@@ -1,10 +1,16 @@
 <Solution>
+  <Folder Name="/docs/" />
+  <Folder Name="/solution/">
+    <File Path=".github/copilot-instructions.md" />
+    <File Path="README.md" />
+  </Folder>
   <Project Path="Revathryn.Contracts.Tests/Revathryn.Contracts.Tests.csproj" />
   <Project Path="Revathryn.Contracts/Revathryn.Contracts.csproj" />
   <Project Path="Revathryn.Data.Tests/Revathryn.Data.Tests.csproj" />
   <Project Path="Revathryn.Data/Revathryn.Data.csproj" />
   <Project Path="Revathryn.Engine.Tests/Revathryn.Engine.Tests.csproj" />
   <Project Path="Revathryn.Engine/Revathryn.Engine.csproj" />
+  <Project Path="Revathryn.Resources/Revathryn.Resources.csproj" />
   <Project Path="Revathryn.Review.Tests/Revathryn.Review.Tests.csproj" />
   <Project Path="Revathryn.Review/Revathryn.Review.csproj" />
   <Project Path="Revathryn.Tests/Revathryn.Tests.csproj" />

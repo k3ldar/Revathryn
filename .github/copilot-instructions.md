@@ -8,8 +8,7 @@
 * Add XML documentation to public APIs.
 * Avoid introducing new third-party packages unless requested.
 * All date/times should be UTC
-* Any classes/enums etc required by Abstractions should be placed within ThemisForge.Kernel
-* ONLY interface allowed within ThermisForge.Abstractions
+* ALL interface within Revathryn.Contracts
 
 # Code Instructions
 
@@ -33,8 +32,13 @@
 * No magic strings, use constants or enums where possible
 * No magic numbers, use constants or enums where possible
 
+## UI
+All string presented to a user should be placed in Revathryn.Resources. This includes error messages, labels, and any other text that is displayed to the user.
+
 ## .cshtml files
 * All models should have the full namespace in the @model directive
+* Bootstrap (responsive) should be used for all UI elements 
+* Do not use tables
 
 # Unit Tests
 
