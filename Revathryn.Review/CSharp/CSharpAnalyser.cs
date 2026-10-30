@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Microsoft.CodeAnalysis;
@@ -10,8 +6,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-using ThemisForge.Abstractions;
-using ThemisForge.Engine.Manifest;
+using Revathryn.Contracts;
+using Revathryn.Engine;
 
 namespace Revathryn.Review.CSharp
 {
@@ -109,7 +105,7 @@ namespace Revathryn.Review.CSharp
             string json = JsonSerializer.Serialize(symbols, options);
             File.WriteAllText(outputPath, json);
 
-            manifestManager.RecordAnalysis(new Manifest.ManifestEntry
+            manifestManager.RecordAnalysis(new ManifestEntry
             {
                 SourcePath = filePath,
                 Language = Language,

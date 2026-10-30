@@ -1,10 +1,10 @@
 ﻿<Project Sdk="MSTest.Sdk/4.2.3">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <UseVSTest>true</UseVSTest>
+	  <TargetFramework>$(TargetFramework)</TargetFramework>
+	  <Nullable>$(Nullable)</Nullable>
+	  <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
+	  <UseVSTest>true</UseVSTest>
   </PropertyGroup>
 
 </Project>

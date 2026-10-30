@@ -1,9 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	  <TargetFramework>$(TargetFramework)</TargetFramework>
+	  <Nullable>$(Nullable)</Nullable>
+	  <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Revathryn.Contracts\Revathryn.Contracts.csproj" />
+    <ProjectReference Include="..\Revathryn.Engine\Revathryn.Engine.csproj" />
+  </ItemGroup>
 
 </Project>

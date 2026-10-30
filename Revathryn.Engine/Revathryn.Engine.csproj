@@ -1,9 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	  <TargetFramework>$(TargetFramework)</TargetFramework>
+	  <Nullable>$(Nullable)</Nullable>
+	  <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Revathryn.Contracts\Revathryn.Contracts.csproj" />
+  </ItemGroup>
 
 </Project>

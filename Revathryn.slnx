@@ -1,7 +1,9 @@
 <Solution>
   <Folder Name="/docs/" />
   <Folder Name="/solution/">
+    <File Path=".editorconfig" />
     <File Path=".github/copilot-instructions.md" />
+    <File Path="Directory.Build.props" />
     <File Path="README.md" />
   </Folder>
   <Project Path="Revathryn.Contracts.Tests/Revathryn.Contracts.Tests.csproj" />

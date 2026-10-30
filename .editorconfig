@@ -1,0 +1,66 @@
+﻿root = true
+
+[*.{csproj,props,targets,xml}]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+charset = utf-8
+
+[*.cs]
+
+# CC0003: Line exceeds maximum length
+dotnet_diagnostic.CC0003.severity = none
+
+# CC0004: If statement should have exactly one blank line above it
+dotnet_diagnostic.CC0004.severity = error
+
+# CC0006: inline comments
+dotnet_diagnostic.CC0006.severity = none
+
+# CC0008: Unnecessary blank line before closing brace
+dotnet_diagnostic.CC0008.severity = error
+
+# CC0009: Avoid magic numbers (and un-named literals)
+dotnet_diagnostic.CC0009.severity = error
+
+# IDE0017: Simplify object initialization
+dotnet_diagnostic.IDE0017.severity = error
+
+# IDE0019: Use pattern matching
+dotnet_diagnostic.IDE0019.severity = error
+
+# IDE0028: collection initialization can be simplified
+dotnet_diagnostic.IDE0028.severity = suggestion
+
+# IDE0031: Use null propagation
+dotnet_diagnostic.IDE0031.severity = error
+
+# IDE0034: Simplify 'default' expression
+dotnet_diagnostic.IDE0034.severity = error
+
+# IDE0090: new expression can be simplified
+dotnet_diagnostic.IDE0090.severity = error
+
+# IDE0130: Namespace does not match folder structure
+dotnet_diagnostic.IDE0130.severity = error
+
+# IDE0290: Use primary constructor
+dotnet_diagnostic.IDE0290.severity = none
+
+# IDE0300: Simplify collection initialization
+dotnet_diagnostic.IDE0300.severity = error
+
+# IDE0301: Simplify collection initialization
+dotnet_diagnostic.IDE0301.severity = error
+
+# IDE0305: Simplify collection initialization
+dotnet_diagnostic.IDE0305.severity = error
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = error
+
+# MSTEST0037: Use proper 'Assert' methods
+dotnet_diagnostic.MSTEST0037.severity = error
+
+# MSTEST0044: Prefer 'TestMethod' over 'DataTestMethod'
+dotnet_diagnostic.MSTEST0044.severity = error
