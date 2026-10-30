@@ -9,6 +9,8 @@ using Microsoft.CodeAnalysis.Text;
 using Revathryn.Contracts;
 using Revathryn.Engine;
 
+using static Revathryn.Contracts.Consts;
+
 namespace Revathryn.Review.CSharp
 {
     public sealed class CSharpAnalyser : IAnalyser
@@ -16,37 +18,23 @@ namespace Revathryn.Review.CSharp
         private readonly string _outputDirectory;
         private const string AnalyserType = "C# Analyser";
         private const string OutputDirectoryRequiredMessage = "An output directory is required.";
-        private const string CSharpFilePattern = "*.cs";
         private static readonly string[] _filePatterns = [CSharpFilePattern];
-        private const string LanguageType = "CSharp";
-        private const string LanguageVersionNumber = "14.0";
-        private const string ModifierPublic = "public";
-        private const string ModifierPrivate = "private";
-        private const string ModifierProtected = "protected";
-        private const string ModifierInternal = "internal";
-        private const string ModifierProtectedInternal = ModifierProtected + " " + ModifierInternal;
-        private const char CharLessThan = '<';
-        private const char CharGreaterThan = '>';
-        private const string StringQuestionMark = "?";
-        private const char CharFullStop = '.';
-        private const char CharI = 'I';
-        private const char CharComma = ',';
-        private const string StringArrayIdentifier = "[]";
         private const int MinimumInterfaceNameLength = 2;
+
         private static readonly HashSet<string> _systemTypeNames = new(StringComparer.Ordinal)
         {
-            "void", "bool", "byte", "sbyte", "short", "ushort", "int", "uint", "long", "ulong",
-            "float", "double", "decimal", "char", "string", "object", "dynamic",
-            "String", "Boolean", "Byte", "SByte", "Int16", "UInt16", "Int32", "UInt32",
-            "Int64", "UInt64", "Single", "Double", "Decimal", "Char", "Object",
-            "Task", "ValueTask", "Action", "Func", "Predicate", "EventHandler",
-            "List", "Dictionary", "HashSet", "IEnumerable", "IList", "ICollection",
-            "IReadOnlyList", "IReadOnlyCollection", "IReadOnlyDictionary", "IDictionary",
-            "IEnumerator", "Array", "Span", "ReadOnlySpan", "Memory", "ReadOnlyMemory",
-            "Nullable", "Type", "Exception", "ArgumentException", "ArgumentNullException",
-            "NotImplementedException", "InvalidOperationException", "CancellationToken",
-            "DateTime", "DateTimeOffset", "TimeSpan", "Guid", "Uri", "Enum",
-            "var", "nameof", "typeof", "sizeof", "default", "null", "true", "false"
+            TypeVoid, TypeBool, TypeByte, TypeSByte, TypeShort, TypeUshort, TypeInt, TypeUint, TypeLong, TypeULong,
+            TypeFloat, TypeDouble, TypeDecimal, TypeChar, TypeString, TypeObject, TypeDynamic,
+            TypeNetString, TypeNetBoolean, TypeNetByte, TypeNetSByte, TypeNetInt16, TypeNetUInt16, TypeNetInt32, TypeNetUInt32,
+            TypeNetInt64, TypeNetUInt64, TypeNetSingle, TypeNetDouble, TypeNetDecimal, TypeNetChar, TypeNetObject,
+            TypeTask, TypeValueTask, TypeAction, TypeFunc, TypePredicate, TypeEventHandler,
+            TypeList, TypeDictionary, TypeHashSet, TypeIEnumerable, TypeIList, TypeICollection,
+            TypeIReadOnlyList, TypeIReadOnlyCollection, TypeIReadOnlyDictionary, TypeIDictionary,
+            TypeIEnumerator, TypeArray, TypeSpan, TypeReadOnlySpan, TypeMemory, TypeReadOnlyMemory,
+            TypeNullable, TypeType, TypeException, TypeArgumentException, TypeArgumentNullException,
+            TypeNotImplementedException, TypeInvalidOperationException, TypeCancellationToken,
+            TypeDateTime, TypeDateTimeOffset, TypeTimeSpan, TypeGuid, TypeUri, TypeEnum,
+            TypeVar, TypeNameOf, TypeTypeOf, TypeSizeOf, TypeDefault, TypeNull, TypeValueTrue, TypeValueFalse
         };
 
         private static readonly JsonSerializerOptions options = new()
@@ -97,8 +85,8 @@ namespace Revathryn.Review.CSharp
             string fileName = Path.GetFileNameWithoutExtension(filePath);
             string namespaceName = symbols[0].Namespace;
             string outputName = string.IsNullOrEmpty(namespaceName)
-                ? $"{fileName}.json"
-                : $"{namespaceName}.{fileName}.json";
+                ? $"{fileName}.{JsonFileExtension}"
+                : $"{namespaceName}.{fileName}.{JsonFileExtension}";
 
             string outputPath = Path.Combine(_outputDirectory, outputName);
 

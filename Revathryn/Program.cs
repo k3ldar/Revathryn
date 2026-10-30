@@ -1,3 +1,10 @@
+using Revathryn.Contracts.Infrastructure;
+using Revathryn.Data;
+using Revathryn.Engine;
+using Revathryn.Review;
+
+#pragma warning disable CC0009
+
 namespace Revathryn
 {
     public class Program
@@ -8,8 +15,15 @@ namespace Revathryn
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddDataServices(options => options.ConnectionString = "Data Source=revathryn.db");
+            builder.Services.AddEngineServices();
+            builder.Services.AddReviewServices();
 
             WebApplication app = builder.Build();
+
+            // Initialise the persistence store before serving requests.
+            IDatabaseInitializer databaseInitializer = app.Services.GetRequiredService<IDatabaseInitializer>();
+            databaseInitializer.Initialize();
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
@@ -34,3 +48,5 @@ namespace Revathryn
         }
     }
 }
+
+#pragma warning restore CC0009

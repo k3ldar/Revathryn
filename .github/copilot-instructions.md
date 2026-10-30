@@ -31,9 +31,10 @@
 * Use null propergation where possible (i.e. string? name = order.Customer?.Name;)
 * No magic strings, use constants or enums where possible
 * No magic numbers, use constants or enums where possible
+* Assume all constants are public and place in Revathryn.Contracts.Consts, ensure there are no duplicates
 
 ## UI
-All string presented to a user should be placed in Revathryn.Resources. This includes error messages, labels, and any other text that is displayed to the user.
+All user facing strings should be placed in Revathryn.Resources.Strings.resx This includes error messages, labels, and any other text that is displayed to the user.
 
 ## .cshtml files
 * All models should have the full namespace in the @model directive

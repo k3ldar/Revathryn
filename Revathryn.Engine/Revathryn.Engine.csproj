@@ -7,7 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CleanCodeAnalyzer" Version="1.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Revathryn.Contracts\Revathryn.Contracts.csproj" />
+    <ProjectReference Include="..\Revathryn.Resources\Revathryn.Resources.csproj" />
   </ItemGroup>
 
 </Project>

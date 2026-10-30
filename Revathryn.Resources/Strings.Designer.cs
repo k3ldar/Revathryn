@@ -31,7 +31,198 @@ namespace Revathryn.Resources {
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal Strings() {
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Dashboard.
+        /// </summary>
+        public static string DashboardTitle {
+            get {
+                return ResourceManager.GetString("DashboardTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Welcome to the Revathryn administration dashboard..
+        /// </summary>
+        public static string DashboardWelcome {
+            get {
+                return ResourceManager.GetString("DashboardWelcome", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repositories.
+        /// </summary>
+        public static string RepositoriesTitle {
+            get {
+                return ResourceManager.GetString("RepositoriesTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enabled.
+        /// </summary>
+        public static string RepositoryEnabled {
+            get {
+                return ResourceManager.GetString("RepositoryEnabled", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Disabled.
+        /// </summary>
+        public static string RepositoryDisabled {
+            get {
+                return ResourceManager.GetString("RepositoryDisabled", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No repositories have been registered yet..
+        /// </summary>
+        public static string NoRepositories {
+            get {
+                return ResourceManager.GetString("NoRepositories", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A local path is required..
+        /// </summary>
+        public static string LocalPathRequired {
+            get {
+                return ResourceManager.GetString("LocalPathRequired", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A local repository path is required..
+        /// </summary>
+        public static string LocalRepositoryPathRequired {
+            get {
+                return ResourceManager.GetString("LocalRepositoryPathRequired", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository not found: {0}.
+        /// </summary>
+        public static string RepositoryNotFound {
+            get {
+                return ResourceManager.GetString("RepositoryNotFound", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository file not found: {0}.
+        /// </summary>
+        public static string RepoFileNotFound {
+            get {
+                return ResourceManager.GetString("RepoFileNotFound", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A path is required..
+        /// </summary>
+        public static string PathRequired {
+            get {
+                return ResourceManager.GetString("PathRequired", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository folder not found: {0}.
+        /// </summary>
+        public static string RepositoryFolderNotFound {
+            get {
+                return ResourceManager.GetString("RepositoryFolderNotFound", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A repository is already registered for: {0}.
+        /// </summary>
+        public static string RepositoryAlreadyRegistered {
+            get {
+                return ResourceManager.GetString("RepositoryAlreadyRegistered", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository folder is not accessible: {0}.
+        /// </summary>
+        public static string RepositoryFolderNotAccessible {
+            get {
+                return ResourceManager.GetString("RepositoryFolderNotAccessible", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to C# Code Review.
+        /// </summary>
+        public static string DefaultCSharpReviewName {
+            get {
+                return ResourceManager.GetString("DefaultCSharpReviewName", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Default C# code review definition..
+        /// </summary>
+        public static string DefaultCSharpReviewDescription {
+            get {
+                return ResourceManager.GetString("DefaultCSharpReviewDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review the supplied C# source for correctness, maintainability and security issues..
+        /// </summary>
+        public static string DefaultCSharpReviewPrompt {
+            get {
+                return ResourceManager.GetString("DefaultCSharpReviewPrompt", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to General Review.
+        /// </summary>
+        public static string DefaultGeneralReviewName {
+            get {
+                return ResourceManager.GetString("DefaultGeneralReviewName", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Default general review definition applied to all file types..
+        /// </summary>
+        public static string DefaultGeneralReviewDescription {
+            get {
+                return ResourceManager.GetString("DefaultGeneralReviewDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review the supplied file contents for correctness and maintainability..
+        /// </summary>
+        public static string DefaultGeneralReviewPrompt {
+            get {
+                return ResourceManager.GetString("DefaultGeneralReviewPrompt", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The file changed while it was being scanned..
+        /// </summary>
+        public static string FileChangedDuringScan {
+            get {
+                return ResourceManager.GetString("FileChangedDuringScan", resourceCulture);
+            }
+        }
+
+
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>

@@ -1,0 +1,38 @@
+@model Revathryn.Models.DashboardViewModel
+@{
+    ViewData["Title"] = Revathryn.Resources.Strings.DashboardTitle;
+}
+
+<h1>@Revathryn.Resources.Strings.DashboardTitle</h1>
+<p class="lead">@Revathryn.Resources.Strings.DashboardWelcome</p>
+
+<h2>@Revathryn.Resources.Strings.RepositoriesTitle</h2>
+
+@if (Model.Repositories.Count == 0)
+{
+    <p class="text-muted">@Revathryn.Resources.Strings.NoRepositories</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+        @foreach (Revathryn.Contracts.Models.Repository repository in Model.Repositories)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="card-title">@repository.Name</h3>
+                        <p class="card-text text-muted">@repository.LocalPath</p>
+                        @if (repository.Enabled)
+                        {
+                            <span class="badge bg-success">@Revathryn.Resources.Strings.RepositoryEnabled</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@Revathryn.Resources.Strings.RepositoryDisabled</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

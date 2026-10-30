@@ -6,4 +6,19 @@
     <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="CleanCodeAnalyzer" Version="1.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Revathryn.Contracts\Revathryn.Contracts.csproj" />
+    <ProjectReference Include="..\Revathryn.Data\Revathryn.Data.csproj" />
+    <ProjectReference Include="..\Revathryn.Engine\Revathryn.Engine.csproj" />
+    <ProjectReference Include="..\Revathryn.Resources\Revathryn.Resources.csproj" />
+    <ProjectReference Include="..\Revathryn.Review\Revathryn.Review.csproj" />
+  </ItemGroup>
+
 </Project>

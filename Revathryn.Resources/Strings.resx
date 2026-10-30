@@ -95,7 +95,70 @@
 	<resheader name="reader">
 		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</resheader>
-	<resheader name="writer">
+	  <resheader name="writer">
 		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-	</resheader>
-</root>
+	  </resheader>
+	  <data name="DashboardTitle" xml:space="preserve">
+		<value>Dashboard</value>
+	  </data>
+	  <data name="DashboardWelcome" xml:space="preserve">
+		<value>Welcome to the Revathryn administration dashboard.</value>
+	  </data>
+		<data name="RepositoriesTitle" xml:space="preserve">
+		  <value>Repositories</value>
+		</data>
+		<data name="RepositoryEnabled" xml:space="preserve">
+		  <value>Enabled</value>
+		</data>
+		  <data name="RepositoryDisabled" xml:space="preserve">
+			<value>Disabled</value>
+		  </data>
+			<data name="NoRepositories" xml:space="preserve">
+			  <value>No repositories have been registered yet.</value>
+			</data>
+			<data name="LocalPathRequired" xml:space="preserve">
+			  <value>A local path is required.</value>
+			</data>
+			<data name="LocalRepositoryPathRequired" xml:space="preserve">
+			  <value>A local repository path is required.</value>
+			</data>
+			<data name="RepositoryNotFound" xml:space="preserve">
+			  <value>Repository not found: {0}</value>
+			</data>
+			<data name="RepoFileNotFound" xml:space="preserve">
+			  <value>Repository file not found: {0}</value>
+			</data>
+			<data name="PathRequired" xml:space="preserve">
+			  <value>A path is required.</value>
+			</data>
+			<data name="RepositoryFolderNotFound" xml:space="preserve">
+			  <value>Repository folder not found: {0}</value>
+			</data>
+			<data name="RepositoryAlreadyRegistered" xml:space="preserve">
+			  <value>A repository is already registered for: {0}</value>
+			</data>
+			<data name="RepositoryFolderNotAccessible" xml:space="preserve">
+			  <value>Repository folder is not accessible: {0}</value>
+			</data>
+			<data name="DefaultCSharpReviewName" xml:space="preserve">
+			  <value>C# Code Review</value>
+			</data>
+			<data name="DefaultCSharpReviewDescription" xml:space="preserve">
+			  <value>Default C# code review definition.</value>
+			</data>
+			<data name="DefaultCSharpReviewPrompt" xml:space="preserve">
+			  <value>Review the supplied C# source for correctness, maintainability and security issues.</value>
+			</data>
+			<data name="DefaultGeneralReviewName" xml:space="preserve">
+			  <value>General Review</value>
+			</data>
+			<data name="DefaultGeneralReviewDescription" xml:space="preserve">
+			  <value>Default general review definition applied to all file types.</value>
+			</data>
+			<data name="DefaultGeneralReviewPrompt" xml:space="preserve">
+			  <value>Review the supplied file contents for correctness and maintainability.</value>
+			</data>
+			<data name="FileChangedDuringScan" xml:space="preserve">
+			  <value>The file changed while it was being scanned.</value>
+			</data>
+		  </root>

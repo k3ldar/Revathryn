@@ -1,9 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
 	  <TargetFramework>$(TargetFramework)</TargetFramework>
 	  <Nullable>$(Nullable)</Nullable>
 	  <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Revathryn.Contracts\Revathryn.Contracts.csproj" />
+  </ItemGroup>
 
 </Project>
