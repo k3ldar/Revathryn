@@ -6,6 +6,7 @@ using PluginManager;
 
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
+using Revathryn.Contracts.Reliability;
 using Revathryn.Data;
 using Revathryn.Engine;
 using Revathryn.Internal;
@@ -50,6 +51,7 @@ namespace Revathryn
                 builder.Services.AddControllersWithViews();
                 builder.Services.AddDataServices();
                 builder.Services.AddEngineServices();
+                builder.Services.AddSingleton<IOperationalLogSink, OperationalLoggingSink>();
                 builder.Services.AddReviewServices();
                 builder.Services.AddHostedService<ReviewWorkerService>();
 

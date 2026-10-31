@@ -9,7 +9,7 @@ namespace Revathryn.Engine
     internal sealed class GitIgnoreMatcher
     {
         private readonly string _rootPath;
-        private readonly Dictionary<string, List<GitIgnoreRule>> _cache = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, List<GitIgnoreRule>> _cache = [with(StringComparer.Ordinal)];
 
         /// <summary>Initialises a new matcher over the given repository root.</summary>
         internal GitIgnoreMatcher(string rootPath)

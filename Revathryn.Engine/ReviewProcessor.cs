@@ -23,7 +23,7 @@ namespace Revathryn.Engine
         private readonly IRepositoryRepository _repositoryRepository;
         private readonly IRepoFileRepository _fileRepository;
         private readonly IReviewTypeRepository _reviewTypeRepository;
-        private readonly IRepoFileAnalysisRepository _analysisRepository;
+        private readonly IReviewOutcomeStore _reviewOutcomeStore;
         private readonly IFindingRepository _findingRepository;
         private readonly IAISettingsRepository _aiSettingsRepository;
         private readonly IAIReviewEngine _aiReviewEngine;
@@ -35,7 +35,7 @@ namespace Revathryn.Engine
             IRepositoryRepository repositoryRepository,
             IRepoFileRepository fileRepository,
             IReviewTypeRepository reviewTypeRepository,
-            IRepoFileAnalysisRepository analysisRepository,
+            IReviewOutcomeStore reviewOutcomeStore,
             IFindingRepository findingRepository,
             IAISettingsRepository aiSettingsRepository,
             IAIReviewEngine aiReviewEngine,
@@ -45,7 +45,7 @@ namespace Revathryn.Engine
             _repositoryRepository = repositoryRepository;
             _fileRepository = fileRepository;
             _reviewTypeRepository = reviewTypeRepository;
-            _analysisRepository = analysisRepository;
+            _reviewOutcomeStore = reviewOutcomeStore;
             _findingRepository = findingRepository;
             _aiSettingsRepository = aiSettingsRepository;
             _aiReviewEngine = aiReviewEngine;
@@ -157,6 +157,8 @@ namespace Revathryn.Engine
             ReviewResponse response,
             CancellationToken cancellationToken)
         {
+            List<Finding> findings = [];
+
             foreach (ReviewResult result in response.Results ?? [])
             {
                 Finding finding = new()
@@ -175,21 +177,22 @@ namespace Revathryn.Engine
                     LastModifiedDate = DateTime.UtcNow
                 };
 
-                await _findingRepository.AddAsync(finding, cancellationToken).ConfigureAwait(false);
+                findings.Add(finding);
             }
 
-            RepoFileAnalysis analysis = new()
+            ReviewOutcome outcome = new()
             {
                 RepositoryId = item.RepositoryId,
                 RepoFileId = item.RepoFileId,
                 ReviewTypeId = item.ReviewTypeId,
                 Sha256 = file.Sha256,
-                LastAnalysedDate = DateTime.UtcNow,
                 AnalysisVersion = Consts.AnalysisVersion,
-                ReviewDefinitionVersion = reviewType.ReviewDefinitionVersion
+                ReviewDefinitionVersion = reviewType.ReviewDefinitionVersion,
+                Findings = findings,
+                CompletedUtc = DateTime.UtcNow
             };
 
-            await _analysisRepository.UpsertAsync(analysis, cancellationToken).ConfigureAwait(false);
+            await _reviewOutcomeStore.PersistAsync(outcome, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task RecordOperationalFailureAsync(QueueItem item, string error, CancellationToken cancellationToken)

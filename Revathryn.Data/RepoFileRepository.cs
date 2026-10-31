@@ -108,9 +108,9 @@ namespace Revathryn.Data
             using SqliteTransaction transaction = connection.BeginTransaction();
 
             Dictionary<string, RepoFile> existing = await LoadInventoryAsync(connection, transaction, repositoryId, cancellationToken).ConfigureAwait(false);
-            HashSet<string> discoveredPaths = new(StringComparer.Ordinal);
+            HashSet<string> discoveredPaths = [with(StringComparer.Ordinal)];
             HashSet<string> failedSet = failedPaths is null
-                ? new HashSet<string>(StringComparer.Ordinal)
+                ? [with(StringComparer.Ordinal)]
                 : new HashSet<string>(failedPaths, StringComparer.Ordinal);
 
             RepositoryReconciliationResult result = new();
@@ -238,7 +238,7 @@ namespace Revathryn.Data
             long repositoryId,
             CancellationToken cancellationToken)
         {
-            Dictionary<string, RepoFile> existing = new(StringComparer.Ordinal);
+            Dictionary<string, RepoFile> existing = [with(StringComparer.Ordinal)];
 
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
@@ -287,7 +287,7 @@ namespace Revathryn.Data
             List<RepositoryFileChange> changes,
             RepositoryReconciliationResult result)
         {
-            HashSet<string> matchedAddedPaths = new(StringComparer.Ordinal);
+            HashSet<string> matchedAddedPaths = [with(StringComparer.Ordinal)];
 
             foreach (RepoFile removed in removedCandidates)
             {

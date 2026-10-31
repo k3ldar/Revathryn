@@ -57,7 +57,18 @@ namespace Revathryn.Data
         public async Task<long> UpsertAsync(RepoFileAnalysis analysis, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            return await UpsertAsync(connection, null, analysis, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>Inserts or updates the analysis record within the supplied transaction and returns its id.</summary>
+        internal static async Task<long> UpsertAsync(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            RepoFileAnalysis analysis,
+            CancellationToken cancellationToken)
+        {
             using SqliteCommand command = connection.CreateCommand();
+            command.Transaction = transaction;
             command.CommandText = """
                 INSERT INTO RepoFileAnalysis (RepositoryId, RepoFileId, ReviewTypeId, Sha256, LastAnalysedDate, AnalysisVersion, ReviewDefinitionVersion)
                 VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Sha256, @LastAnalysedDate, @AnalysisVersion, @ReviewDefinitionVersion)

@@ -25,7 +25,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "notes.txt"), "not scanned");
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(1, scan.DiscoveredFiles);
                 Assert.AreEqual("keep.cs", scan.DiscoveredFiles[0].RelativePath);
@@ -46,7 +46,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "src", "nested", "Program.cs"), "class Program { }");
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(1, scan.DiscoveredFiles);
                 Assert.AreEqual("src/nested/Program.cs", scan.DiscoveredFiles[0].RelativePath);
@@ -73,7 +73,7 @@ namespace Revathryn.Engine.Tests
                 };
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root, options);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, options, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(1, scan.DiscoveredFiles);
                 Assert.AreEqual("keep.cs", scan.DiscoveredFiles[0].RelativePath);
@@ -94,8 +94,8 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(filePath, "class Program { }");
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult first = await scanner.ScanAsync(root);
-                RepositoryScanResult second = await scanner.ScanAsync(root);
+                RepositoryScanResult first = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
+                RepositoryScanResult second = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.AreEqual(first.DiscoveredFiles[0].Sha256, second.DiscoveredFiles[0].Sha256);
             }
@@ -115,10 +115,10 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(filePath, "class Program { }");
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult first = await scanner.ScanAsync(root);
+                RepositoryScanResult first = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 File.WriteAllText(filePath, "class Program { void M() { } }");
-                RepositoryScanResult second = await scanner.ScanAsync(root);
+                RepositoryScanResult second = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.AreNotEqual(first.DiscoveredFiles[0].Sha256, second.DiscoveredFiles[0].Sha256);
             }
@@ -140,12 +140,12 @@ namespace Revathryn.Engine.Tests
                 DateTime originalTimestamp = File.GetLastWriteTimeUtc(filePath);
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult first = await scanner.ScanAsync(root);
+                RepositoryScanResult first = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 File.WriteAllText(filePath, "class Program { void M() { } }");
                 File.SetLastWriteTimeUtc(filePath, originalTimestamp);
 
-                RepositoryScanResult second = await scanner.ScanAsync(root);
+                RepositoryScanResult second = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.AreEqual(originalTimestamp, File.GetLastWriteTimeUtc(filePath));
                 Assert.AreNotEqual(first.DiscoveredFiles[0].Sha256, second.DiscoveredFiles[0].Sha256);
@@ -167,7 +167,7 @@ namespace Revathryn.Engine.Tests
 
                 using FileStream locked = new(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(0, scan.DiscoveredFiles);
                 Assert.HasCount(1, scan.Failures);
@@ -190,10 +190,10 @@ namespace Revathryn.Engine.Tests
 
                 CountingFileHasher hasher = new();
                 RepositoryScanner scanner = new(hasher);
-                RepositoryScanResult first = await scanner.ScanAsync(root);
+                RepositoryScanResult first = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 IReadOnlyDictionary<string, RepoFile> existing = BuildExistingFiles(first.DiscoveredFiles);
-                RepositoryScanResult second = await scanner.ScanAsync(root, existingFiles: existing);
+                RepositoryScanResult second = await scanner.ScanAsync(root, existingFiles: existing, cancellationToken: TestContext.CancellationToken);
 
                 Assert.AreEqual(1, hasher.AsyncCallCount);
                 Assert.AreEqual(first.DiscoveredFiles[0].Sha256, second.DiscoveredFiles[0].Sha256);
@@ -215,10 +215,10 @@ namespace Revathryn.Engine.Tests
 
                 CountingFileHasher hasher = new();
                 RepositoryScanner scanner = new(hasher);
-                RepositoryScanResult first = await scanner.ScanAsync(root);
+                RepositoryScanResult first = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 IReadOnlyDictionary<string, RepoFile> existing = BuildExistingFiles(first.DiscoveredFiles);
-                await scanner.ScanAsync(root, existingFiles: existing, forceFullScan: true);
+                await scanner.ScanAsync(root, existingFiles: existing, forceFullScan: true, cancellationToken: TestContext.CancellationToken);
 
                 Assert.AreEqual(2, hasher.AsyncCallCount);
             }
@@ -239,12 +239,12 @@ namespace Revathryn.Engine.Tests
 
                 CountingFileHasher hasher = new();
                 RepositoryScanner scanner = new(hasher);
-                RepositoryScanResult first = await scanner.ScanAsync(root);
+                RepositoryScanResult first = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 File.SetLastWriteTimeUtc(filePath, File.GetLastWriteTimeUtc(filePath).AddSeconds(1));
 
                 IReadOnlyDictionary<string, RepoFile> existing = BuildExistingFiles(first.DiscoveredFiles);
-                RepositoryScanResult second = await scanner.ScanAsync(root, existingFiles: existing);
+                RepositoryScanResult second = await scanner.ScanAsync(root, existingFiles: existing, cancellationToken: TestContext.CancellationToken);
 
                 Assert.AreEqual(2, hasher.AsyncCallCount);
                 Assert.AreEqual(first.DiscoveredFiles[0].Sha256, second.DiscoveredFiles[0].Sha256);
@@ -262,7 +262,7 @@ namespace Revathryn.Engine.Tests
             FakeReviewTypeRepository reviewTypes = new();
             RepositoryService service = new(repositories, reviewTypes);
 
-            await Assert.ThrowsExactlyAsync<ArgumentException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = "  " }));
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = "  " }, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -274,7 +274,7 @@ namespace Revathryn.Engine.Tests
             FakeReviewTypeRepository reviewTypes = new();
             RepositoryService service = new(repositories, reviewTypes);
 
-            await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = missing }));
+            await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = missing }, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -287,11 +287,11 @@ namespace Revathryn.Engine.Tests
                 FakeReviewTypeRepository reviewTypes = new();
                 RepositoryService service = new(repositories, reviewTypes);
 
-                await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root });
+                await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
 
                 string duplicatePath = root + Path.DirectorySeparatorChar;
 
-                await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => service.RegisterAsync(new Repository { Name = "Repo Again", LocalPath = duplicatePath }));
+                await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => service.RegisterAsync(new Repository { Name = "Repo Again", LocalPath = duplicatePath }, TestContext.CancellationToken));
             }
             finally
             {
@@ -313,7 +313,7 @@ namespace Revathryn.Engine.Tests
                 {
                     Name = "Repo",
                     LocalPath = root + Path.DirectorySeparatorChar
-                });
+                }, TestContext.CancellationToken);
 
                 Assert.AreEqual(Path.TrimEndingDirectorySeparator(root), registered.LocalPath);
             }
@@ -333,11 +333,11 @@ namespace Revathryn.Engine.Tests
                 FakeReviewTypeRepository reviewTypes = new();
                 RepositoryService service = new(repositories, reviewTypes);
 
-                Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root });
+                Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
 
-                await service.SetEnabledAsync(registered.Id, false);
+                await service.SetEnabledAsync(registered.Id, false, TestContext.CancellationToken);
 
-                Repository disabled = await service.GetAsync(registered.Id);
+                Repository disabled = await service.GetAsync(registered.Id, TestContext.CancellationToken);
                 Assert.IsFalse(disabled.Enabled);
             }
             finally
@@ -354,10 +354,10 @@ namespace Revathryn.Engine.Tests
             harness.SeedFile(1, "src/A.cs", "cs", "h1");
             harness.SeedReviewType(1, "cs", "v1");
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(1, result.Added);
-            Assert.HasCount(1, await harness.Queue.GetPendingAsync());
+            Assert.HasCount(1, await harness.Queue.GetPendingAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -369,7 +369,7 @@ namespace Revathryn.Engine.Tests
             harness.SeedReviewType(1, "cs", "v1");
             harness.SeedAnalysis(1, 1, "old-hash", "v1");
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(1, result.Added);
         }
@@ -383,10 +383,10 @@ namespace Revathryn.Engine.Tests
             harness.SeedReviewType(1, "cs", "v1");
             harness.SeedAnalysis(1, 1, "h1", "v1");
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(0, result.Added);
-            Assert.AreEqual(0, await harness.Queue.CountAsync());
+            Assert.AreEqual(0, await harness.Queue.CountAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -399,10 +399,10 @@ namespace Revathryn.Engine.Tests
             harness.SeedAnalysis(1, 1, "h1", "v1");
             harness.SeedReviewType(2, "cs", "v1", true, 20);
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(1, result.Added);
-            IReadOnlyList<QueueItem> pending = await harness.Queue.GetPendingAsync();
+            IReadOnlyList<QueueItem> pending = await harness.Queue.GetPendingAsync(TestContext.CancellationToken);
             Assert.HasCount(1, pending);
             Assert.AreEqual(2, pending[0].ReviewTypeId);
         }
@@ -418,7 +418,7 @@ namespace Revathryn.Engine.Tests
 
             reviewType.ReviewDefinitionVersion = "v2";
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(1, result.Added);
         }
@@ -431,10 +431,10 @@ namespace Revathryn.Engine.Tests
             harness.SeedFile(1, "src/A.cs", "cs", "h1");
             harness.SeedReviewType(1, "cs", "v1", enabled: false);
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(0, result.Added);
-            Assert.AreEqual(0, await harness.Queue.CountAsync());
+            Assert.AreEqual(0, await harness.Queue.CountAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -446,7 +446,7 @@ namespace Revathryn.Engine.Tests
             harness.SeedReviewType(1, "cs", "v1");
             harness.Links.Add(new ReviewLink { RepoFileId = 1, ReviewTypeId = 1, Enabled = false });
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(0, result.Added);
         }
@@ -460,7 +460,7 @@ namespace Revathryn.Engine.Tests
             harness.SeedReviewType(1, "cs", "v1");
             harness.Links.Add(new ReviewLink { RepoFileId = 1, ReviewTypeId = 1, Enabled = true });
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(1, result.Added);
         }
@@ -474,9 +474,9 @@ namespace Revathryn.Engine.Tests
             harness.SeedReviewType(1, "cs", "v1", true, 10);
             harness.Links.Add(new ReviewLink { RepoFileId = 1, ReviewTypeId = 1, Enabled = true, PriorityOverride = 500 });
 
-            await harness.Scheduler.ScheduleRepositoryAsync(1);
+            await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
-            QueueItem item = await harness.Queue.DequeueAsync();
+            QueueItem item = await harness.Queue.DequeueAsync(TestContext.CancellationToken);
             Assert.AreEqual(500, item.Priority);
         }
 
@@ -488,13 +488,13 @@ namespace Revathryn.Engine.Tests
             harness.SeedFile(1, "src/A.cs", "cs", "h1");
             harness.SeedReviewType(1, "cs", "v1");
 
-            ReviewScheduleResult first = await harness.Scheduler.ScheduleRepositoryAsync(1);
-            ReviewScheduleResult second = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult first = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
+            ReviewScheduleResult second = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(1, first.Added);
             Assert.AreEqual(0, second.Added);
             Assert.AreEqual(1, second.DuplicatesSkipped);
-            Assert.AreEqual(1, await harness.Queue.CountAsync());
+            Assert.AreEqual(1, await harness.Queue.CountAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -514,7 +514,7 @@ namespace Revathryn.Engine.Tests
                 Assert.AreEqual(1, summary.NewFiles);
                 Assert.AreEqual(1, summary.CSharpFilesAnalysed);
                 Assert.AreEqual(1, summary.QueueEntriesAdded);
-                Assert.AreEqual(1, await harness.Queue.CountAsync());
+                Assert.AreEqual(1, await harness.Queue.CountAsync(TestContext.CancellationToken));
             }
             finally
             {
@@ -541,7 +541,7 @@ namespace Revathryn.Engine.Tests
                 Assert.AreEqual(1, second.UnchangedFiles);
                 Assert.AreEqual(0, second.QueueEntriesAdded);
                 Assert.AreEqual(1, second.QueueDuplicatesSkipped);
-                Assert.AreEqual(1, await harness.Queue.CountAsync());
+                Assert.AreEqual(1, await harness.Queue.CountAsync(TestContext.CancellationToken));
             }
             finally
             {
@@ -569,7 +569,7 @@ namespace Revathryn.Engine.Tests
                 RepositoryScanSummary second = await harness.Processor.ProcessAsync(1, CancellationToken.None);
 
                 Assert.AreEqual(1, second.RemovedFiles);
-                IReadOnlyList<RepoFile> remaining = await harness.Files.GetByRepositoryAsync(1);
+                IReadOnlyList<RepoFile> remaining = await harness.Files.GetByRepositoryAsync(1, TestContext.CancellationToken);
                 Assert.HasCount(1, remaining);
                 Assert.IsTrue(remaining[0].IsRemoved);
             }
@@ -651,7 +651,7 @@ namespace Revathryn.Engine.Tests
                 FakeReviewTypeRepository reviewTypes = new();
                 RepositoryService service = new(repositories, reviewTypes);
 
-                await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = filePath }));
+                await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = filePath }, TestContext.CancellationToken));
             }
             finally
             {
@@ -669,13 +669,13 @@ namespace Revathryn.Engine.Tests
                 FakeReviewTypeRepository reviewTypes = new();
                 RepositoryService service = new(repositories, reviewTypes);
 
-                Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root, Description = "Before" });
+                Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root, Description = "Before" }, TestContext.CancellationToken);
 
                 registered.Description = "After";
                 registered.ScanOptions = new RepositoryScanOptions { RespectGitIgnore = true };
-                await service.UpdateAsync(registered);
+                await service.UpdateAsync(registered, TestContext.CancellationToken);
 
-                Repository updated = await service.GetAsync(registered.Id);
+                Repository updated = await service.GetAsync(registered.Id, TestContext.CancellationToken);
 
                 Assert.AreEqual("After", updated.Description);
                 Assert.IsTrue(updated.ScanOptions.RespectGitIgnore);
@@ -698,10 +698,10 @@ namespace Revathryn.Engine.Tests
                 FakeReviewTypeRepository reviewTypes = new();
                 RepositoryService service = new(repositories, reviewTypes);
 
-                Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root });
-                await service.DeleteAsync(registered.Id);
+                Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
+                await service.DeleteAsync(registered.Id, TestContext.CancellationToken);
 
-                Assert.IsNull(await service.GetAsync(registered.Id));
+                Assert.IsNull(await service.GetAsync(registered.Id, TestContext.CancellationToken));
                 Assert.IsTrue(Directory.Exists(root));
                 Assert.IsTrue(File.Exists(Path.Combine(root, "keep.cs")));
             }
@@ -719,10 +719,10 @@ namespace Revathryn.Engine.Tests
             harness.SeedFile(1, "src/A.cs", "cs", "h1", isRemoved: true);
             harness.SeedReviewType(1, "cs", "v1");
 
-            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1);
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.AreEqual(0, result.Added);
-            Assert.AreEqual(0, await harness.Queue.CountAsync());
+            Assert.AreEqual(0, await harness.Queue.CountAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -809,7 +809,7 @@ namespace Revathryn.Engine.Tests
                 Assert.AreEqual(0, reintroduced.NewFiles);
                 Assert.AreEqual(0, reintroduced.RemovedFiles);
 
-                RepoFile file = await harness.Files.GetByRelativePathAsync(1, "Program.cs");
+                RepoFile file = await harness.Files.GetByRelativePathAsync(1, "Program.cs", TestContext.CancellationToken);
                 Assert.IsFalse(file.IsRemoved);
             }
             finally
@@ -903,7 +903,7 @@ namespace Revathryn.Engine.Tests
 
         private static IReadOnlyDictionary<string, RepoFile> BuildExistingFiles(IReadOnlyList<RepoFile> files)
         {
-            Dictionary<string, RepoFile> map = new(StringComparer.Ordinal);
+            Dictionary<string, RepoFile> map = [with(StringComparer.Ordinal)];
 
             foreach (RepoFile file in files)
             {
@@ -1017,7 +1017,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeRepositoryRepository : IRepositoryRepository
         {
-            private readonly Dictionary<long, Repository> _items = new();
+            private readonly Dictionary<long, Repository> _items = [];
             private long _nextId = 1;
 
             public void Add(Repository repository)
@@ -1067,7 +1067,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeRepoFileRepository : IRepoFileRepository
         {
-            private readonly Dictionary<(long RepositoryId, string RelativePath), RepoFile> _items = new();
+            private readonly Dictionary<(long RepositoryId, string RelativePath), RepoFile> _items = [];
             private long _nextId = 1;
 
             public void Add(RepoFile file)
@@ -1105,9 +1105,9 @@ namespace Revathryn.Engine.Tests
             {
                 RepositoryReconciliationResult result = new();
                 List<RepositoryFileChange> changes = [];
-                HashSet<string> discoveredPaths = new(StringComparer.Ordinal);
+                HashSet<string> discoveredPaths = [with(StringComparer.Ordinal)];
                 HashSet<string> failedSet = failedPaths is null
-                    ? new HashSet<string>(StringComparer.Ordinal)
+                    ? [with(StringComparer.Ordinal)]
                     : new HashSet<string>(failedPaths, StringComparer.Ordinal);
                 List<RepoFile> addedCandidates = [];
                 List<RepoFile> removedCandidates = [];
@@ -1181,7 +1181,7 @@ namespace Revathryn.Engine.Tests
                 List<RepositoryFileChange> changes,
                 RepositoryReconciliationResult result)
             {
-                HashSet<string> matchedAddedPaths = new(StringComparer.Ordinal);
+                HashSet<string> matchedAddedPaths = [with(StringComparer.Ordinal)];
 
                 foreach (RepoFile removed in removedCandidates)
                 {
@@ -1300,7 +1300,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeReviewTypeRepository : IReviewTypeRepository
         {
-            private readonly Dictionary<long, ReviewType> _items = new();
+            private readonly Dictionary<long, ReviewType> _items = [];
             private long _nextId = 1;
 
             public void Add(ReviewType reviewType)
@@ -1350,7 +1350,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeReviewLinkRepository : IReviewLinkRepository
         {
-            private readonly Dictionary<(long RepoFileId, long ReviewTypeId), ReviewLink> _items = new();
+            private readonly Dictionary<(long RepoFileId, long ReviewTypeId), ReviewLink> _items = [];
             private long _nextId = 1;
 
             public void Add(ReviewLink link)
@@ -1427,7 +1427,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeRepoFileAnalysisRepository : IRepoFileAnalysisRepository
         {
-            private readonly Dictionary<(long RepoFileId, long ReviewTypeId), RepoFileAnalysis> _items = new();
+            private readonly Dictionary<(long RepoFileId, long ReviewTypeId), RepoFileAnalysis> _items = [];
             private long _nextId = 1;
 
             public void Add(RepoFileAnalysis analysis)
@@ -1493,7 +1493,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeQueueRepository : IQueueRepository
         {
-            private readonly List<QueueItem> _items = new();
+            private readonly List<QueueItem> _items = [];
             private long _nextId = 1;
 
             public Task<bool> EnqueueAsync(QueueItem item, CancellationToken cancellationToken = default)
@@ -1585,7 +1585,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeProjectDiscoveryService : IProjectDiscoveryService
         {
-            public List<RepositoryProject> Projects { get; } = new();
+            public List<RepositoryProject> Projects { get; } = [];
 
             public Task<IReadOnlyList<RepositoryProject>> DiscoverAsync(string localPath, CancellationToken cancellationToken = default)
             {
@@ -1595,7 +1595,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeProjectRepository : IProjectRepository
         {
-            private readonly List<RepositoryProject> _items = new();
+            private readonly List<RepositoryProject> _items = [];
 
             public int ReconcileCount { get; private set; }
 
@@ -1615,7 +1615,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeRepositoryScanRepository : IRepositoryScanRepository
         {
-            public List<RepositoryScanRecord> Records { get; } = new();
+            public List<RepositoryScanRecord> Records { get; } = [];
 
             public Task<long> AddAsync(RepositoryScanRecord record, CancellationToken cancellationToken = default)
             {
@@ -1670,5 +1670,7 @@ namespace Revathryn.Engine.Tests
                 return await _inner.ScanAsync(localPath, options, progress, cancellationToken, existingFiles, forceFullScan);
             }
         }
+
+        public TestContext TestContext { get; set; }
     }
 }

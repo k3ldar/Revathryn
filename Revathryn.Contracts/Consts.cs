@@ -155,5 +155,46 @@
         public const int MaximumConcurrentRunningThreads = 50;
 
         public const int CpuDecimalPlaces = 2;
+
+        // SQLite error codes used to classify transient resource contention.
+        public const int SqliteBusyErrorCode = 5;
+        public const int SqliteLockedErrorCode = 6;
+        public const int SqliteBusySnapshotErrorCode = 517;
+        public const string SqliteExceptionTypeName = "SqliteException";
+        public const string SqliteErrorCodePropertyName = "SqliteErrorCode";
+
+        // Reliability defaults.
+        public const int DefaultRetryMaxAttempts = 3;
+        public const int DefaultRetryInitialDelayMilliseconds = 200;
+        public const int DefaultRetryMaxDelaySeconds = 30;
+        public const double DefaultRetryBackoffMultiplier = 2.0;
+        public const double DefaultRetryJitterFactor = 0.25;
+        public const int ShutdownTimeoutSeconds = 30;
+
+        // Reliability component names.
+        public const string ReviewProcessorComponent = "ReviewProcessor";
+        public const string RepositoryProcessorComponent = "RepositoryProcessor";
+        public const string ReviewWorkerServiceComponent = "ReviewWorkerService";
+        public const string StartupRecoveryServiceComponent = "StartupRecoveryService";
+        public const string HealthServiceComponent = "HealthService";
+        public const string OpenAIReviewEngineComponent = "OpenAIReviewEngine";
+        public const string SqliteReviewOutcomeStoreComponent = "SqliteReviewOutcomeStore";
+
+        // Reliability operation names.
+        public const string ProcessNextOperation = "ProcessNext";
+        public const string ProcessItemOperation = "ProcessItem";
+        public const string LoadRepositoryOperation = "LoadRepository";
+        public const string LoadFileOperation = "LoadFile";
+        public const string LoadReviewTypeOperation = "LoadReviewType";
+        public const string ReadFileOperation = "ReadFile";
+        public const string ReviewOperation = "Review";
+        public const string PersistOutcomeOperation = "PersistOutcome";
+        public const string RecordOperationalFailureOperation = "RecordOperationalFailure";
+        public const string ProcessRepositoryOperation = "ProcessRepository";
+        public const string AnalyseCSharpFilesOperation = "AnalyseCSharpFiles";
+        public const string RecoverOperation = "Recover";
+        public const string RunCycleOperation = "RunCycle";
+        public const string CheckReadinessOperation = "CheckReadiness";
+        public const string CheckLivenessOperation = "CheckLiveness";
     }
 }

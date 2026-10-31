@@ -21,8 +21,9 @@ namespace Revathryn.Review.CSharp
         private static readonly string[] _filePatterns = [CSharpFilePattern];
         private const int MinimumInterfaceNameLength = 2;
 
-        private static readonly HashSet<string> _systemTypeNames = new(StringComparer.Ordinal)
-        {
+        private static readonly HashSet<string> _systemTypeNames =
+        [
+            with(StringComparer.Ordinal),
             TypeVoid, TypeBool, TypeByte, TypeSByte, TypeShort, TypeUshort, TypeInt, TypeUint, TypeLong, TypeULong,
             TypeFloat, TypeDouble, TypeDecimal, TypeChar, TypeString, TypeObject, TypeDynamic,
             TypeNetString, TypeNetBoolean, TypeNetByte, TypeNetSByte, TypeNetInt16, TypeNetUInt16, TypeNetInt32, TypeNetUInt32,
@@ -35,7 +36,7 @@ namespace Revathryn.Review.CSharp
             TypeNotImplementedException, TypeInvalidOperationException, TypeCancellationToken,
             TypeDateTime, TypeDateTimeOffset, TypeTimeSpan, TypeGuid, TypeUri, TypeEnum,
             TypeVar, TypeNameOf, TypeTypeOf, TypeSizeOf, TypeDefault, TypeNull, TypeValueTrue, TypeValueFalse
-        };
+        ];
 
         private static readonly JsonSerializerOptions options = new()
         {
@@ -539,7 +540,7 @@ namespace Revathryn.Review.CSharp
 
         private static List<string> ExtractReferencedTypes(SyntaxNode body, List<InvocationSymbol> invocations)
         {
-            HashSet<string> types = new(StringComparer.Ordinal);
+            HashSet<string> types = [with(StringComparer.Ordinal)];
 
             // Identifier names that look like user types (UpperCase, not system)
             foreach (IdentifierNameSyntax id in body.DescendantNodes().OfType<IdentifierNameSyntax>())
@@ -563,7 +564,7 @@ namespace Revathryn.Review.CSharp
 
         private static List<string> CollectDependencies(CodeSymbol symbol)
         {
-            HashSet<string> deps = new(StringComparer.Ordinal);
+            HashSet<string> deps = [with(StringComparer.Ordinal)];
 
             foreach (PropertySymbol p in symbol.Properties)
                 AddIfUserType(deps, p.Type);

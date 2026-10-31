@@ -75,7 +75,18 @@ namespace Revathryn.Data
         public async Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            return await AddAsync(connection, null, finding, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>Inserts the finding within the supplied transaction, or returns the existing id when already present.</summary>
+        internal static async Task<long> AddAsync(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            Finding finding,
+            CancellationToken cancellationToken)
+        {
             using SqliteCommand command = connection.CreateCommand();
+            command.Transaction = transaction;
             command.CommandText = """
                 INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate)
                 VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate);

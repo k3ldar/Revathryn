@@ -163,7 +163,7 @@ namespace Revathryn.Engine
 
         private static IReadOnlyDictionary<string, RepoFile> BuildExistingFileMap(IReadOnlyList<RepoFile> existingFiles)
         {
-            Dictionary<string, RepoFile> map = new(StringComparer.Ordinal);
+            Dictionary<string, RepoFile> map = [with(StringComparer.Ordinal)];
 
             foreach (RepoFile file in existingFiles)
             {

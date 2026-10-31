@@ -49,7 +49,7 @@ namespace Revathryn.Engine
         {
             Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
             IReadOnlyList<RepoFile> existingFiles = await _fileRepository.GetByRepositoryAsync(repositoryId, cancellationToken).ConfigureAwait(false);
-            Dictionary<string, RepoFile> existingFileMap = new(StringComparer.Ordinal);
+            Dictionary<string, RepoFile> existingFileMap = [with(StringComparer.Ordinal)];
 
             foreach (RepoFile file in existingFiles)
             {

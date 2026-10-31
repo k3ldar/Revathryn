@@ -2,7 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Orchestration;
+using Revathryn.Contracts.Reliability;
 using Revathryn.Contracts.Services;
+using Revathryn.Engine.Reliability;
 
 namespace Revathryn.Engine
 {
@@ -10,8 +12,20 @@ namespace Revathryn.Engine
     public static class EngineServiceCollectionExtensions
     {
         /// <summary>Adds the Revathryn engine services to the service collection.</summary>
-        public static IServiceCollection AddEngineServices(this IServiceCollection services)
+        /// <param name="services">The service collection.</param>
+        /// <param name="configure">Optional callback for customising resilience options.</param>
+        public static IServiceCollection AddEngineServices(this IServiceCollection services, Action<ResilienceOptions> configure = null)
         {
+            ResilienceOptions resilienceOptions = new();
+            configure?.Invoke(resilienceOptions);
+
+            services.AddSingleton(resilienceOptions);
+            services.AddSingleton<ICorrelationContext, CorrelationContext>();
+            services.AddSingleton<IFailureClassifier, FailureClassifier>();
+            services.AddSingleton<IOperationalDiagnostics, OperationalDiagnostics>();
+            services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
+            services.AddSingleton<IRetryExecutor, RetryExecutor>();
+
             services.AddSingleton<IFileHasher, FileHasher>();
             services.AddSingleton<IRepositoryScanner, RepositoryScanner>();
             services.AddSingleton<IProjectDiscoveryService, ProjectDiscoveryService>();

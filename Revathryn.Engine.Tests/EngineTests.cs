@@ -19,7 +19,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "src", "Program.cs"), "class Program { }");
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
                 IReadOnlyList<RepoFile> files = scan.DiscoveredFiles;
 
                 Assert.HasCount(1, files);
@@ -45,7 +45,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "bin", "artifact.dll"), "binary");
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(1, scan.DiscoveredFiles);
                 Assert.AreEqual("keep.cs", scan.DiscoveredFiles[0].RelativePath);
@@ -62,10 +62,10 @@ namespace Revathryn.Engine.Tests
             FakeQueueRepository repository = new();
             ReviewQueue queue = new(repository);
 
-            await queue.EnqueueAsync(CreateQueueItem(1, 1, 1, 5));
-            await queue.EnqueueAsync(CreateQueueItem(1, 2, 1, 50));
+            await queue.EnqueueAsync(CreateQueueItem(1, 1, 1, 5), TestContext.CancellationToken);
+            await queue.EnqueueAsync(CreateQueueItem(1, 2, 1, 50), TestContext.CancellationToken);
 
-            QueueItem dequeued = await queue.DequeueAsync();
+            QueueItem dequeued = await queue.DequeueAsync(TestContext.CancellationToken);
 
             Assert.AreEqual(2, dequeued.RepoFileId);
             Assert.AreEqual(50, dequeued.Priority);
@@ -79,8 +79,8 @@ namespace Revathryn.Engine.Tests
 
             QueueItem item = CreateQueueItem(1, 1, 1, 5);
 
-            bool first = await queue.EnqueueAsync(item);
-            bool second = await queue.EnqueueAsync(item);
+            bool first = await queue.EnqueueAsync(item, TestContext.CancellationToken);
+            bool second = await queue.EnqueueAsync(item, TestContext.CancellationToken);
 
             Assert.IsTrue(first);
             Assert.IsFalse(second);
@@ -109,7 +109,7 @@ namespace Revathryn.Engine.Tests
             FakeRepoFileAnalysisRepository analyses = new();
             ReviewScheduler scheduler = new(repositories, files, reviewTypes, links, analyses, new ReviewQueue(queue));
 
-            await scheduler.ScheduleRepositoryAsync(1);
+            await scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
             Assert.HasCount(2, queue.EnqueuedItems);
             Assert.AreEqual(1, queue.EnqueuedItems[0].ReviewTypeId);
@@ -130,7 +130,7 @@ namespace Revathryn.Engine.Tests
                 {
                     Name = "Repo",
                     LocalPath = root
-                });
+                }, TestContext.CancellationToken);
 
                 Assert.AreNotEqual(0, registered.Id);
                 Assert.HasCount(2, reviewTypes.Added);
@@ -162,10 +162,10 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeRepositoryRepository : IRepositoryRepository
         {
-            private readonly Dictionary<long, Repository> _items = new();
+            private readonly Dictionary<long, Repository> _items = [];
             private long _nextId = 1;
 
-            public List<Repository> Added { get; } = new List<Repository>();
+            public List<Repository> Added { get; } = [];
 
             public void Add(Repository repository)
             {
@@ -212,7 +212,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeRepoFileRepository : IRepoFileRepository
         {
-            private readonly Dictionary<long, RepoFile> _items = new();
+            private readonly Dictionary<long, RepoFile> _items = [];
 
             public void Add(RepoFile file)
             {
@@ -242,9 +242,9 @@ namespace Revathryn.Engine.Tests
                 CancellationToken cancellationToken = default)
             {
                 RepositoryReconciliationResult result = new();
-                HashSet<string> discoveredPaths = new(StringComparer.Ordinal);
+                HashSet<string> discoveredPaths = [with(StringComparer.Ordinal)];
                 HashSet<string> failedSet = failedPaths is null
-                    ? new HashSet<string>(StringComparer.Ordinal)
+                    ? [with(StringComparer.Ordinal)]
                     : new HashSet<string>(failedPaths, StringComparer.Ordinal);
 
                 foreach (RepoFile file in discoveredFiles)
@@ -326,10 +326,10 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeReviewTypeRepository : IReviewTypeRepository
         {
-            private readonly Dictionary<long, ReviewType> _items = new();
+            private readonly Dictionary<long, ReviewType> _items = [];
             private long _nextId = 1;
 
-            public List<ReviewType> Added { get; } = new List<ReviewType>();
+            public List<ReviewType> Added { get; } = [];
 
             public void Add(ReviewType reviewType)
             {
@@ -376,7 +376,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeRepoFileAnalysisRepository : IRepoFileAnalysisRepository
         {
-            private readonly Dictionary<(long, long), RepoFileAnalysis> _items = new();
+            private readonly Dictionary<(long, long), RepoFileAnalysis> _items = [];
 
             public Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
             {
@@ -421,7 +421,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeReviewLinkRepository : IReviewLinkRepository
         {
-            private readonly Dictionary<(long, long), ReviewLink> _items = new();
+            private readonly Dictionary<(long, long), ReviewLink> _items = [];
 
             public Task<ReviewLink> GetByIdAsync(long id, CancellationToken cancellationToken = default)
             {
@@ -475,7 +475,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeQueueRepository : IQueueRepository
         {
-            private readonly List<QueueItem> _items = new();
+            private readonly List<QueueItem> _items = [];
             private long _nextId = 1;
 
             public List<QueueItem> EnqueuedItems => [.. _items];
@@ -531,5 +531,7 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult(_items.Count);
             }
         }
+
+        public TestContext TestContext { get; set; }
     }
 }

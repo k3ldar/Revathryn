@@ -43,8 +43,8 @@ namespace Revathryn.Data
             using SqliteTransaction transaction = connection.BeginTransaction();
 
             Dictionary<string, RepositoryProject> existing = await LoadInventoryAsync(connection, transaction, repositoryId, cancellationToken).ConfigureAwait(false);
-            HashSet<string> discoveredPaths = new(StringComparer.Ordinal);
-            Dictionary<string, long> solutionIds = new(StringComparer.Ordinal);
+            HashSet<string> discoveredPaths = [with(StringComparer.Ordinal)];
+            Dictionary<string, long> solutionIds = [with(StringComparer.Ordinal)];
 
             foreach (RepositoryProject project in projects)
             {
@@ -92,7 +92,7 @@ namespace Revathryn.Data
             long repositoryId,
             CancellationToken cancellationToken)
         {
-            Dictionary<string, RepositoryProject> existing = new(StringComparer.Ordinal);
+            Dictionary<string, RepositoryProject> existing = [with(StringComparer.Ordinal)];
 
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;

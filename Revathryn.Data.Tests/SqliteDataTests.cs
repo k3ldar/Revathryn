@@ -42,9 +42,9 @@ namespace Revathryn.Data.Tests
                 MaxContextRequests = 3,
                 CreatedDate = now,
                 LastModifiedDate = now
-            });
+            }, TestContext.CancellationToken);
 
-            Repository loaded = await repository.GetByIdAsync(id);
+            Repository loaded = await repository.GetByIdAsync(id, TestContext.CancellationToken);
 
             Assert.AreEqual(id, loaded.Id);
             Assert.AreEqual("Example", loaded.Name);
@@ -61,7 +61,7 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             RepoFileRepository files = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             long firstId = await files.UpsertAsync(new RepoFile
             {
@@ -72,7 +72,7 @@ namespace Revathryn.Data.Tests
                 Sha256 = "aaa",
                 LastModifiedDate = DateTime.UtcNow,
                 LastDiscoveredDate = DateTime.UtcNow
-            });
+            }, TestContext.CancellationToken);
 
             long secondId = await files.UpsertAsync(new RepoFile
             {
@@ -83,11 +83,11 @@ namespace Revathryn.Data.Tests
                 Sha256 = "bbb",
                 LastModifiedDate = DateTime.UtcNow,
                 LastDiscoveredDate = DateTime.UtcNow
-            });
+            }, TestContext.CancellationToken);
 
             Assert.AreEqual(firstId, secondId);
 
-            IReadOnlyList<RepoFile> all = await files.GetByRepositoryAsync(repositoryId);
+            IReadOnlyList<RepoFile> all = await files.GetByRepositoryAsync(repositoryId, TestContext.CancellationToken);
             Assert.HasCount(1, all);
             Assert.AreEqual("bbb", all[0].Sha256);
         }
@@ -101,18 +101,18 @@ namespace Revathryn.Data.Tests
             ReviewTypeRepository reviewTypes = new(database.Factory);
             QueueRepository queue = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
-            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"));
-            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
 
             QueueItem item = CreateQueueItem(repositoryId, fileId, reviewTypeId, 10);
 
-            bool first = await queue.EnqueueAsync(item);
-            bool second = await queue.EnqueueAsync(item);
+            bool first = await queue.EnqueueAsync(item, TestContext.CancellationToken);
+            bool second = await queue.EnqueueAsync(item, TestContext.CancellationToken);
 
             Assert.IsTrue(first);
             Assert.IsFalse(second);
-            Assert.AreEqual(1, await queue.CountAsync());
+            Assert.AreEqual(1, await queue.CountAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -124,19 +124,19 @@ namespace Revathryn.Data.Tests
             ReviewTypeRepository reviewTypes = new(database.Factory);
             QueueRepository queue = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
-            long fileA = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"));
-            long fileB = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/B.cs"));
-            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileA = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long fileB = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/B.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
 
-            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileA, reviewTypeId, 1));
-            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileB, reviewTypeId, 50));
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileA, reviewTypeId, 1), TestContext.CancellationToken);
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileB, reviewTypeId, 50), TestContext.CancellationToken);
 
-            QueueItem dequeued = await queue.DequeueAsync();
+            QueueItem dequeued = await queue.DequeueAsync(TestContext.CancellationToken);
 
             Assert.AreEqual(fileB, dequeued.RepoFileId);
             Assert.AreEqual(50, dequeued.Priority);
-            Assert.AreEqual(1, await queue.CountAsync());
+            Assert.AreEqual(1, await queue.CountAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -146,7 +146,7 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             FindingRepository findings = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             Finding finding = new()
             {
@@ -161,9 +161,9 @@ namespace Revathryn.Data.Tests
                 LastModifiedDate = DateTime.UtcNow
             };
 
-            long id = await findings.AddAsync(finding);
+            long id = await findings.AddAsync(finding, TestContext.CancellationToken);
 
-            Finding byFingerprint = await findings.GetByFingerprintAsync(repositoryId, "fp-001");
+            Finding byFingerprint = await findings.GetByFingerprintAsync(repositoryId, "fp-001", TestContext.CancellationToken);
 
             Assert.AreEqual(id, byFingerprint.Id);
             Assert.AreEqual(FindingSeverity.High, byFingerprint.Severity);
@@ -178,9 +178,9 @@ namespace Revathryn.Data.Tests
             ReviewTypeRepository reviewTypes = new(database.Factory);
             RepoFileAnalysisRepository analysis = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
-            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"));
-            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
 
             RepoFileAnalysis record = new()
             {
@@ -192,13 +192,13 @@ namespace Revathryn.Data.Tests
                 AnalysisVersion = "1.0"
             };
 
-            long firstId = await analysis.UpsertAsync(record);
+            long firstId = await analysis.UpsertAsync(record, TestContext.CancellationToken);
             record.Sha256 = "hash-2";
-            long secondId = await analysis.UpsertAsync(record);
+            long secondId = await analysis.UpsertAsync(record, TestContext.CancellationToken);
 
             Assert.AreEqual(firstId, secondId);
 
-            RepoFileAnalysis loaded = await analysis.GetAsync(fileId, reviewTypeId);
+            RepoFileAnalysis loaded = await analysis.GetAsync(fileId, reviewTypeId, TestContext.CancellationToken);
             Assert.AreEqual("hash-2", loaded.Sha256);
         }
 
@@ -209,15 +209,15 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             FindingRepository findings = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             Finding finding = CreateFinding(repositoryId, "dup-fp");
 
-            long firstId = await findings.AddAsync(finding);
-            long secondId = await findings.AddAsync(CreateFinding(repositoryId, "dup-fp"));
+            long firstId = await findings.AddAsync(finding, TestContext.CancellationToken);
+            long secondId = await findings.AddAsync(CreateFinding(repositoryId, "dup-fp"), TestContext.CancellationToken);
 
             Assert.AreEqual(firstId, secondId);
-            Assert.HasCount(1, await findings.GetByRepositoryAsync(repositoryId));
+            Assert.HasCount(1, await findings.GetByRepositoryAsync(repositoryId, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -228,16 +228,16 @@ namespace Revathryn.Data.Tests
             RepoFileRepository files = new(database.Factory);
             FindingRepository findings = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
-            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
 
             Finding finding = CreateFinding(repositoryId, "fp-file");
             finding.RepoFileId = fileId;
-            long findingId = await findings.AddAsync(finding);
+            long findingId = await findings.AddAsync(finding, TestContext.CancellationToken);
 
-            await files.DeleteAsync(fileId);
+            await files.DeleteAsync(fileId, TestContext.CancellationToken);
 
-            Finding retained = await findings.GetByIdAsync(findingId);
+            Finding retained = await findings.GetByIdAsync(findingId, TestContext.CancellationToken);
             Assert.IsNotNull(retained);
             Assert.IsNull(retained.RepoFileId);
         }
@@ -254,16 +254,16 @@ namespace Revathryn.Data.Tests
             QueueRepository queue = new(database.Factory);
             FindingRepository findings = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
-            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"));
-            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
 
             await links.UpsertAsync(new ReviewLink
             {
                 RepoFileId = fileId,
                 ReviewTypeId = reviewTypeId,
                 Enabled = true
-            });
+            }, TestContext.CancellationToken);
 
             await analyses.UpsertAsync(new RepoFileAnalysis
             {
@@ -274,21 +274,21 @@ namespace Revathryn.Data.Tests
                 LastAnalysedDate = DateTime.UtcNow,
                 AnalysisVersion = "1",
                 ReviewDefinitionVersion = "v1"
-            });
+            }, TestContext.CancellationToken);
 
-            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileId, reviewTypeId, 10));
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileId, reviewTypeId, 10), TestContext.CancellationToken);
 
             Finding finding = CreateFinding(repositoryId, "fp-cascade");
             finding.RepoFileId = fileId;
-            long findingId = await findings.AddAsync(finding);
+            long findingId = await findings.AddAsync(finding, TestContext.CancellationToken);
 
-            await files.DeleteAsync(fileId);
+            await files.DeleteAsync(fileId, TestContext.CancellationToken);
 
-            Assert.IsNull(await links.GetAsync(fileId, reviewTypeId));
-            Assert.IsNull(await analyses.GetAsync(fileId, reviewTypeId));
-            Assert.AreEqual(0, await queue.CountAsync());
+            Assert.IsNull(await links.GetAsync(fileId, reviewTypeId, TestContext.CancellationToken));
+            Assert.IsNull(await analyses.GetAsync(fileId, reviewTypeId, TestContext.CancellationToken));
+            Assert.AreEqual(0, await queue.CountAsync(TestContext.CancellationToken));
 
-            Finding retained = await findings.GetByIdAsync(findingId);
+            Finding retained = await findings.GetByIdAsync(findingId, TestContext.CancellationToken);
             Assert.IsNotNull(retained);
             Assert.IsNull(retained.RepoFileId);
         }
@@ -302,26 +302,26 @@ namespace Revathryn.Data.Tests
             ReviewTypeRepository reviewTypes = new(database.Factory);
             QueueRepository queue = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
-            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"));
-            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
 
             QueueItem item = CreateQueueItem(repositoryId, fileId, reviewTypeId, 10);
 
             Task<bool>[] attempts =
             [
-                queue.EnqueueAsync(item),
-                queue.EnqueueAsync(item),
-                queue.EnqueueAsync(item),
-                queue.EnqueueAsync(item),
-                queue.EnqueueAsync(item),
-                queue.EnqueueAsync(item)
+                queue.EnqueueAsync(item, TestContext.CancellationToken),
+                queue.EnqueueAsync(item, TestContext.CancellationToken),
+                queue.EnqueueAsync(item, TestContext.CancellationToken),
+                queue.EnqueueAsync(item, TestContext.CancellationToken),
+                queue.EnqueueAsync(item, TestContext.CancellationToken),
+                queue.EnqueueAsync(item, TestContext.CancellationToken)
             ];
 
             bool[] results = await Task.WhenAll(attempts);
 
             Assert.HasCount(1, results.Where(r => r));
-            Assert.AreEqual(1, await queue.CountAsync());
+            Assert.AreEqual(1, await queue.CountAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -331,14 +331,14 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             RepoFileRepository files = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             RepoFile fileA = CreateRepoFile(repositoryId, "src/A.cs");
             fileA.Sha256 = "hash-a";
             RepoFile fileB = CreateRepoFile(repositoryId, "src/B.cs");
             fileB.Sha256 = "hash-b";
 
-            RepositoryReconciliationResult first = await files.ReconcileAsync(repositoryId, [fileA, fileB], null);
+            RepositoryReconciliationResult first = await files.ReconcileAsync(repositoryId, [fileA, fileB], null, TestContext.CancellationToken);
 
             Assert.AreEqual(2, first.NewFiles);
             Assert.AreEqual(0, first.ChangedFiles);
@@ -352,21 +352,21 @@ namespace Revathryn.Data.Tests
             RepoFile fileC = CreateRepoFile(repositoryId, "src/C.cs");
             fileC.Sha256 = "hash-c";
 
-            RepositoryReconciliationResult second = await files.ReconcileAsync(repositoryId, [fileAUnchanged, fileBChanged, fileC], null);
+            RepositoryReconciliationResult second = await files.ReconcileAsync(repositoryId, [fileAUnchanged, fileBChanged, fileC], null, TestContext.CancellationToken);
 
             Assert.AreEqual(1, second.NewFiles);
             Assert.AreEqual(1, second.ChangedFiles);
             Assert.AreEqual(1, second.UnchangedFiles);
             Assert.AreEqual(0, second.RemovedFiles);
 
-            RepositoryReconciliationResult third = await files.ReconcileAsync(repositoryId, [], null);
+            RepositoryReconciliationResult third = await files.ReconcileAsync(repositoryId, [], null, TestContext.CancellationToken);
 
             Assert.AreEqual(3, third.RemovedFiles);
             Assert.AreEqual(0, third.NewFiles);
             Assert.AreEqual(0, third.ChangedFiles);
             Assert.AreEqual(0, third.UnchangedFiles);
 
-            RepoFile removed = await files.GetByRelativePathAsync(repositoryId, "src/A.cs");
+            RepoFile removed = await files.GetByRelativePathAsync(repositoryId, "src/A.cs", TestContext.CancellationToken);
             Assert.IsTrue(removed.IsRemoved);
         }
 
@@ -377,14 +377,14 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             RepoFileRepository files = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             RepoFile fileA = CreateRepoFile(repositoryId, "src/A.cs");
             fileA.Sha256 = "hash-a";
             RepoFile fileB = CreateRepoFile(repositoryId, "src/B.cs");
             fileB.Sha256 = "hash-b";
 
-            RepositoryReconciliationResult first = await files.ReconcileAsync(repositoryId, [fileA, fileB], null);
+            RepositoryReconciliationResult first = await files.ReconcileAsync(repositoryId, [fileA, fileB], null, TestContext.CancellationToken);
 
             Assert.HasCount(2, first.Changes.Where(change => change.ChangeType == RepositoryChangeType.Added));
             Assert.IsTrue(first.Changes.All(change => change.RepositoryId == repositoryId));
@@ -396,7 +396,7 @@ namespace Revathryn.Data.Tests
             RepoFile fileC = CreateRepoFile(repositoryId, "src/C.cs");
             fileC.Sha256 = "hash-c";
 
-            RepositoryReconciliationResult second = await files.ReconcileAsync(repositoryId, [fileAUnchanged, fileBChanged, fileC], null);
+            RepositoryReconciliationResult second = await files.ReconcileAsync(repositoryId, [fileAUnchanged, fileBChanged, fileC], null, TestContext.CancellationToken);
 
             RepositoryFileChange unchanged = second.Changes.Single(change => change.ChangeType == RepositoryChangeType.Unchanged);
             RepositoryFileChange modified = second.Changes.Single(change => change.ChangeType == RepositoryChangeType.Modified);
@@ -409,7 +409,7 @@ namespace Revathryn.Data.Tests
             Assert.AreEqual("src/C.cs", added.RelativePath);
             Assert.AreEqual("hash-c", added.Sha256);
 
-            RepositoryReconciliationResult third = await files.ReconcileAsync(repositoryId, [], null);
+            RepositoryReconciliationResult third = await files.ReconcileAsync(repositoryId, [], null, TestContext.CancellationToken);
 
             Assert.HasCount(3, third.Changes.Where(change => change.ChangeType == RepositoryChangeType.Removed));
         }
@@ -421,19 +421,19 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             RepoFileRepository files = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             RepoFile fileA = CreateRepoFile(repositoryId, "src/A.cs");
             fileA.Sha256 = "hash-a";
             fileA.FileSize = 100;
 
-            await files.ReconcileAsync(repositoryId, [fileA], null);
+            await files.ReconcileAsync(repositoryId, [fileA], null, TestContext.CancellationToken);
 
             RepoFile fileB = CreateRepoFile(repositoryId, "src/B.cs");
             fileB.Sha256 = "hash-a";
             fileB.FileSize = 100;
 
-            RepositoryReconciliationResult result = await files.ReconcileAsync(repositoryId, [fileB], null);
+            RepositoryReconciliationResult result = await files.ReconcileAsync(repositoryId, [fileB], null, TestContext.CancellationToken);
 
             Assert.AreEqual(1, result.RenamedFiles);
             Assert.AreEqual(0, result.NewFiles);
@@ -446,8 +446,8 @@ namespace Revathryn.Data.Tests
             Assert.AreEqual("src/A.cs", change.PreviousRelativePath);
             Assert.AreEqual("hash-a", change.Sha256);
 
-            RepoFile oldPath = await files.GetByRelativePathAsync(repositoryId, "src/A.cs");
-            RepoFile newPath = await files.GetByRelativePathAsync(repositoryId, "src/B.cs");
+            RepoFile oldPath = await files.GetByRelativePathAsync(repositoryId, "src/A.cs", TestContext.CancellationToken);
+            RepoFile newPath = await files.GetByRelativePathAsync(repositoryId, "src/B.cs", TestContext.CancellationToken);
 
             Assert.IsTrue(oldPath.IsRemoved);
             Assert.IsFalse(newPath.IsRemoved);
@@ -460,18 +460,18 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             RepoFileRepository files = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             RepoFile fileA = CreateRepoFile(repositoryId, "src/A.cs");
             fileA.Sha256 = "hash-a";
 
-            await files.ReconcileAsync(repositoryId, [fileA], null);
+            await files.ReconcileAsync(repositoryId, [fileA], null, TestContext.CancellationToken);
 
-            RepositoryReconciliationResult result = await files.ReconcileAsync(repositoryId, [], ["src/A.cs"]);
+            RepositoryReconciliationResult result = await files.ReconcileAsync(repositoryId, [], ["src/A.cs"], TestContext.CancellationToken);
 
             Assert.AreEqual(0, result.RemovedFiles);
 
-            RepoFile retained = await files.GetByRelativePathAsync(repositoryId, "src/A.cs");
+            RepoFile retained = await files.GetByRelativePathAsync(repositoryId, "src/A.cs", TestContext.CancellationToken);
             Assert.IsFalse(retained.IsRemoved);
         }
 
@@ -482,26 +482,26 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             RepoFileRepository files = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             RepoFile fileA = CreateRepoFile(repositoryId, "src/A.cs");
             fileA.Sha256 = "hash-a";
 
-            await files.ReconcileAsync(repositoryId, [fileA], null);
-            await files.ReconcileAsync(repositoryId, [], null);
+            await files.ReconcileAsync(repositoryId, [fileA], null, TestContext.CancellationToken);
+            await files.ReconcileAsync(repositoryId, [], null, TestContext.CancellationToken);
 
-            RepoFile removed = await files.GetByRelativePathAsync(repositoryId, "src/A.cs");
+            RepoFile removed = await files.GetByRelativePathAsync(repositoryId, "src/A.cs", TestContext.CancellationToken);
             Assert.IsTrue(removed.IsRemoved);
 
             RepoFile reintroduced = CreateRepoFile(repositoryId, "src/A.cs");
             reintroduced.Sha256 = "hash-a";
 
-            RepositoryReconciliationResult result = await files.ReconcileAsync(repositoryId, [reintroduced], null);
+            RepositoryReconciliationResult result = await files.ReconcileAsync(repositoryId, [reintroduced], null, TestContext.CancellationToken);
 
             Assert.AreEqual(1, result.UnchangedFiles);
             Assert.AreEqual(0, result.RemovedFiles);
 
-            RepoFile restored = await files.GetByRelativePathAsync(repositoryId, "src/A.cs");
+            RepoFile restored = await files.GetByRelativePathAsync(repositoryId, "src/A.cs", TestContext.CancellationToken);
             Assert.IsFalse(restored.IsRemoved);
         }
 
@@ -512,15 +512,15 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             ProjectRepository projects = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             RepositoryProject solution = new() { Name = "Revathryn", Kind = ProjectKind.Solution, RelativePath = "Revathryn.sln" };
             RepositoryProject app = new() { Name = "App", Kind = ProjectKind.Project, RelativePath = "src/App/App.csproj", DirectoryPath = "src/App", SolutionPath = "Revathryn.sln" };
             RepositoryProject nested = new() { Name = "Nested", Kind = ProjectKind.Project, RelativePath = "src/Nested/Nested.csproj", DirectoryPath = "src/Nested", SolutionPath = "Revathryn.sln" };
 
-            await projects.ReconcileAsync(repositoryId, [solution, app, nested]);
+            await projects.ReconcileAsync(repositoryId, [solution, app, nested], TestContext.CancellationToken);
 
-            IReadOnlyList<RepositoryProject> loaded = await projects.GetByRepositoryAsync(repositoryId);
+            IReadOnlyList<RepositoryProject> loaded = await projects.GetByRepositoryAsync(repositoryId, TestContext.CancellationToken);
 
             Assert.HasCount(3, loaded);
 
@@ -539,15 +539,15 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             ProjectRepository projects = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             RepositoryProject solution = new() { Name = "Revathryn", Kind = ProjectKind.Solution, RelativePath = "Revathryn.sln" };
             RepositoryProject app = new() { Name = "App", Kind = ProjectKind.Project, RelativePath = "src/App/App.csproj", DirectoryPath = "src/App", SolutionPath = "Revathryn.sln" };
 
-            await projects.ReconcileAsync(repositoryId, [solution, app]);
-            await projects.ReconcileAsync(repositoryId, [solution]);
+            await projects.ReconcileAsync(repositoryId, [solution, app], TestContext.CancellationToken);
+            await projects.ReconcileAsync(repositoryId, [solution], TestContext.CancellationToken);
 
-            IReadOnlyList<RepositoryProject> remaining = await projects.GetByRepositoryAsync(repositoryId);
+            IReadOnlyList<RepositoryProject> remaining = await projects.GetByRepositoryAsync(repositoryId, TestContext.CancellationToken);
 
             Assert.HasCount(1, remaining);
             Assert.AreEqual(ProjectKind.Solution, remaining[0].Kind);
@@ -560,7 +560,7 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             RepositoryScanRepository scans = new(database.Factory);
 
-            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
             DateTime older = DateTime.UtcNow.AddMinutes(-5);
             DateTime newer = DateTime.UtcNow;
@@ -573,7 +573,7 @@ namespace Revathryn.Data.Tests
                 Succeeded = true,
                 FilesDiscovered = 1,
                 NewFiles = 1
-            });
+            }, TestContext.CancellationToken);
 
             long newerId = await scans.AddAsync(new RepositoryScanRecord
             {
@@ -581,9 +581,9 @@ namespace Revathryn.Data.Tests
                 StartedUtc = newer,
                 CompletedUtc = newer.AddSeconds(1),
                 Succeeded = false
-            });
+            }, TestContext.CancellationToken);
 
-            IReadOnlyList<RepositoryScanRecord> records = await scans.GetByRepositoryAsync(repositoryId);
+            IReadOnlyList<RepositoryScanRecord> records = await scans.GetByRepositoryAsync(repositoryId, TestContext.CancellationToken);
 
             Assert.HasCount(2, records);
             Assert.AreEqual(newerId, records[0].Id);
@@ -615,14 +615,14 @@ namespace Revathryn.Data.Tests
                 LastSuccessfulScanDate = now,
                 CreatedDate = now,
                 LastModifiedDate = now
-            });
+            }, TestContext.CancellationToken);
 
-            Repository loaded = await repositories.GetByIdAsync(id);
+            Repository loaded = await repositories.GetByIdAsync(id, TestContext.CancellationToken);
 
             Assert.IsNotNull(loaded.ScanOptions);
             Assert.IsTrue(loaded.ScanOptions.RespectGitIgnore);
-            CollectionAssert.AreEquivalent(new[] { "cs", "json" }, loaded.ScanOptions.IncludedExtensions.ToArray());
-            CollectionAssert.AreEquivalent(new[] { "docs" }, loaded.ScanOptions.ExcludedDirectoryNames.ToArray());
+            CollectionAssert.AreEquivalent(expected, loaded.ScanOptions.IncludedExtensions.ToArray());
+            CollectionAssert.AreEquivalent(expectedArray, loaded.ScanOptions.ExcludedDirectoryNames.ToArray());
             Assert.IsNotNull(loaded.LastSuccessfulScanDate);
             Assert.AreEqual(now, loaded.LastSuccessfulScanDate.Value);
         }
@@ -633,9 +633,9 @@ namespace Revathryn.Data.Tests
             using TestDatabase database = new();
             RepositoryRepository repositories = new(database.Factory);
 
-            long id = await repositories.AddAsync(CreateRepository("Repo"));
+            long id = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
 
-            Repository loaded = await repositories.GetByIdAsync(id);
+            Repository loaded = await repositories.GetByIdAsync(id, TestContext.CancellationToken);
 
             Assert.IsNull(loaded.ScanOptions);
             Assert.IsNull(loaded.LastSuccessfulScanDate);
@@ -744,5 +744,10 @@ namespace Revathryn.Data.Tests
                 }
             }
         }
+
+        public TestContext TestContext { get; set; }
+
+        private static readonly string[] expected = ["cs", "json"];
+        private static readonly string[] expectedArray = ["docs"];
     }
 }

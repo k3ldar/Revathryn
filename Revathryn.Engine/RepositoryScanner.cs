@@ -224,7 +224,7 @@ namespace Revathryn.Engine
                 return _defaultExcludedDirectories;
             }
 
-            List<string> merged = new(_defaultExcludedDirectories);
+            List<string> merged = [with(_defaultExcludedDirectories)];
 
             foreach (string directory in options.ExcludedDirectoryNames)
             {
@@ -259,10 +259,7 @@ namespace Revathryn.Engine
 
             string sha256 = GetReusableFingerprint(relativePath, info, existingFiles, forceFullScan);
 
-            if (sha256 is null)
-            {
-                sha256 = await _fileHasher.ComputeHashAsync(filePath, cancellationToken).ConfigureAwait(false);
-            }
+            sha256 ??= await _fileHasher.ComputeHashAsync(filePath, cancellationToken).ConfigureAwait(false);
 
             return new RepoFile
             {
