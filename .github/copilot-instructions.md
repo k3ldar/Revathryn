@@ -29,9 +29,10 @@
 * If an expression value is not used, prefix with "\_ =" which shows intent to ignore the value
 * Use pattern matching where possible (i.e. if (order.State is not ProductionOrderState.InProgress and not ProductionOrderState.Queued))
 * Use null propergation where possible (i.e. string? name = order.Customer?.Name;)
-* No magic strings, use constants or enums where possible
-* No magic numbers, use constants or enums where possible
+* No magic strings
+* No magic numbers
 * Assume all constants are public and place in Revathryn.Contracts.Consts, ensure there are no duplicates
+* All classes to be sealed unless they are intended to be inherited from
 
 ## UI
 All user facing strings should be placed in Revathryn.Resources.Strings.resx This includes error messages, labels, and any other text that is displayed to the user.
