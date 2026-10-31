@@ -21,6 +21,12 @@ namespace Revathryn.Contracts.Models
         /// <summary>Number of previously registered files removed from the repository.</summary>
         public int RemovedFiles { get; set; }
 
+        /// <summary>Number of files reliably detected as renamed or moved.</summary>
+        public int RenamedFiles { get; set; }
+
+        /// <summary>Structured per-file change details produced by reconciliation.</summary>
+        public IReadOnlyList<RepositoryFileChange> Changes { get; set; } = new List<RepositoryFileChange>();
+
         /// <summary>Number of C# files that were analysed during this scan.</summary>
         public int CSharpFilesAnalysed { get; set; }
 

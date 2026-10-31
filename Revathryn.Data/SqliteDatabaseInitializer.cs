@@ -65,6 +65,7 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Repositories", "LastSuccessfulScanDate", "TEXT NULL");
             EnsureColumn(connection, "RepoFiles", "IsRemoved", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(connection, "RepoFiles", "ProjectPath", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "RepositoryScans", "RenamedFiles", "INTEGER NOT NULL DEFAULT 0");
         }
 
         private static void EnsureColumn(SqliteConnection connection, string table, string column, string definition)

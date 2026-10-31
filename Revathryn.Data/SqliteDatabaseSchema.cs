@@ -183,6 +183,7 @@ namespace Revathryn.Data
                 ChangedFiles INTEGER NOT NULL DEFAULT 0,
                 UnchangedFiles INTEGER NOT NULL DEFAULT 0,
                 RemovedFiles INTEGER NOT NULL DEFAULT 0,
+                RenamedFiles INTEGER NOT NULL DEFAULT 0,
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE
             );
             """;

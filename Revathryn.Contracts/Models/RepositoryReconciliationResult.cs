@@ -1,6 +1,6 @@
 namespace Revathryn.Contracts.Models
 {
-    /// <summary>Counts describing how a repository inventory changed during reconciliation.</summary>
+    /// <summary>Counts and per-file details describing how a repository inventory changed during reconciliation.</summary>
     public sealed class RepositoryReconciliationResult
     {
         /// <summary>Number of files not previously registered.</summary>
@@ -14,5 +14,11 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Number of previously present files removed from the repository.</summary>
         public int RemovedFiles { get; set; }
+
+        /// <summary>Number of files reliably detected as renamed or moved.</summary>
+        public int RenamedFiles { get; set; }
+
+        /// <summary>Structured per-file change details for subsequent phases.</summary>
+        public IReadOnlyList<RepositoryFileChange> Changes { get; set; } = new List<RepositoryFileChange>();
     }
 }

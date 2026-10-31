@@ -1,4 +1,3 @@
-using Revathryn.Contracts;
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
@@ -36,7 +35,9 @@ namespace Revathryn.Engine
             string localPath,
             RepositoryScanOptions options = null,
             IProgress<RepositoryScanProgress> progress = null,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            IReadOnlyDictionary<string, RepoFile> existingFiles = null,
+            bool forceFullScan = false)
         {
             if (string.IsNullOrWhiteSpace(localPath))
             {
@@ -69,6 +70,8 @@ namespace Revathryn.Engine
                 failures,
                 progress,
                 state,
+                existingFiles,
+                forceFullScan,
                 cancellationToken).ConfigureAwait(false);
 
             return new RepositoryScanResult
@@ -89,6 +92,8 @@ namespace Revathryn.Engine
             List<ScanFailure> failures,
             IProgress<RepositoryScanProgress> progress,
             ScanState state,
+            IReadOnlyDictionary<string, RepoFile> existingFiles,
+            bool forceFullScan,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -154,6 +159,8 @@ namespace Revathryn.Engine
                         failures,
                         progress,
                         state,
+                        existingFiles,
+                        forceFullScan,
                         cancellationToken).ConfigureAwait(false);
                     continue;
                 }
@@ -188,7 +195,7 @@ namespace Revathryn.Engine
                         continue;
                     }
 
-                    files.Add(await BuildRepoFileAsync(fullRoot, entry, relativePath, cancellationToken).ConfigureAwait(false));
+                    files.Add(await BuildRepoFileAsync(fullRoot, entry, relativePath, existingFiles, forceFullScan, cancellationToken).ConfigureAwait(false));
                 }
                 catch (OperationCanceledException)
                 {
@@ -240,9 +247,22 @@ namespace Revathryn.Engine
             return _defaultIncludedExtensions;
         }
 
-        private async Task<RepoFile> BuildRepoFileAsync(string rootPath, string filePath, string relativePath, CancellationToken cancellationToken)
+        private async Task<RepoFile> BuildRepoFileAsync(
+            string rootPath,
+            string filePath,
+            string relativePath,
+            IReadOnlyDictionary<string, RepoFile> existingFiles,
+            bool forceFullScan,
+            CancellationToken cancellationToken)
         {
             FileInfo info = new(filePath);
+
+            string sha256 = GetReusableFingerprint(relativePath, info, existingFiles, forceFullScan);
+
+            if (sha256 is null)
+            {
+                sha256 = await _fileHasher.ComputeHashAsync(filePath, cancellationToken).ConfigureAwait(false);
+            }
 
             return new RepoFile
             {
@@ -250,11 +270,35 @@ namespace Revathryn.Engine
                 FileName = info.Name,
                 Extension = NormaliseExtension(info.Extension),
                 LastModifiedDate = info.LastWriteTimeUtc,
-                Sha256 = await _fileHasher.ComputeHashAsync(filePath, cancellationToken).ConfigureAwait(false),
+                Sha256 = sha256,
                 FileSize = info.Length,
                 IsExcluded = false,
                 LastDiscoveredDate = DateTime.UtcNow
             };
+        }
+
+        private static string GetReusableFingerprint(
+            string relativePath,
+            FileInfo info,
+            IReadOnlyDictionary<string, RepoFile> existingFiles,
+            bool forceFullScan)
+        {
+            if (forceFullScan || existingFiles is null)
+            {
+                return null;
+            }
+
+            if (!existingFiles.TryGetValue(relativePath, out RepoFile previous))
+            {
+                return null;
+            }
+
+            if (previous.Sha256.Length == 0 || previous.FileSize != info.Length || previous.LastModifiedDate != info.LastWriteTimeUtc)
+            {
+                return null;
+            }
+
+            return previous.Sha256;
         }
 
         private static bool IsBinaryFile(string filePath)

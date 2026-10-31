@@ -48,7 +48,18 @@ namespace Revathryn.Engine
         public async Task<IReadOnlyList<RepoFile>> RescanAsync(long repositoryId, CancellationToken cancellationToken = default)
         {
             Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
-            RepositoryScanResult scan = await _scanner.ScanAsync(repository.LocalPath, repository.ScanOptions, null, cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<RepoFile> existingFiles = await _fileRepository.GetByRepositoryAsync(repositoryId, cancellationToken).ConfigureAwait(false);
+            Dictionary<string, RepoFile> existingFileMap = new(StringComparer.Ordinal);
+
+            foreach (RepoFile file in existingFiles)
+            {
+                if (!file.IsRemoved)
+                {
+                    existingFileMap[file.RelativePath] = file;
+                }
+            }
+
+            RepositoryScanResult scan = await _scanner.ScanAsync(repository.LocalPath, repository.ScanOptions, null, cancellationToken, existingFileMap).ConfigureAwait(false);
 
             foreach (RepoFile file in scan.DiscoveredFiles)
             {

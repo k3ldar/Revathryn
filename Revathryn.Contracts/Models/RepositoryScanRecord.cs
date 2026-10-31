@@ -32,5 +32,8 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Number of previously present files removed from the repository.</summary>
         public int RemovedFiles { get; set; }
+
+        /// <summary>Number of files reliably detected as renamed or moved.</summary>
+        public int RenamedFiles { get; set; }
     }
 }

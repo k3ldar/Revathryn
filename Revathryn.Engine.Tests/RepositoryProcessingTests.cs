@@ -2,6 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 
 using Revathryn.Contracts;
 using Revathryn.Contracts.Analysis;
+using Revathryn.Contracts.Enums;
+using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Orchestration;
 using Revathryn.Contracts.Persistence;
@@ -170,6 +172,82 @@ namespace Revathryn.Engine.Tests
                 Assert.HasCount(0, scan.DiscoveredFiles);
                 Assert.HasCount(1, scan.Failures);
                 Assert.AreEqual("Locked.cs", scan.Failures[0].RelativePath);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task RepositoryScanner_ReusesFingerprintForUnchangedFile()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                string filePath = Path.Combine(root, "Program.cs");
+                File.WriteAllText(filePath, "class Program { }");
+
+                CountingFileHasher hasher = new();
+                RepositoryScanner scanner = new(hasher);
+                RepositoryScanResult first = await scanner.ScanAsync(root);
+
+                IReadOnlyDictionary<string, RepoFile> existing = BuildExistingFiles(first.DiscoveredFiles);
+                RepositoryScanResult second = await scanner.ScanAsync(root, existingFiles: existing);
+
+                Assert.AreEqual(1, hasher.AsyncCallCount);
+                Assert.AreEqual(first.DiscoveredFiles[0].Sha256, second.DiscoveredFiles[0].Sha256);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task RepositoryScanner_ForceFullScanRehashesUnchangedFile()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                string filePath = Path.Combine(root, "Program.cs");
+                File.WriteAllText(filePath, "class Program { }");
+
+                CountingFileHasher hasher = new();
+                RepositoryScanner scanner = new(hasher);
+                RepositoryScanResult first = await scanner.ScanAsync(root);
+
+                IReadOnlyDictionary<string, RepoFile> existing = BuildExistingFiles(first.DiscoveredFiles);
+                await scanner.ScanAsync(root, existingFiles: existing, forceFullScan: true);
+
+                Assert.AreEqual(2, hasher.AsyncCallCount);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task RepositoryScanner_RehashesWhenTimestampChanges()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                string filePath = Path.Combine(root, "Program.cs");
+                File.WriteAllText(filePath, "class Program { }");
+
+                CountingFileHasher hasher = new();
+                RepositoryScanner scanner = new(hasher);
+                RepositoryScanResult first = await scanner.ScanAsync(root);
+
+                File.SetLastWriteTimeUtc(filePath, File.GetLastWriteTimeUtc(filePath).AddSeconds(1));
+
+                IReadOnlyDictionary<string, RepoFile> existing = BuildExistingFiles(first.DiscoveredFiles);
+                RepositoryScanResult second = await scanner.ScanAsync(root, existingFiles: existing);
+
+                Assert.AreEqual(2, hasher.AsyncCallCount);
+                Assert.AreEqual(first.DiscoveredFiles[0].Sha256, second.DiscoveredFiles[0].Sha256);
             }
             finally
             {
@@ -823,6 +901,18 @@ namespace Revathryn.Engine.Tests
             return path;
         }
 
+        private static IReadOnlyDictionary<string, RepoFile> BuildExistingFiles(IReadOnlyList<RepoFile> files)
+        {
+            Dictionary<string, RepoFile> map = new(StringComparer.Ordinal);
+
+            foreach (RepoFile file in files)
+            {
+                map[file.RelativePath] = file;
+            }
+
+            return map;
+        }
+
         private sealed class SchedulerHarness
         {
             public SchedulerHarness()
@@ -1014,10 +1104,13 @@ namespace Revathryn.Engine.Tests
                 CancellationToken cancellationToken = default)
             {
                 RepositoryReconciliationResult result = new();
+                List<RepositoryFileChange> changes = [];
                 HashSet<string> discoveredPaths = new(StringComparer.Ordinal);
                 HashSet<string> failedSet = failedPaths is null
                     ? new HashSet<string>(StringComparer.Ordinal)
                     : new HashSet<string>(failedPaths, StringComparer.Ordinal);
+                List<RepoFile> addedCandidates = [];
+                List<RepoFile> removedCandidates = [];
 
                 foreach (RepoFile file in discoveredFiles)
                 {
@@ -1034,10 +1127,12 @@ namespace Revathryn.Engine.Tests
                         if (string.Equals(existing.Sha256, file.Sha256, StringComparison.Ordinal))
                         {
                             result.UnchangedFiles++;
+                            changes.Add(BuildChange(repositoryId, file, RepositoryChangeType.Unchanged));
                         }
                         else
                         {
                             result.ChangedFiles++;
+                            changes.Add(BuildChange(repositoryId, file, RepositoryChangeType.Modified));
                         }
                     }
                     else
@@ -1047,7 +1142,7 @@ namespace Revathryn.Engine.Tests
                             file.Id = _nextId++;
                         }
 
-                        result.NewFiles++;
+                        addedCandidates.Add(file);
                     }
 
                     _items[key] = file;
@@ -1060,11 +1155,95 @@ namespace Revathryn.Engine.Tests
                         continue;
                     }
 
-                    result.RemovedFiles++;
+                    removedCandidates.Add(existing);
                     existing.IsRemoved = true;
                 }
 
+                HashSet<string> matchedAddedPaths = ClassifyAdditionsAndRemovals(repositoryId, addedCandidates, removedCandidates, changes, result);
+
+                foreach (RepoFile added in addedCandidates)
+                {
+                    if (!matchedAddedPaths.Contains(added.RelativePath))
+                    {
+                        result.NewFiles++;
+                        changes.Add(BuildChange(repositoryId, added, RepositoryChangeType.Added));
+                    }
+                }
+
+                result.Changes = changes;
                 return Task.FromResult(result);
+            }
+
+            private static HashSet<string> ClassifyAdditionsAndRemovals(
+                long repositoryId,
+                List<RepoFile> addedCandidates,
+                List<RepoFile> removedCandidates,
+                List<RepositoryFileChange> changes,
+                RepositoryReconciliationResult result)
+            {
+                HashSet<string> matchedAddedPaths = new(StringComparer.Ordinal);
+
+                foreach (RepoFile removed in removedCandidates)
+                {
+                    RepoFile match = null;
+
+                    foreach (RepoFile added in addedCandidates)
+                    {
+                        if (matchedAddedPaths.Contains(added.RelativePath))
+                        {
+                            continue;
+                        }
+
+                        if (string.Equals(removed.Sha256, added.Sha256, StringComparison.Ordinal) && removed.FileSize == added.FileSize)
+                        {
+                            match = added;
+                            break;
+                        }
+                    }
+
+                    if (match is not null)
+                    {
+                        result.RenamedFiles++;
+                        matchedAddedPaths.Add(match.RelativePath);
+                        changes.Add(BuildRenameChange(repositoryId, match, removed.RelativePath));
+                    }
+                    else
+                    {
+                        result.RemovedFiles++;
+                        changes.Add(BuildChange(repositoryId, removed, RepositoryChangeType.Removed));
+                    }
+                }
+
+                return matchedAddedPaths;
+            }
+
+            private static RepositoryFileChange BuildChange(long repositoryId, RepoFile file, RepositoryChangeType changeType)
+            {
+                return new RepositoryFileChange
+                {
+                    RepositoryId = repositoryId,
+                    FileId = file.Id,
+                    RelativePath = file.RelativePath,
+                    ChangeType = changeType,
+                    Sha256 = file.Sha256,
+                    FileSize = file.FileSize,
+                    LastModifiedDate = file.LastModifiedDate
+                };
+            }
+
+            private static RepositoryFileChange BuildRenameChange(long repositoryId, RepoFile file, string previousRelativePath)
+            {
+                return new RepositoryFileChange
+                {
+                    RepositoryId = repositoryId,
+                    FileId = file.Id,
+                    RelativePath = file.RelativePath,
+                    PreviousRelativePath = previousRelativePath,
+                    ChangeType = RepositoryChangeType.Renamed,
+                    Sha256 = file.Sha256,
+                    FileSize = file.FileSize,
+                    LastModifiedDate = file.LastModifiedDate
+                };
             }
 
             public Task<long> UpsertAsync(RepoFile file, CancellationToken cancellationToken = default)
@@ -1451,6 +1630,24 @@ namespace Revathryn.Engine.Tests
             }
         }
 
+        private sealed class CountingFileHasher : IFileHasher
+        {
+            private readonly FileHasher _inner = new();
+
+            public int AsyncCallCount { get; private set; }
+
+            public string ComputeHash(string filePath)
+            {
+                return _inner.ComputeHash(filePath);
+            }
+
+            public async Task<string> ComputeHashAsync(string filePath, CancellationToken cancellationToken = default)
+            {
+                AsyncCallCount++;
+                return await _inner.ComputeHashAsync(filePath, cancellationToken);
+            }
+        }
+
         private sealed class FlakyScanner : IRepositoryScanner
         {
             private readonly RepositoryScanner _inner = new();
@@ -1460,7 +1657,9 @@ namespace Revathryn.Engine.Tests
                 string localPath,
                 RepositoryScanOptions options = null,
                 IProgress<RepositoryScanProgress> progress = null,
-                CancellationToken cancellationToken = default)
+                CancellationToken cancellationToken = default,
+                IReadOnlyDictionary<string, RepoFile> existingFiles = null,
+                bool forceFullScan = false)
             {
                 if (_failNext)
                 {
@@ -1468,7 +1667,7 @@ namespace Revathryn.Engine.Tests
                     throw new IOException("Simulated interruption.");
                 }
 
-                return await _inner.ScanAsync(localPath, options, progress, cancellationToken);
+                return await _inner.ScanAsync(localPath, options, progress, cancellationToken, existingFiles, forceFullScan);
             }
         }
     }

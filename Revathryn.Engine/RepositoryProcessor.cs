@@ -51,7 +51,7 @@ namespace Revathryn.Engine
         }
 
         /// <summary>Scans and processes a single repository, returning a summary of the work performed.</summary>
-        public async Task<RepositoryScanSummary> ProcessAsync(long repositoryId, CancellationToken cancellationToken, IProgress<RepositoryScanProgress> progress = null)
+        public async Task<RepositoryScanSummary> ProcessAsync(long repositoryId, CancellationToken cancellationToken, IProgress<RepositoryScanProgress> progress = null, bool forceFullScan = false)
         {
             Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
             SemaphoreSlim scanLock = _lockRegistry.GetLock(repositoryId);
@@ -59,7 +59,7 @@ namespace Revathryn.Engine
 
             try
             {
-                return await ProcessCoreAsync(repository, cancellationToken, progress).ConfigureAwait(false);
+                return await ProcessCoreAsync(repository, cancellationToken, progress, forceFullScan).ConfigureAwait(false);
             }
             finally
             {
@@ -81,7 +81,7 @@ namespace Revathryn.Engine
             return summaries;
         }
 
-        private async Task<RepositoryScanSummary> ProcessCoreAsync(Repository repository, CancellationToken cancellationToken, IProgress<RepositoryScanProgress> progress)
+        private async Task<RepositoryScanSummary> ProcessCoreAsync(Repository repository, CancellationToken cancellationToken, IProgress<RepositoryScanProgress> progress, bool forceFullScan)
         {
             RepositoryScanSummary summary = new()
             {
@@ -94,7 +94,9 @@ namespace Revathryn.Engine
                 ReportProgress(progress, repository.Id, ScanPhase.Discovering, 0, 0, 0);
 
                 IProgress<RepositoryScanProgress> scannerProgress = BuildScannerProgress(repository.Id, progress);
-                RepositoryScanResult scan = await _scanner.ScanAsync(repository.LocalPath, repository.ScanOptions, scannerProgress, cancellationToken).ConfigureAwait(false);
+                IReadOnlyList<RepoFile> existingFiles = await _fileRepository.GetByRepositoryAsync(repository.Id, cancellationToken).ConfigureAwait(false);
+                IReadOnlyDictionary<string, RepoFile> existingFileMap = BuildExistingFileMap(existingFiles);
+                RepositoryScanResult scan = await _scanner.ScanAsync(repository.LocalPath, repository.ScanOptions, scannerProgress, cancellationToken, existingFileMap, forceFullScan).ConfigureAwait(false);
 
                 ReportProgress(progress, repository.Id, ScanPhase.Reconciling, scan.DiscoveredFiles.Count, scan.DiscoveredFiles.Count, 0);
 
@@ -115,6 +117,8 @@ namespace Revathryn.Engine
                 summary.ChangedFiles = reconciliation.ChangedFiles;
                 summary.UnchangedFiles = reconciliation.UnchangedFiles;
                 summary.RemovedFiles = reconciliation.RemovedFiles;
+                summary.RenamedFiles = reconciliation.RenamedFiles;
+                summary.Changes = reconciliation.Changes;
 
                 ReportProgress(progress, repository.Id, ScanPhase.Analysing, summary.FilesDiscovered, summary.FilesDiscovered, summary.RemovedFiles);
                 await AnalyseCSharpFilesAsync(repository, scan.DiscoveredFiles, summary, cancellationToken).ConfigureAwait(false);
@@ -155,6 +159,21 @@ namespace Revathryn.Engine
         private static IProgress<RepositoryScanProgress> BuildScannerProgress(long repositoryId, IProgress<RepositoryScanProgress> progress)
         {
             return progress is null ? null : new RepositoryProgressAdapter(repositoryId, progress);
+        }
+
+        private static IReadOnlyDictionary<string, RepoFile> BuildExistingFileMap(IReadOnlyList<RepoFile> existingFiles)
+        {
+            Dictionary<string, RepoFile> map = new(StringComparer.Ordinal);
+
+            foreach (RepoFile file in existingFiles)
+            {
+                if (!file.IsRemoved)
+                {
+                    map[file.RelativePath] = file;
+                }
+            }
+
+            return map;
         }
 
         private static void ReportProgress(IProgress<RepositoryScanProgress> progress, long repositoryId, ScanPhase phase, int discovered, int processed, int removed)
@@ -223,7 +242,8 @@ namespace Revathryn.Engine
                 NewFiles = summary.NewFiles,
                 ChangedFiles = summary.ChangedFiles,
                 UnchangedFiles = summary.UnchangedFiles,
-                RemovedFiles = summary.RemovedFiles
+                RemovedFiles = summary.RemovedFiles,
+                RenamedFiles = summary.RenamedFiles
             };
 
             await _scanRepository.AddAsync(record, cancellationToken).ConfigureAwait(false);

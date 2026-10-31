@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 
+using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 
@@ -113,6 +114,9 @@ namespace Revathryn.Data
                 : new HashSet<string>(failedPaths, StringComparer.Ordinal);
 
             RepositoryReconciliationResult result = new();
+            List<RepositoryFileChange> changes = [];
+            List<RepoFile> addedCandidates = [];
+            List<RepoFile> removedCandidates = [];
 
             foreach (RepoFile discovered in discoveredFiles)
             {
@@ -120,28 +124,37 @@ namespace Revathryn.Data
                 discovered.IsRemoved = false;
                 discoveredPaths.Add(discovered.RelativePath);
 
-                if (existing.TryGetValue(discovered.RelativePath, out RepoFile current))
+                bool isNew = !existing.TryGetValue(discovered.RelativePath, out RepoFile current);
+
+                if (isNew)
+                {
+                    discovered.IsExcluded = false;
+                    addedCandidates.Add(discovered);
+                }
+                else
                 {
                     discovered.Id = current.Id;
                     discovered.IsExcluded = current.IsExcluded;
                     discovered.ProjectPath = string.IsNullOrEmpty(discovered.ProjectPath) ? current.ProjectPath : discovered.ProjectPath;
+                }
 
-                    if (string.Equals(current.Sha256, discovered.Sha256, StringComparison.Ordinal))
-                    {
-                        result.UnchangedFiles++;
-                    }
-                    else
-                    {
-                        result.ChangedFiles++;
-                    }
+                discovered.Id = await UpsertFileAsync(connection, transaction, discovered, cancellationToken).ConfigureAwait(false);
+
+                if (isNew)
+                {
+                    continue;
+                }
+
+                if (string.Equals(current.Sha256, discovered.Sha256, StringComparison.Ordinal))
+                {
+                    result.UnchangedFiles++;
+                    changes.Add(BuildChange(repositoryId, discovered, RepositoryChangeType.Unchanged));
                 }
                 else
                 {
-                    result.NewFiles++;
-                    discovered.IsExcluded = false;
+                    result.ChangedFiles++;
+                    changes.Add(BuildChange(repositoryId, discovered, RepositoryChangeType.Modified));
                 }
-
-                await UpsertFileAsync(connection, transaction, discovered, cancellationToken).ConfigureAwait(false);
             }
 
             foreach (RepoFile current in existing.Values)
@@ -151,10 +164,22 @@ namespace Revathryn.Data
                     continue;
                 }
 
-                result.RemovedFiles++;
+                removedCandidates.Add(current);
                 await MarkRemovedAsync(connection, transaction, current.Id, cancellationToken).ConfigureAwait(false);
             }
 
+            HashSet<string> matchedAddedPaths = ClassifyAdditionsAndRemovals(repositoryId, addedCandidates, removedCandidates, changes, result);
+
+            foreach (RepoFile added in addedCandidates)
+            {
+                if (!matchedAddedPaths.Contains(added.RelativePath))
+                {
+                    result.NewFiles++;
+                    changes.Add(BuildChange(repositoryId, added, RepositoryChangeType.Added));
+                }
+            }
+
+            result.Changes = changes;
             transaction.Commit();
             return result;
         }
@@ -230,7 +255,7 @@ namespace Revathryn.Data
             return existing;
         }
 
-        private static async Task UpsertFileAsync(SqliteConnection connection, SqliteTransaction transaction, RepoFile file, CancellationToken cancellationToken)
+        private static async Task<long> UpsertFileAsync(SqliteConnection connection, SqliteTransaction transaction, RepoFile file, CancellationToken cancellationToken)
         {
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
@@ -247,10 +272,84 @@ namespace Revathryn.Data
                     IsRemoved = excluded.IsRemoved,
                     ProjectPath = excluded.ProjectPath,
                     LastDiscoveredDate = excluded.LastDiscoveredDate;
+                SELECT Id FROM RepoFiles WHERE RepositoryId = @RepositoryId AND RelativePath = @RelativePath;
                 """;
             AddParameters(command, file);
 
-            await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            object result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+            return (long)result;
+        }
+
+        private static HashSet<string> ClassifyAdditionsAndRemovals(
+            long repositoryId,
+            List<RepoFile> addedCandidates,
+            List<RepoFile> removedCandidates,
+            List<RepositoryFileChange> changes,
+            RepositoryReconciliationResult result)
+        {
+            HashSet<string> matchedAddedPaths = new(StringComparer.Ordinal);
+
+            foreach (RepoFile removed in removedCandidates)
+            {
+                RepoFile match = null;
+
+                foreach (RepoFile added in addedCandidates)
+                {
+                    if (matchedAddedPaths.Contains(added.RelativePath))
+                    {
+                        continue;
+                    }
+
+                    if (string.Equals(removed.Sha256, added.Sha256, StringComparison.Ordinal) && removed.FileSize == added.FileSize)
+                    {
+                        match = added;
+                        break;
+                    }
+                }
+
+                if (match is not null)
+                {
+                    result.RenamedFiles++;
+                    matchedAddedPaths.Add(match.RelativePath);
+                    changes.Add(BuildRenameChange(repositoryId, match, removed.RelativePath));
+                }
+                else
+                {
+                    result.RemovedFiles++;
+                    changes.Add(BuildChange(repositoryId, removed, RepositoryChangeType.Removed));
+                }
+            }
+
+            return matchedAddedPaths;
+        }
+
+        private static RepositoryFileChange BuildChange(long repositoryId, RepoFile file, RepositoryChangeType changeType)
+        {
+            return new RepositoryFileChange
+            {
+                RepositoryId = repositoryId,
+                FileId = file.Id,
+                RelativePath = file.RelativePath,
+                ChangeType = changeType,
+                Sha256 = file.Sha256,
+                FileSize = file.FileSize,
+                LastModifiedDate = file.LastModifiedDate
+            };
+        }
+
+        private static RepositoryFileChange BuildRenameChange(long repositoryId, RepoFile file, string previousRelativePath)
+        {
+            return new RepositoryFileChange
+            {
+                RepositoryId = repositoryId,
+                FileId = file.Id,
+                RelativePath = file.RelativePath,
+                PreviousRelativePath = previousRelativePath,
+                ChangeType = RepositoryChangeType.Renamed,
+                Sha256 = file.Sha256,
+                FileSize = file.FileSize,
+                LastModifiedDate = file.LastModifiedDate
+            };
         }
 
         private static async Task MarkRemovedAsync(SqliteConnection connection, SqliteTransaction transaction, long id, CancellationToken cancellationToken)

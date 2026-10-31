@@ -12,7 +12,8 @@ namespace Revathryn.Contracts.Services
         /// <param name="repositoryId">The repository to process.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <param name="progress">Optional progress reporting callback.</param>
-        Task<RepositoryScanSummary> ProcessAsync(long repositoryId, CancellationToken cancellationToken, IProgress<RepositoryScanProgress> progress = null);
+        /// <param name="forceFullScan">When true, fingerprints every file rather than reusing unchanged inventory metadata.</param>
+        Task<RepositoryScanSummary> ProcessAsync(long repositoryId, CancellationToken cancellationToken, IProgress<RepositoryScanProgress> progress = null, bool forceFullScan = false);
 
         /// <summary>Scans and processes every enabled repository, returning a summary per repository.</summary>
         Task<IReadOnlyList<RepositoryScanSummary>> ProcessAllEnabledAsync(CancellationToken cancellationToken);

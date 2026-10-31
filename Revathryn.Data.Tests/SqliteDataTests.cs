@@ -371,6 +371,89 @@ namespace Revathryn.Data.Tests
         }
 
         [TestMethod]
+        public async Task RepoFileRepository_Reconcile_ReportsStructuredChanges()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+
+            RepoFile fileA = CreateRepoFile(repositoryId, "src/A.cs");
+            fileA.Sha256 = "hash-a";
+            RepoFile fileB = CreateRepoFile(repositoryId, "src/B.cs");
+            fileB.Sha256 = "hash-b";
+
+            RepositoryReconciliationResult first = await files.ReconcileAsync(repositoryId, [fileA, fileB], null);
+
+            Assert.HasCount(2, first.Changes.Where(change => change.ChangeType == RepositoryChangeType.Added));
+            Assert.IsTrue(first.Changes.All(change => change.RepositoryId == repositoryId));
+
+            RepoFile fileAUnchanged = CreateRepoFile(repositoryId, "src/A.cs");
+            fileAUnchanged.Sha256 = "hash-a";
+            RepoFile fileBChanged = CreateRepoFile(repositoryId, "src/B.cs");
+            fileBChanged.Sha256 = "hash-b2";
+            RepoFile fileC = CreateRepoFile(repositoryId, "src/C.cs");
+            fileC.Sha256 = "hash-c";
+
+            RepositoryReconciliationResult second = await files.ReconcileAsync(repositoryId, [fileAUnchanged, fileBChanged, fileC], null);
+
+            RepositoryFileChange unchanged = second.Changes.Single(change => change.ChangeType == RepositoryChangeType.Unchanged);
+            RepositoryFileChange modified = second.Changes.Single(change => change.ChangeType == RepositoryChangeType.Modified);
+            RepositoryFileChange added = second.Changes.Single(change => change.ChangeType == RepositoryChangeType.Added);
+
+            Assert.AreEqual("src/A.cs", unchanged.RelativePath);
+            Assert.AreEqual("hash-a", unchanged.Sha256);
+            Assert.AreEqual("src/B.cs", modified.RelativePath);
+            Assert.AreEqual("hash-b2", modified.Sha256);
+            Assert.AreEqual("src/C.cs", added.RelativePath);
+            Assert.AreEqual("hash-c", added.Sha256);
+
+            RepositoryReconciliationResult third = await files.ReconcileAsync(repositoryId, [], null);
+
+            Assert.HasCount(3, third.Changes.Where(change => change.ChangeType == RepositoryChangeType.Removed));
+        }
+
+        [TestMethod]
+        public async Task RepoFileRepository_Reconcile_DetectsRenamedFile()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"));
+
+            RepoFile fileA = CreateRepoFile(repositoryId, "src/A.cs");
+            fileA.Sha256 = "hash-a";
+            fileA.FileSize = 100;
+
+            await files.ReconcileAsync(repositoryId, [fileA], null);
+
+            RepoFile fileB = CreateRepoFile(repositoryId, "src/B.cs");
+            fileB.Sha256 = "hash-a";
+            fileB.FileSize = 100;
+
+            RepositoryReconciliationResult result = await files.ReconcileAsync(repositoryId, [fileB], null);
+
+            Assert.AreEqual(1, result.RenamedFiles);
+            Assert.AreEqual(0, result.NewFiles);
+            Assert.AreEqual(0, result.RemovedFiles);
+            Assert.AreEqual(0, result.ChangedFiles);
+            Assert.AreEqual(0, result.UnchangedFiles);
+
+            RepositoryFileChange change = result.Changes.Single(rename => rename.ChangeType == RepositoryChangeType.Renamed);
+            Assert.AreEqual("src/B.cs", change.RelativePath);
+            Assert.AreEqual("src/A.cs", change.PreviousRelativePath);
+            Assert.AreEqual("hash-a", change.Sha256);
+
+            RepoFile oldPath = await files.GetByRelativePathAsync(repositoryId, "src/A.cs");
+            RepoFile newPath = await files.GetByRelativePathAsync(repositoryId, "src/B.cs");
+
+            Assert.IsTrue(oldPath.IsRemoved);
+            Assert.IsFalse(newPath.IsRemoved);
+        }
+
+        [TestMethod]
         public async Task RepoFileRepository_Reconcile_PreservesFailedPaths()
         {
             using TestDatabase database = new();
