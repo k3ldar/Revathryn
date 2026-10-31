@@ -2,6 +2,10 @@
 {
     public static class Consts
     {
+        public const string DefaultProgramDataPath = "Revathryn";
+        public const string DefaultBackupDirectoryName = "backups";
+        public const string DefaultDatabaseFileName = "revathryn.db";
+        public const string DefaultDataStore = "Data Source={0}";
         public const string FileTypeCSharp = "cs";
         public const string FileTypeJson = "json";
         public const string FileTypeXml = "xml";
@@ -132,5 +136,20 @@
         public const string AnalysisVersion = "1";
         public const int DefaultCSharpReviewPriority = 100;
         public const int DefaultGeneralReviewPriority = 50;
+        public const int DefaultMaxContextRequests = 3;
+        public const int MaxContextItemsPerRequest = 10;
+        public const int MaxContextItemContentLength = 4000;
+        public const string ContextKeySymbols = "symbols";
+        public const string ContextKeyDependencies = "dependencies";
+        public const string FindingFingerprintSeparator = ":";
+        public const string OperationalFailureFingerprintSuffix = "operational";
+        public const int OpenAIRequestTimeoutSeconds = 120;
+        public const string OpenAIChatCompletionsSuffix = "/chat/completions";
+        public const string OpenAIResponseFormatJsonObject = "json_object";
+        public const int ReviewWorkerDelayMilliseconds = 30000;
+        public const int MaximumThreadPoolSize = 500;
+        public const int MaximumConcurrentRunningThreads = 50;
+
+        public const int CpuDecimalPlaces = 2;
     }
 }
