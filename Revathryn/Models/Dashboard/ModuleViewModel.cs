@@ -10,7 +10,7 @@ namespace Revathryn.Models.Dashboard
         public string RelativePath { get; set; } = string.Empty;
 
         /// <summary>Files belonging to the module.</summary>
-        public IReadOnlyList<FileSummaryViewModel> Files { get; set; } = new List<FileSummaryViewModel>();
+        public IReadOnlyList<FileSummaryViewModel> Files { get; set; } = [];
 
         /// <summary>Number of file and review type combinations applicable to the module.</summary>
         public int RequiredReviews { get; set; }
@@ -25,6 +25,6 @@ namespace Revathryn.Models.Dashboard
         public int ReviewCoveragePercent { get; set; }
 
         /// <summary>Findings grouped by severity and review type.</summary>
-        public IReadOnlyList<FindingGroupViewModel> FindingGroups { get; set; } = new List<FindingGroupViewModel>();
+        public IReadOnlyList<FindingGroupViewModel> FindingGroups { get; set; } = [];
     }
 }

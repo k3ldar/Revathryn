@@ -5,11 +5,13 @@ using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Services;
 
+#pragma warning disable CA1861
+
 namespace Revathryn.Engine.Tests
 {
     [TestClass]
     [ExcludeFromCodeCoverage]
-    public class Phase5Tests
+    public class RepositoryManagementTests
     {
         private const string EmptyFileSha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
@@ -24,7 +26,7 @@ namespace Revathryn.Engine.Tests
 
                 IFileHasher hasher = new FileHasher();
 
-                string hash = await hasher.ComputeHashAsync(filePath);
+                string hash = await hasher.ComputeHashAsync(filePath, TestContext.CancellationToken);
 
                 Assert.AreEqual(EmptyFileSha256, hash);
             }
@@ -46,7 +48,7 @@ namespace Revathryn.Engine.Tests
                 IFileHasher hasher = new FileHasher();
 
                 string synchronous = hasher.ComputeHash(filePath);
-                string asynchronous = await hasher.ComputeHashAsync(filePath);
+                string asynchronous = await hasher.ComputeHashAsync(filePath, TestContext.CancellationToken);
 
                 Assert.AreEqual(synchronous, asynchronous);
                 Assert.AreEqual(64, synchronous.Length);
@@ -67,10 +69,10 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(filePath, "class Changed { }");
 
                 IFileHasher hasher = new FileHasher();
-                string first = await hasher.ComputeHashAsync(filePath);
+                string first = await hasher.ComputeHashAsync(filePath, TestContext.CancellationToken);
 
                 File.WriteAllText(filePath, "class Changed { void M() { } }");
-                string second = await hasher.ComputeHashAsync(filePath);
+                string second = await hasher.ComputeHashAsync(filePath, TestContext.CancellationToken);
 
                 Assert.AreNotEqual(first, second);
             }
@@ -99,7 +101,7 @@ namespace Revathryn.Engine.Tests
                 IFileHasher hasher = new FileHasher();
 
                 string synchronous = hasher.ComputeHash(filePath);
-                string asynchronous = await hasher.ComputeHashAsync(filePath);
+                string asynchronous = await hasher.ComputeHashAsync(filePath, TestContext.CancellationToken);
 
                 Assert.AreEqual(synchronous, asynchronous);
                 Assert.AreEqual(64, synchronous.Length);
@@ -119,7 +121,7 @@ namespace Revathryn.Engine.Tests
                 string missing = Path.Combine(root, "missing.cs");
                 IFileHasher hasher = new FileHasher();
 
-                await Assert.ThrowsExactlyAsync<FileNotFoundException>(() => hasher.ComputeHashAsync(missing));
+                await Assert.ThrowsExactlyAsync<FileNotFoundException>(() => hasher.ComputeHashAsync(missing, TestContext.CancellationToken));
             }
             finally
             {
@@ -162,7 +164,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "app.config"), "<configuration />");
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(6, scan.DiscoveredFiles);
                 CollectionAssert.AreEquivalent(
@@ -190,7 +192,7 @@ namespace Revathryn.Engine.Tests
                 };
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root, options);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, options, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(1, scan.DiscoveredFiles);
                 Assert.AreEqual("readme.md", scan.DiscoveredFiles[0].RelativePath);
@@ -218,7 +220,7 @@ namespace Revathryn.Engine.Tests
                 };
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root, options);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, options, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(2, scan.DiscoveredFiles);
                 CollectionAssert.AreEquivalent(
@@ -247,7 +249,7 @@ namespace Revathryn.Engine.Tests
                 };
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root, options);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, options, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(1, scan.DiscoveredFiles);
                 Assert.AreEqual("keep.cs", scan.DiscoveredFiles[0].RelativePath);
@@ -275,7 +277,7 @@ namespace Revathryn.Engine.Tests
                 };
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root, options);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, options, cancellationToken: TestContext.CancellationToken);
 
                 CollectionAssert.AreEquivalent(
                     new[] { "keep.cs", "important.generated.cs" },
@@ -297,7 +299,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllBytes(Path.Combine(root, "binary.cs"), [0x00, 0x01, 0x02, 0x00, 0x03]);
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(1, scan.DiscoveredFiles);
                 Assert.AreEqual("keep.cs", scan.DiscoveredFiles[0].RelativePath);
@@ -318,7 +320,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "keep.cs"), "class Keep { }");
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(1, scan.DiscoveredFiles);
                 Assert.HasCount(0, scan.Failures);
@@ -351,7 +353,7 @@ namespace Revathryn.Engine.Tests
                 }
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(0, scan.DiscoveredFiles);
             }
@@ -415,7 +417,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "MyApp.csproj"), "<Project />");
 
                 IProjectDiscoveryService service = new ProjectDiscoveryService();
-                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root);
+                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root, TestContext.CancellationToken);
 
                 Assert.HasCount(1, projects);
                 Assert.AreEqual(ProjectKind.Project, projects[0].Kind);
@@ -449,7 +451,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "App.sln"), solution);
 
                 IProjectDiscoveryService service = new ProjectDiscoveryService();
-                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root);
+                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root, TestContext.CancellationToken);
 
                 Assert.HasCount(3, projects);
 
@@ -477,7 +479,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "src", "Nested", "Inner.csproj"), "<Project />");
 
                 IProjectDiscoveryService service = new ProjectDiscoveryService();
-                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root);
+                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root, TestContext.CancellationToken);
 
                 Assert.HasCount(1, projects);
                 Assert.AreEqual("src/Nested/Inner.csproj", projects[0].RelativePath);
@@ -499,7 +501,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "readme.md"), "# Readme");
 
                 IProjectDiscoveryService service = new ProjectDiscoveryService();
-                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root);
+                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root, TestContext.CancellationToken);
 
                 Assert.HasCount(0, projects);
             }
@@ -520,7 +522,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "App.slnx"), "<Solution><Project Path=\"src/App/App.csproj\" /></Solution>");
 
                 IProjectDiscoveryService service = new ProjectDiscoveryService();
-                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root);
+                IReadOnlyList<RepositoryProject> projects = await service.DiscoverAsync(root, TestContext.CancellationToken);
 
                 Assert.HasCount(2, projects);
 
@@ -545,10 +547,10 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
 
                 IProjectDiscoveryService discovery = new ProjectDiscoveryService();
-                IReadOnlyList<RepositoryProject> projects = await discovery.DiscoverAsync(root);
+                IReadOnlyList<RepositoryProject> projects = await discovery.DiscoverAsync(root, TestContext.CancellationToken);
 
                 RepositoryScanner scanner = new();
-                RepositoryScanResult scan = await scanner.ScanAsync(root);
+                RepositoryScanResult scan = await scanner.ScanAsync(root, cancellationToken: TestContext.CancellationToken);
 
                 Assert.HasCount(0, projects);
                 Assert.HasCount(1, scan.DiscoveredFiles);
@@ -581,5 +583,9 @@ namespace Revathryn.Engine.Tests
                 _handler(value);
             }
         }
+
+        public TestContext TestContext { get; set; }
     }
 }
+
+#pragma warning restore CA1861

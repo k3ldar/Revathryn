@@ -13,6 +13,6 @@ namespace Revathryn.Models.Dashboard
         public string ReviewTypeName { get; set; } = string.Empty;
 
         /// <summary>Findings in the group.</summary>
-        public IReadOnlyList<Finding> Findings { get; set; } = new List<Finding>();
+        public IReadOnlyList<Finding> Findings { get; set; } = [];
     }
 }

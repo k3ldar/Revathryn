@@ -58,11 +58,16 @@ dotnet_diagnostic.IDE0305.severity = error
 
 dotnet_diagnostic.CA1822.severity = error
 dotnet_diagnostic.CA1859.severity = none
-dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.CA1861.severity = error
+dotnet_diagnostic.CA1873.severity = none
 
 # MSTEST0037: Use proper 'Assert' methods
 dotnet_diagnostic.MSTEST0037.severity = error
 
 # MSTEST0044: Prefer 'TestMethod' over 'DataTestMethod'
 dotnet_diagnostic.MSTEST0044.severity = error
+dotnet_diagnostic.MSTEST0049.severity = none
+dotnet_diagnostic.MSTEST0058.severity = error
 
+[*.Tests.csproj]
+dotnet_diagnostic.CA1861.severity = none

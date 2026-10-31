@@ -25,7 +25,7 @@ namespace Revathryn.Contracts.Models
         public int RenamedFiles { get; set; }
 
         /// <summary>Structured per-file change details produced by reconciliation.</summary>
-        public IReadOnlyList<RepositoryFileChange> Changes { get; set; } = new List<RepositoryFileChange>();
+        public IReadOnlyList<RepositoryFileChange> Changes { get; set; } = [];
 
         /// <summary>Number of C# files that were analysed during this scan.</summary>
         public int CSharpFilesAnalysed { get; set; }

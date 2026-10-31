@@ -19,6 +19,6 @@ namespace Revathryn.Contracts.Models
         public int RenamedFiles { get; set; }
 
         /// <summary>Structured per-file change details for subsequent phases.</summary>
-        public IReadOnlyList<RepositoryFileChange> Changes { get; set; } = new List<RepositoryFileChange>();
+        public IReadOnlyList<RepositoryFileChange> Changes { get; set; } = [];
     }
 }

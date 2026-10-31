@@ -1,18 +1,15 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
 using Revathryn.Contracts;
-using Revathryn.Contracts.Analysis;
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Review;
 using Revathryn.Engine;
-using Revathryn.Review;
 using Revathryn.Review.CSharp;
 
 namespace Revathryn.Review.Tests
@@ -37,7 +34,7 @@ namespace Revathryn.Review.Tests
                 ManifestManager manifestManager = new(manifestPath);
                 CSharpAnalysisEngine engine = new(analyser, manifestManager);
 
-                string json = await engine.AnalyseSymbolsAsync(sourcePath);
+                string json = await engine.AnalyseSymbolsAsync(sourcePath, TestContext.CancellationToken);
 
                 Assert.IsFalse(string.IsNullOrWhiteSpace(json));
                 StringAssert.Contains(json, "Program");
@@ -124,7 +121,7 @@ namespace Revathryn.Review.Tests
             };
 
             // Act
-            ReviewResponse response = await engine.ReviewAsync(request);
+            ReviewResponse response = await engine.ReviewAsync(request, TestContext.CancellationToken);
 
             // Assert
             Assert.IsTrue(response.Success);
@@ -182,7 +179,7 @@ namespace Revathryn.Review.Tests
             };
 
             // Act
-            ReviewResponse response = await engine.ReviewAsync(request);
+            ReviewResponse response = await engine.ReviewAsync(request, TestContext.CancellationToken);
 
             // Assert
             Assert.IsFalse(response.Success);
@@ -232,7 +229,7 @@ namespace Revathryn.Review.Tests
                 };
 
                 // Act
-                ReviewContextResponse response = await provider.GetContextAsync(request);
+                ReviewContextResponse response = await provider.GetContextAsync(request, TestContext.CancellationToken);
 
                 // Assert
                 Assert.AreEqual(Consts.ContextKeySymbols, response.ContextKey);
@@ -381,5 +378,7 @@ namespace Revathryn.Review.Tests
             public DateTime SourceLastWriteUtc { get; set; }
             public string SourcePath { get; set; } = string.Empty;
         }
+
+        public TestContext TestContext { get; set; }
     }
 }

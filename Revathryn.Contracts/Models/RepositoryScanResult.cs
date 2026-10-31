@@ -4,9 +4,9 @@ namespace Revathryn.Contracts.Models
     public class RepositoryScanResult
     {
         /// <summary>Files that were discovered and successfully fingerprinted.</summary>
-        public IReadOnlyList<RepoFile> DiscoveredFiles { get; set; } = new List<RepoFile>();
+        public IReadOnlyList<RepoFile> DiscoveredFiles { get; set; } = [];
 
         /// <summary>Files that existed but could not be read or fingerprinted.</summary>
-        public IReadOnlyList<ScanFailure> Failures { get; set; } = new List<ScanFailure>();
+        public IReadOnlyList<ScanFailure> Failures { get; set; } = [];
     }
 }

@@ -110,6 +110,7 @@ namespace Revathryn.Engine.Reliability
                     await operation(token).ConfigureAwait(false);
                     return null;
                 },
+
                 operationType,
                 component,
                 operationName,

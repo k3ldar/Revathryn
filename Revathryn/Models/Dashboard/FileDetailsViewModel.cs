@@ -12,15 +12,15 @@ namespace Revathryn.Models.Dashboard
         public RepoFile File { get; set; }
 
         /// <summary>Review types applicable to the file.</summary>
-        public IReadOnlyList<ReviewType> ApplicableReviewTypes { get; set; } = new List<ReviewType>();
+        public IReadOnlyList<ReviewType> ApplicableReviewTypes { get; set; } = [];
 
         /// <summary>Current completed review outcomes for the file.</summary>
-        public IReadOnlyList<ReviewOutcomeViewModel> CompletedReviews { get; set; } = new List<ReviewOutcomeViewModel>();
+        public IReadOnlyList<ReviewOutcomeViewModel> CompletedReviews { get; set; } = [];
 
         /// <summary>Applicable review types that do not yet have a current completed outcome.</summary>
-        public IReadOnlyList<ReviewType> OutstandingReviewTypes { get; set; } = new List<ReviewType>();
+        public IReadOnlyList<ReviewType> OutstandingReviewTypes { get; set; } = [];
 
         /// <summary>Findings recorded against the file.</summary>
-        public IReadOnlyList<FindingViewModel> Findings { get; set; } = new List<FindingViewModel>();
+        public IReadOnlyList<FindingViewModel> Findings { get; set; } = [];
     }
 }

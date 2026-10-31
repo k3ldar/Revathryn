@@ -24,9 +24,9 @@ namespace Revathryn.Models.Dashboard
         public string ReviewStatus { get; set; } = string.Empty;
 
         /// <summary>Project-based modules with their file coverage and findings.</summary>
-        public IReadOnlyList<ModuleViewModel> Modules { get; set; } = new List<ModuleViewModel>();
+        public IReadOnlyList<ModuleViewModel> Modules { get; set; } = [];
 
         /// <summary>Files not associated with any discovered project.</summary>
-        public IReadOnlyList<FileSummaryViewModel> UnassignedFiles { get; set; } = new List<FileSummaryViewModel>();
+        public IReadOnlyList<FileSummaryViewModel> UnassignedFiles { get; set; } = [];
     }
 }

@@ -5,7 +5,11 @@
 	  <Nullable>$(Nullable)</Nullable>
 	  <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
   </PropertyGroup>
-
+  
+  <PropertyGroup>
+    <NeutralResourcesLanguage>en-GB</NeutralResourcesLanguage>
+  </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="CleanCodeAnalyzer" Version="1.1.1">
       <PrivateAssets>all</PrivateAssets>

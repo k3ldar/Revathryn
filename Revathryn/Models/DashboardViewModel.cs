@@ -6,6 +6,6 @@ namespace Revathryn.Models
     public class DashboardViewModel
     {
         /// <summary>Repository-level review lifecycle summaries.</summary>
-        public IReadOnlyList<RepositorySummaryViewModel> Repositories { get; set; } = new List<RepositorySummaryViewModel>();
+        public IReadOnlyList<RepositorySummaryViewModel> Repositories { get; set; } = [];
     }
 }
