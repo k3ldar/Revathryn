@@ -294,7 +294,7 @@ namespace Revathryn.Engine.Tests
             try
             {
                 File.WriteAllText(Path.Combine(root, "keep.cs"), "class Keep { }");
-                File.WriteAllBytes(Path.Combine(root, "binary.cs"), new byte[] { 0x00, 0x01, 0x02, 0x00, 0x03 });
+                File.WriteAllBytes(Path.Combine(root, "binary.cs"), [0x00, 0x01, 0x02, 0x00, 0x03]);
 
                 RepositoryScanner scanner = new();
                 RepositoryScanResult scan = await scanner.ScanAsync(root);
@@ -456,9 +456,7 @@ namespace Revathryn.Engine.Tests
                 RepositoryProject solutionProject = projects.Single(project => project.Kind == ProjectKind.Solution);
                 Assert.AreEqual("App.sln", solutionProject.RelativePath);
 
-                IReadOnlyList<RepositoryProject> appProjects = projects
-                    .Where(project => project.Kind == ProjectKind.Project)
-                    .ToList();
+                IReadOnlyList<RepositoryProject> appProjects = [.. projects.Where(project => project.Kind == ProjectKind.Project)];
 
                 Assert.HasCount(2, appProjects);
                 Assert.IsTrue(appProjects.All(project => project.SolutionPath == "App.sln"));

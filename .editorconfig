@@ -56,8 +56,8 @@ dotnet_diagnostic.IDE0301.severity = error
 # IDE0305: Simplify collection initialization
 dotnet_diagnostic.IDE0305.severity = error
 
-# CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = error
+dotnet_diagnostic.CA1859.severity = none
 
 # MSTEST0037: Use proper 'Assert' methods
 dotnet_diagnostic.MSTEST0037.severity = error

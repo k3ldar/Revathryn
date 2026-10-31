@@ -30,16 +30,16 @@ namespace Revathryn.Engine
             return [.. files.Where(file => !file.IsRemoved)];
         }
 
+        /// <summary>Returns the file with the given id, or null when not found.</summary>
+        public Task<RepoFile> GetFileAsync(long repoFileId, CancellationToken cancellationToken = default)
+        {
+            return _fileRepository.GetByIdAsync(repoFileId, cancellationToken);
+        }
+
         /// <summary>Marks a file as excluded or included for review.</summary>
         public async Task SetExcludedAsync(long repoFileId, bool isExcluded, CancellationToken cancellationToken = default)
         {
-            RepoFile file = await _fileRepository.GetByIdAsync(repoFileId, cancellationToken).ConfigureAwait(false);
-
-            if (file is null)
-            {
-                throw new InvalidOperationException(string.Format(Strings.RepoFileNotFound, repoFileId));
-            }
-
+            RepoFile file = await _fileRepository.GetByIdAsync(repoFileId, cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException(string.Format(Strings.RepoFileNotFound, repoFileId));
             file.IsExcluded = isExcluded;
             await _fileRepository.UpdateAsync(file, cancellationToken).ConfigureAwait(false);
         }
@@ -47,13 +47,7 @@ namespace Revathryn.Engine
         /// <summary>Rescans a repository and returns the discovered files.</summary>
         public async Task<IReadOnlyList<RepoFile>> RescanAsync(long repositoryId, CancellationToken cancellationToken = default)
         {
-            Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false);
-
-            if (repository is null)
-            {
-                throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
-            }
-
+            Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
             RepositoryScanResult scan = await _scanner.ScanAsync(repository.LocalPath, repository.ScanOptions, null, cancellationToken).ConfigureAwait(false);
 
             foreach (RepoFile file in scan.DiscoveredFiles)

@@ -161,4 +161,160 @@
 			<data name="FileChangedDuringScan" xml:space="preserve">
 			  <value>The file changed while it was being scanned.</value>
 			</data>
+			<data name="OperationalFailureTitle" xml:space="preserve">
+			  <value>Review could not be completed</value>
+			</data>
+			<data name="OperationalFailureDescription" xml:space="preserve">
+			  <value>Review failed for file {0} using review type {1}: {2}</value>
+			</data>
+			<data name="OperationalFailureSuggestedFix" xml:space="preserve">
+			  <value>Retry the review once the underlying issue has been resolved.</value>
+			</data>
+			<data name="ContextRequestLimitExceeded" xml:space="preserve">
+			  <value>The review exceeded the permitted number of context requests.</value>
+			</data>
+			<data name="UnknownReviewError" xml:space="preserve">
+			  <value>The review failed with an unknown error.</value>
+			</data>
+			<data name="AIEngineNotConfigured" xml:space="preserve">
+			  <value>No enabled AI engine is configured.</value>
+			</data>
+			<data name="AIEngineSecretMissing" xml:space="preserve">
+			  <value>The API key for AI engine '{0}' is not configured.</value>
+			</data>
+			<data name="AIEngineResponseIncomplete" xml:space="preserve">
+			  <value>The AI engine returned an incomplete response.</value>
+			</data>
+			<data name="AIEngineResponseInvalid" xml:space="preserve">
+			  <value>The AI engine returned a response that could not be parsed.</value>
+			</data>
+			<data name="AIEngineHttpError" xml:space="preserve">
+			  <value>The AI engine returned HTTP status {0}.</value>
+			</data>
+			<data name="ReviewWorkerCycleFailed" xml:space="preserve">
+			  <value>The review worker cycle failed.</value>
+			</data>
+			<data name="FilesDiscoveredLabel" xml:space="preserve">
+			  <value>Files discovered</value>
+			</data>
+			<data name="FilesRequiringReviewLabel" xml:space="preserve">
+			  <value>Files requiring review</value>
+			</data>
+			<data name="OutstandingReviewsLabel" xml:space="preserve">
+			  <value>Outstanding reviews</value>
+			</data>
+			<data name="FindingsLabel" xml:space="preserve">
+			  <value>Findings</value>
+			</data>
+			<data name="OperationalFailuresLabel" xml:space="preserve">
+			  <value>Operational failures</value>
+			</data>
+			<data name="RepositoryReviewStatusNotScanned" xml:space="preserve">
+			  <value>Not scanned</value>
+			</data>
+			<data name="RepositoryReviewStatusInProgress" xml:space="preserve">
+			  <value>In progress</value>
+			</data>
+			<data name="RepositoryReviewStatusComplete" xml:space="preserve">
+			  <value>Complete</value>
+			</data>
+			<data name="RepositoryReviewStatusIssuesFound" xml:space="preserve">
+			  <value>Issues found</value>
+			</data>
+			<data name="ViewDetails" xml:space="preserve">
+			  <value>View details</value>
+			</data>
+			<data name="BackToDashboard" xml:space="preserve">
+			  <value>Back to dashboard</value>
+			</data>
+			<data name="ModulesTitle" xml:space="preserve">
+			  <value>Modules</value>
+			</data>
+			<data name="UnassignedFilesLabel" xml:space="preserve">
+			  <value>Unassigned files</value>
+			</data>
+			<data name="FilesLabel" xml:space="preserve">
+			  <value>Files</value>
+			</data>
+			<data name="ReviewCoverageLabel" xml:space="preserve">
+			  <value>Review coverage</value>
+			</data>
+			<data name="FingerprintLabel" xml:space="preserve">
+			  <value>Fingerprint</value>
+			</data>
+			<data name="ApplicableReviewTypesLabel" xml:space="preserve">
+			  <value>Applicable review types</value>
+			</data>
+			<data name="CompletedReviewsLabel" xml:space="preserve">
+			  <value>Completed reviews</value>
+			</data>
+			<data name="RequiredReviewsLabel" xml:space="preserve">
+			  <value>Required reviews</value>
+			</data>
+			<data name="OutstandingLabel" xml:space="preserve">
+			  <value>Outstanding</value>
+			</data>
+			<data name="NoFindings" xml:space="preserve">
+			  <value>No findings</value>
+			</data>
+			<data name="NoModules" xml:space="preserve">
+			  <value>No modules discovered for this repository.</value>
+			</data>
+			<data name="NoFiles" xml:space="preserve">
+			  <value>No files discovered for this repository.</value>
+			</data>
+			<data name="FileDetailsTitle" xml:space="preserve">
+			  <value>File details</value>
+			</data>
+			<data name="RepositoryLabel" xml:space="preserve">
+			  <value>Repository</value>
+			</data>
+			<data name="PathLabel" xml:space="preserve">
+			  <value>Path</value>
+			</data>
+			<data name="ExtensionLabel" xml:space="preserve">
+			  <value>Extension</value>
+			</data>
+			<data name="LastModifiedLabel" xml:space="preserve">
+			  <value>Last modified</value>
+			</data>
+			<data name="FileSizeLabel" xml:space="preserve">
+			  <value>File size</value>
+			</data>
+			<data name="ExcludedLabel" xml:space="preserve">
+			  <value>Excluded</value>
+			</data>
+			<data name="RemovedLabel" xml:space="preserve">
+			  <value>Removed</value>
+			</data>
+			<data name="SeverityLabel" xml:space="preserve">
+			  <value>Severity</value>
+			</data>
+			<data name="CategoryLabel" xml:space="preserve">
+			  <value>Category</value>
+			</data>
+			<data name="ReviewTypeLabel" xml:space="preserve">
+			  <value>Review type</value>
+			</data>
+			<data name="SuggestedFixLabel" xml:space="preserve">
+			  <value>Suggested fix</value>
+			</data>
+			<data name="StatusLabel" xml:space="preserve">
+			  <value>Status</value>
+			</data>
+			<data name="NoReviewTypes" xml:space="preserve">
+			  <value>No review types apply to this file.</value>
+			</data>
+			<data name="CompletedLabel" xml:space="preserve">
+			  <value>Completed</value>
+			</data>
+			<data name="NotCompletedLabel" xml:space="preserve">
+			  <value>Not completed</value>
+			</data>
+			<data name="NoRepositoryDetails" xml:space="preserve">
+			  <value>Repository not found.</value>
+			</data>
+			<data name="NoFileDetails" xml:space="preserve">
+			  <value>File not found.</value>
+			</data>
 		  </root>

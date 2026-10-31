@@ -1,11 +1,11 @@
-using Revathryn.Contracts.Models;
+using Revathryn.Models.Dashboard;
 
 namespace Revathryn.Models
 {
     /// <summary>Data displayed on the administration dashboard.</summary>
     public class DashboardViewModel
     {
-        /// <summary>Registered repositories.</summary>
-        public IReadOnlyList<Repository> Repositories { get; set; } = new List<Repository>();
+        /// <summary>Repository-level review lifecycle summaries.</summary>
+        public IReadOnlyList<RepositorySummaryViewModel> Repositories { get; set; } = new List<RepositorySummaryViewModel>();
     }
 }

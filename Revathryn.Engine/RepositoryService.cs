@@ -1,4 +1,3 @@
-using Revathryn.Contracts;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Services;
@@ -74,13 +73,7 @@ namespace Revathryn.Engine
         /// <summary>Enables or disables a repository.</summary>
         public async Task SetEnabledAsync(long repositoryId, bool enabled, CancellationToken cancellationToken = default)
         {
-            Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false);
-
-            if (repository is null)
-            {
-                throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
-            }
-
+            Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
             repository.Enabled = enabled;
             await _repositoryRepository.UpdateAsync(repository, cancellationToken).ConfigureAwait(false);
         }

@@ -51,6 +51,7 @@ namespace Revathryn
                 builder.Services.AddDataServices();
                 builder.Services.AddEngineServices();
                 builder.Services.AddReviewServices();
+                builder.Services.AddHostedService<ReviewWorkerService>();
 
                 //builder.Host.UseWindowsService();
                 //builder.Host.UseSystemd();

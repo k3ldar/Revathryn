@@ -1,0 +1,146 @@
+@model Revathryn.Models.Dashboard.RepositoryDetailsViewModel
+@{
+    ViewData["Title"] = Model.Repository.Name;
+}
+
+<p>
+    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-link ps-0">&larr; @Revathryn.Resources.Strings.BackToDashboard</a>
+</p>
+
+<h1>@Model.Repository.Name</h1>
+<p class="text-muted">@Model.Repository.LocalPath</p>
+
+<div class="mb-3">
+    @if (Model.Repository.Enabled)
+    {
+        <span class="badge bg-success">@Revathryn.Resources.Strings.RepositoryEnabled</span>
+    }
+    else
+    {
+        <span class="badge bg-secondary">@Revathryn.Resources.Strings.RepositoryDisabled</span>
+    }
+
+    <span class="badge bg-info text-dark">@Model.ReviewStatus</span>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mb-4">
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@Model.FilesDiscovered</div>
+                <div class="text-muted">@Revathryn.Resources.Strings.FilesDiscoveredLabel</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@Model.FilesRequiringReview</div>
+                <div class="text-muted">@Revathryn.Resources.Strings.FilesRequiringReviewLabel</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@Model.OutstandingReviews</div>
+                <div class="text-muted">@Revathryn.Resources.Strings.OutstandingReviewsLabel</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@Model.FindingsCount</div>
+                <div class="text-muted">@Revathryn.Resources.Strings.FindingsLabel</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>@Revathryn.Resources.Strings.ModulesTitle</h2>
+
+@if (Model.Modules.Count == 0)
+{
+    <p class="text-muted">@Revathryn.Resources.Strings.NoModules</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+        @foreach (Revathryn.Models.Dashboard.ModuleViewModel module in Model.Modules)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h3 class="h5 mb-1">@module.Name</h3>
+                        <div class="text-muted small">@module.RelativePath</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <span class="badge bg-secondary">@Revathryn.Resources.Strings.FilesLabel: @module.Files.Count</span>
+                            <span class="badge bg-secondary">@Revathryn.Resources.Strings.RequiredReviewsLabel: @module.RequiredReviews</span>
+                            <span class="badge bg-secondary">@Revathryn.Resources.Strings.OutstandingLabel: @module.OutstandingReviews</span>
+                            <span class="badge bg-primary">@Revathryn.Resources.Strings.ReviewCoverageLabel: @module.ReviewCoveragePercent%</span>
+                        </div>
+
+                        @if (module.Files.Count > 0)
+                        {
+                            <ul class="list-group mb-3">
+                                @foreach (Revathryn.Models.Dashboard.FileSummaryViewModel file in module.Files)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <a asp-controller="Dashboard" asp-action="File" asp-route-id="@file.File.Id" class="text-truncate">@file.File.RelativePath</a>
+                                        <span class="badge bg-light text-dark">
+                                            @Revathryn.Resources.Strings.CompletedLabel: @file.CompletedReviews /
+                                            @Revathryn.Resources.Strings.OutstandingLabel: @file.OutstandingReviews /
+                                            @Revathryn.Resources.Strings.FindingsLabel: @file.FindingsCount
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+
+                        @if (module.FindingGroups.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">@Revathryn.Resources.Strings.NoFindings</p>
+                        }
+                        else
+                        {
+                            <ul class="list-group">
+                                @foreach (Revathryn.Models.Dashboard.FindingGroupViewModel group in module.FindingGroups)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <span class="badge bg-warning text-dark">@group.ReviewTypeName</span>
+                                            <span class="badge bg-dark">@group.Severity</span>
+                                        </span>
+                                        <span class="badge bg-secondary rounded-pill">@group.Findings.Count</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (Model.UnassignedFiles.Count > 0)
+{
+    <h2>@Revathryn.Resources.Strings.UnassignedFilesLabel</h2>
+
+    <ul class="list-group mb-4">
+        @foreach (Revathryn.Models.Dashboard.FileSummaryViewModel file in Model.UnassignedFiles)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a asp-controller="Dashboard" asp-action="File" asp-route-id="@file.File.Id" class="text-truncate">@file.File.RelativePath</a>
+                <span class="badge bg-light text-dark">
+                    @Revathryn.Resources.Strings.CompletedLabel: @file.CompletedReviews /
+                    @Revathryn.Resources.Strings.OutstandingLabel: @file.OutstandingReviews /
+                    @Revathryn.Resources.Strings.FindingsLabel: @file.FindingsCount
+                </span>
+            </li>
+        }
+    </ul>
+}

@@ -8,6 +8,9 @@ namespace Revathryn.Contracts.Persistence
         /// <summary>Returns the analysis record for the file and review type, or null when not found.</summary>
         Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default);
 
+        /// <summary>Returns all analysis records belonging to a repository.</summary>
+        Task<IReadOnlyList<RepoFileAnalysis>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default);
+
         /// <summary>Inserts or updates the analysis record and returns its id.</summary>
         Task<long> UpsertAsync(RepoFileAnalysis analysis, CancellationToken cancellationToken = default);
 

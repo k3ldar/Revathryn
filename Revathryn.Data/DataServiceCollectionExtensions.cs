@@ -20,19 +20,20 @@ namespace Revathryn.Data
             services.AddSingleton<SqliteConnectionFactory>();
             services.AddSingleton<IDatabaseContext, SqliteDatabaseContext>();
             services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
+            services.AddSingleton<ISecretsProvider, EnvironmentSecretsProvider>();
 
-            services.AddScoped<IRepositoryRepository, RepositoryRepository>();
-            services.AddScoped<IRepoFileRepository, RepoFileRepository>();
-            services.AddScoped<IProjectRepository, ProjectRepository>();
-            services.AddScoped<IRepositoryScanRepository, RepositoryScanRepository>();
-            services.AddScoped<IReviewTypeRepository, ReviewTypeRepository>();
-            services.AddScoped<IReviewLinkRepository, ReviewLinkRepository>();
-            services.AddScoped<IRepoFileAnalysisRepository, RepoFileAnalysisRepository>();
-            services.AddScoped<IFindingRepository, FindingRepository>();
-            services.AddScoped<IQueueRepository, QueueRepository>();
-            services.AddScoped<IAIEngineRepository, AIEngineRepository>();
-            services.AddScoped<IAISettingsRepository, AISettingsRepository>();
-            services.AddScoped<IBackupService, BackupService>();
+            services.AddTransient<IRepositoryRepository, RepositoryRepository>();
+            services.AddTransient<IRepoFileRepository, RepoFileRepository>();
+            services.AddTransient<IProjectRepository, ProjectRepository>();
+            services.AddTransient<IRepositoryScanRepository, RepositoryScanRepository>();
+            services.AddTransient<IReviewTypeRepository, ReviewTypeRepository>();
+            services.AddTransient<IReviewLinkRepository, ReviewLinkRepository>();
+            services.AddTransient<IRepoFileAnalysisRepository, RepoFileAnalysisRepository>();
+            services.AddTransient<IFindingRepository, FindingRepository>();
+            services.AddTransient<IQueueRepository, QueueRepository>();
+            services.AddTransient<IAIEngineRepository, AIEngineRepository>();
+            services.AddTransient<IAISettingsRepository, AISettingsRepository>();
+            services.AddTransient<IBackupService, BackupService>();
 
             return services;
         }

@@ -23,8 +23,9 @@ namespace Revathryn.Review
             services.AddSingleton<IManifestManager>(_ => new ManifestManager(options.ManifestPath));
             services.AddSingleton<ICSharpAnalysisEngine, CSharpAnalysisEngine>();
             services.AddSingleton<IAnalysisEngine, CSharpAnalysisEngine>();
-            services.AddSingleton<IAIReviewEngine, StubAIReviewEngine>();
-            services.AddSingleton<IReviewContextProvider, StubReviewContextProvider>();
+            services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(Consts.OpenAIRequestTimeoutSeconds) });
+            services.AddSingleton<IAIReviewEngine, OpenAIReviewEngine>();
+            services.AddSingleton<IReviewContextProvider, SymbolContextProvider>();
 
             return services;
         }

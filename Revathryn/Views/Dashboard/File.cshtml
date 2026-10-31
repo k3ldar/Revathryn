@@ -1,0 +1,138 @@
+@model Revathryn.Models.Dashboard.FileDetailsViewModel
+@{
+    ViewData["Title"] = Model.File.RelativePath;
+}
+
+<p>
+    <a asp-controller="Dashboard" asp-action="Repository" asp-route-id="@Model.Repository.Id" class="btn btn-link ps-0">
+        &larr; @Model.Repository.Name
+    </a>
+    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-link">@Revathryn.Resources.Strings.BackToDashboard</a>
+</p>
+
+<h1>@Revathryn.Resources.Strings.FileDetailsTitle</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">@Model.File.RelativePath</h2>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">@Revathryn.Resources.Strings.RepositoryLabel</dt>
+            <dd class="col-sm-9">@Model.Repository.Name</dd>
+
+            <dt class="col-sm-3">@Revathryn.Resources.Strings.PathLabel</dt>
+            <dd class="col-sm-9">@Model.File.RelativePath</dd>
+
+            <dt class="col-sm-3">@Revathryn.Resources.Strings.ExtensionLabel</dt>
+            <dd class="col-sm-9">@Model.File.Extension</dd>
+
+            <dt class="col-sm-3">@Revathryn.Resources.Strings.LastModifiedLabel</dt>
+            <dd class="col-sm-9">@Model.File.LastModifiedDate.ToString("u")</dd>
+
+            <dt class="col-sm-3">@Revathryn.Resources.Strings.FileSizeLabel</dt>
+            <dd class="col-sm-9">@Model.File.FileSize</dd>
+
+            <dt class="col-sm-3">@Revathryn.Resources.Strings.FingerprintLabel</dt>
+            <dd class="col-sm-9 text-break">@Model.File.Sha256</dd>
+
+            <dt class="col-sm-3">@Revathryn.Resources.Strings.StatusLabel</dt>
+            <dd class="col-sm-9">
+                @if (Model.File.IsExcluded)
+                {
+                    <span class="badge bg-warning text-dark">@Revathryn.Resources.Strings.ExcludedLabel</span>
+                }
+
+                @if (Model.File.IsRemoved)
+                {
+                    <span class="badge bg-danger">@Revathryn.Resources.Strings.RemovedLabel</span>
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<h2>@Revathryn.Resources.Strings.ApplicableReviewTypesLabel</h2>
+
+@if (Model.ApplicableReviewTypes.Count == 0)
+{
+    <p class="text-muted">@Revathryn.Resources.Strings.NoReviewTypes</p>
+}
+else
+{
+    <ul class="list-group mb-4">
+        @foreach (Revathryn.Contracts.Models.ReviewType reviewType in Model.ApplicableReviewTypes)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@reviewType.Name</span>
+                @if (Model.OutstandingReviewTypes.Any(item => item.Id == reviewType.Id))
+                {
+                    <span class="badge bg-warning text-dark">@Revathryn.Resources.Strings.NotCompletedLabel</span>
+                }
+                else
+                {
+                    <span class="badge bg-success">@Revathryn.Resources.Strings.CompletedLabel</span>
+                }
+            </li>
+        }
+    </ul>
+}
+
+<h2>@Revathryn.Resources.Strings.CompletedReviewsLabel</h2>
+
+@if (Model.CompletedReviews.Count == 0)
+{
+    <p class="text-muted">@Revathryn.Resources.Strings.NoFindings</p>
+}
+else
+{
+    <ul class="list-group mb-4">
+        @foreach (Revathryn.Models.Dashboard.ReviewOutcomeViewModel outcome in Model.CompletedReviews)
+        {
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <strong>@outcome.ReviewTypeName</strong>
+                    <span class="text-muted">@outcome.Analysis.LastAnalysedDate.ToString("u")</span>
+                </div>
+                <div class="small text-muted">
+                    @Revathryn.Resources.Strings.FingerprintLabel: @outcome.Analysis.Sha256
+                </div>
+            </li>
+        }
+    </ul>
+}
+
+<h2>@Revathryn.Resources.Strings.FindingsLabel</h2>
+
+@if (Model.Findings.Count == 0)
+{
+    <p class="text-muted">@Revathryn.Resources.Strings.NoFindings</p>
+}
+else
+{
+    <ul class="list-group mb-4">
+        @foreach (Revathryn.Models.Dashboard.FindingViewModel item in Model.Findings)
+        {
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <strong>@item.Finding.Title</strong>
+                        <span class="badge bg-dark">@item.Finding.Severity</span>
+                        <span class="badge bg-secondary">@item.Finding.Category</span>
+                    </div>
+                    <div class="text-end small text-muted">
+                        <div>@Revathryn.Resources.Strings.ReviewTypeLabel: @item.ReviewTypeName</div>
+                        <div>@Revathryn.Resources.Strings.StatusLabel: @item.Finding.Status</div>
+                    </div>
+                </div>
+                <p class="mb-1">@item.Finding.Description</p>
+                @if (!string.IsNullOrEmpty(item.Finding.SuggestedFix))
+                {
+                    <p class="mb-0 small">
+                        <strong>@Revathryn.Resources.Strings.SuggestedFixLabel:</strong> @item.Finding.SuggestedFix
+                    </p>
+                }
+            </li>
+        }
+    </ul>
+}

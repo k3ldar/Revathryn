@@ -17,5 +17,8 @@ namespace Revathryn.Contracts.Review
 
         /// <summary>Maximum number of context items to return.</summary>
         public int MaxItems { get; set; }
+
+        /// <summary>Absolute path of the file context is requested for.</summary>
+        public string SourcePath { get; set; } = string.Empty;
     }
 }

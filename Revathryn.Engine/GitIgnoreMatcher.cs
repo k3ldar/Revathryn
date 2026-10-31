@@ -105,7 +105,7 @@ namespace Revathryn.Engine
                 return string.Empty;
             }
 
-            return relativePath.Substring(0, separator);
+            return relativePath[..separator];
         }
 
         private sealed class GitIgnoreRule
@@ -145,7 +145,7 @@ namespace Revathryn.Engine
 
                 if (negated)
                 {
-                    pattern = pattern.Substring(1);
+                    pattern = pattern[1..];
                 }
 
                 bool directoryOnly = pattern.EndsWith(Consts.CharForwardSlash);
@@ -179,7 +179,7 @@ namespace Revathryn.Engine
 
                 if (pattern.StartsWith(Consts.CharForwardSlash))
                 {
-                    return RegexStartAnchor + prefix + ConvertGlob(pattern.Substring(1)) + RegexEndAnchor;
+                    return RegexStartAnchor + prefix + ConvertGlob(pattern[1..]) + RegexEndAnchor;
                 }
 
                 if (pattern.Contains(Consts.CharForwardSlash))

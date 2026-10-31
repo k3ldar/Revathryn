@@ -35,6 +35,24 @@ namespace Revathryn.Data
             return null;
         }
 
+        /// <summary>Returns all analysis records belonging to a repository.</summary>
+        public async Task<IReadOnlyList<RepoFileAnalysis>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = $"SELECT {SelectColumns} FROM RepoFileAnalysis WHERE RepositoryId = @RepositoryId ORDER BY LastAnalysedDate DESC;";
+            command.Parameters.AddWithValue("@RepositoryId", repositoryId);
+
+            List<RepoFileAnalysis> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(MapAnalysis(reader));
+            }
+
+            return results;
+        }
+
         /// <summary>Inserts or updates the analysis record and returns its id.</summary>
         public async Task<long> UpsertAsync(RepoFileAnalysis analysis, CancellationToken cancellationToken = default)
         {

@@ -80,6 +80,48 @@ namespace Revathryn.Engine
             return await ScheduleForFileAsync(file.RepositoryId, file, reviewTypes, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>Returns the enabled review types that apply to the file, respecting disabled links.</summary>
+        public async Task<IReadOnlyList<ReviewType>> GetApplicableReviewTypesAsync(RepoFile file, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(file);
+
+            if (file.IsExcluded || file.IsRemoved)
+            {
+                return [];
+            }
+
+            IReadOnlyList<ReviewType> reviewTypes = await _reviewTypeRepository.GetEnabledByRepositoryAsync(file.RepositoryId, cancellationToken).ConfigureAwait(false);
+            List<ReviewType> applicable = [];
+
+            foreach (ReviewType reviewType in reviewTypes)
+            {
+                if (!AppliesToFile(reviewType, file))
+                {
+                    continue;
+                }
+
+                ReviewLink link = await _reviewLinkRepository.GetAsync(file.Id, reviewType.Id, cancellationToken).ConfigureAwait(false);
+
+                if (link is not null && !link.Enabled)
+                {
+                    continue;
+                }
+
+                applicable.Add(reviewType);
+            }
+
+            return applicable;
+        }
+
+        /// <summary>Determines whether the review type already has a current completed analysis for the file.</summary>
+        public async Task<bool> IsCurrentAsync(RepoFile file, ReviewType reviewType, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(file);
+            ArgumentNullException.ThrowIfNull(reviewType);
+
+            return !await RequiresReviewAsync(file, reviewType, cancellationToken).ConfigureAwait(false);
+        }
+
         private async Task<ReviewScheduleResult> ScheduleForFileAsync(
             long repositoryId,
             RepoFile file,

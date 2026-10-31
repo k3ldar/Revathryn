@@ -6,7 +6,7 @@ namespace Revathryn.Engine
     /// <summary>Watches a folder tree and reports file changes.</summary>
     public sealed class FileChangeMonitor : IFileChangeMonitor
     {
-        private readonly object _sync = new();
+        private readonly Lock _sync = new();
         private FileSystemWatcher _watcher;
 
         /// <summary>Raised when a file changes under the watched path.</summary>

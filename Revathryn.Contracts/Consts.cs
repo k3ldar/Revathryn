@@ -44,8 +44,11 @@
         public const char CharBackSlash = '\\';
         public const char CharFullStop = '.';
         public const char CharI = 'I';
+        public const char NewLine = '\n';
         public const string Pipe = "|";
         public const char CharComma = ',';
+        public const char CharLeftSquareBracket = '[';
+        public const char CharRightSquareBracket = ']';
         public const string FullStop = ".";
         public const string StringArrayIdentifier = "[]";
         public const string StringSpace = " ";
@@ -147,6 +150,7 @@
         public const string OpenAIChatCompletionsSuffix = "/chat/completions";
         public const string OpenAIResponseFormatJsonObject = "json_object";
         public const int ReviewWorkerDelayMilliseconds = 30000;
+        public const int ReviewWorkerMaxItemsPerCycle = 100;
         public const int MaximumThreadPoolSize = 500;
         public const int MaximumConcurrentRunningThreads = 50;
 

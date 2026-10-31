@@ -163,15 +163,13 @@ namespace Revathryn.Engine.Tests
                 string filePath = Path.Combine(root, "Locked.cs");
                 File.WriteAllText(filePath, "class Locked { }");
 
-                using (FileStream locked = new(filePath, FileMode.Open, FileAccess.Read, FileShare.None))
-                {
-                    RepositoryScanner scanner = new();
-                    RepositoryScanResult scan = await scanner.ScanAsync(root);
+                using FileStream locked = new(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+                RepositoryScanner scanner = new();
+                RepositoryScanResult scan = await scanner.ScanAsync(root);
 
-                    Assert.HasCount(0, scan.DiscoveredFiles);
-                    Assert.HasCount(1, scan.Failures);
-                    Assert.AreEqual("Locked.cs", scan.Failures[0].RelativePath);
-                }
+                Assert.HasCount(0, scan.DiscoveredFiles);
+                Assert.HasCount(1, scan.Failures);
+                Assert.AreEqual("Locked.cs", scan.Failures[0].RelativePath);
             }
             finally
             {
@@ -1267,6 +1265,11 @@ namespace Revathryn.Engine.Tests
             {
                 _items.TryGetValue((repoFileId, reviewTypeId), out RepoFileAnalysis analysis);
                 return Task.FromResult(analysis);
+            }
+
+            public Task<IReadOnlyList<RepoFileAnalysis>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepoFileAnalysis>>([.. _items.Values.Where(a => a.RepositoryId == repositoryId)]);
             }
 
             public Task<long> UpsertAsync(RepoFileAnalysis analysis, CancellationToken cancellationToken = default)

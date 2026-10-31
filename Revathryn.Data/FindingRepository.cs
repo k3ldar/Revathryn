@@ -71,15 +71,15 @@ namespace Revathryn.Data
             return null;
         }
 
-        /// <summary>Inserts the finding and returns its assigned id.</summary>
+        /// <summary>Inserts the finding, or returns the existing id when an equivalent finding already exists.</summary>
         public async Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate)
+                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate)
                 VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate);
-                SELECT last_insert_rowid();
+                SELECT Id FROM Findings WHERE RepositoryId = @RepositoryId AND Fingerprint = @Fingerprint LIMIT 1;
                 """;
             AddParameters(command, finding);
 

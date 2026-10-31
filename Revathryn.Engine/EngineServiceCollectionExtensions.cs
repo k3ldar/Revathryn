@@ -18,12 +18,12 @@ namespace Revathryn.Engine
             services.AddSingleton<IFileChangeMonitor, FileChangeMonitor>();
             services.AddSingleton<RepositoryScanLockRegistry>();
 
-            services.AddScoped<IReviewQueue, ReviewQueue>();
-            services.AddScoped<IReviewScheduler, ReviewScheduler>();
-            services.AddScoped<IReviewProcessor, ReviewProcessor>();
-            services.AddScoped<IRepositoryService, RepositoryService>();
-            services.AddScoped<IRepositoryFileService, RepositoryFileService>();
-            services.AddScoped<IRepositoryProcessor, RepositoryProcessor>();
+            services.AddSingleton<IReviewQueue, ReviewQueue>();
+            services.AddSingleton<IReviewScheduler, ReviewScheduler>();
+            services.AddSingleton<IReviewProcessor, ReviewProcessor>();
+            services.AddSingleton<IRepositoryService, RepositoryService>();
+            services.AddSingleton<IRepositoryFileService, RepositoryFileService>();
+            services.AddSingleton<IRepositoryProcessor, RepositoryProcessor>();
 
             return services;
         }

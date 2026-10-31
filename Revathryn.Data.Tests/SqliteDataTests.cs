@@ -203,7 +203,7 @@ namespace Revathryn.Data.Tests
         }
 
         [TestMethod]
-        public async Task FindingRepository_EnforcesUniqueFingerprintPerRepository()
+        public async Task FindingRepository_DuplicateFingerprint_ReturnsExistingId()
         {
             using TestDatabase database = new();
             RepositoryRepository repositories = new(database.Factory);
@@ -213,9 +213,11 @@ namespace Revathryn.Data.Tests
 
             Finding finding = CreateFinding(repositoryId, "dup-fp");
 
-            await findings.AddAsync(finding);
+            long firstId = await findings.AddAsync(finding);
+            long secondId = await findings.AddAsync(CreateFinding(repositoryId, "dup-fp"));
 
-            await Assert.ThrowsExactlyAsync<SqliteException>(() => findings.AddAsync(CreateFinding(repositoryId, "dup-fp")));
+            Assert.AreEqual(firstId, secondId);
+            Assert.HasCount(1, await findings.GetByRepositoryAsync(repositoryId));
         }
 
         [TestMethod]

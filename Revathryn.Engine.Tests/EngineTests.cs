@@ -384,6 +384,11 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult(analysis);
             }
 
+            public Task<IReadOnlyList<RepoFileAnalysis>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepoFileAnalysis>>([.. _items.Values.Where(a => a.RepositoryId == repositoryId)]);
+            }
+
             public Task<long> UpsertAsync(RepoFileAnalysis analysis, CancellationToken cancellationToken = default)
             {
                 analysis.Id = _items.Count + 1;

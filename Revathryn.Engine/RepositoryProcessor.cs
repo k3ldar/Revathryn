@@ -53,13 +53,7 @@ namespace Revathryn.Engine
         /// <summary>Scans and processes a single repository, returning a summary of the work performed.</summary>
         public async Task<RepositoryScanSummary> ProcessAsync(long repositoryId, CancellationToken cancellationToken, IProgress<RepositoryScanProgress> progress = null)
         {
-            Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false);
-
-            if (repository is null)
-            {
-                throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
-            }
-
+            Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException(string.Format(Strings.RepositoryNotFound, repositoryId));
             SemaphoreSlim scanLock = _lockRegistry.GetLock(repositoryId);
             await scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
@@ -214,7 +208,7 @@ namespace Revathryn.Engine
                 return string.Empty;
             }
 
-            return relativePath.Substring(0, separator);
+            return relativePath[..separator];
         }
 
         private async Task RecordScanAsync(Repository repository, RepositoryScanSummary summary, bool succeeded, CancellationToken cancellationToken)

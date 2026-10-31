@@ -1,6 +1,5 @@
 using System.Xml.Linq;
 
-using Revathryn.Contracts;
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Services;
@@ -276,7 +275,7 @@ namespace Revathryn.Engine
                 return string.Empty;
             }
 
-            return relativePath.Substring(0, separator);
+            return relativePath[..separator];
         }
 
         private static string NormaliseRelativePath(string relativePath)

@@ -35,34 +35,20 @@ namespace Revathryn.Data
         public async Task<QueueItem> DequeueAsync(CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
-            using SqliteTransaction transaction = connection.BeginTransaction();
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = """
+                DELETE FROM Queue
+                WHERE Id = (SELECT Id FROM Queue ORDER BY Priority DESC, CreatedDate ASC LIMIT 1)
+                RETURNING Id, RepositoryId, RepoFileId, ReviewTypeId, Priority, CreatedDate;
+                """;
 
-            QueueItem item = null;
-
-            using (SqliteCommand selectCommand = connection.CreateCommand())
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
-                selectCommand.Transaction = transaction;
-                selectCommand.CommandText = $"SELECT {SelectColumns} FROM Queue ORDER BY Priority DESC, CreatedDate ASC LIMIT 1;";
-
-                using SqliteDataReader reader = await selectCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-                if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    item = MapQueueItem(reader);
-                }
+                return MapQueueItem(reader);
             }
 
-            if (item is not null)
-            {
-                using SqliteCommand deleteCommand = connection.CreateCommand();
-                deleteCommand.Transaction = transaction;
-                deleteCommand.CommandText = "DELETE FROM Queue WHERE Id = @Id;";
-                deleteCommand.Parameters.AddWithValue("@Id", item.Id);
-
-                await deleteCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            transaction.Commit();
-            return item;
+            return null;
         }
 
         /// <summary>Returns pending items ordered by priority descending, then creation ascending.</summary>

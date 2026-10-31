@@ -15,21 +15,38 @@
 else
 {
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-        @foreach (Revathryn.Contracts.Models.Repository repository in Model.Repositories)
+        @foreach (Revathryn.Models.Dashboard.RepositorySummaryViewModel summary in Model.Repositories)
         {
             <div class="col">
                 <div class="card h-100">
-                    <div class="card-body">
-                        <h3 class="card-title">@repository.Name</h3>
-                        <p class="card-text text-muted">@repository.LocalPath</p>
-                        @if (repository.Enabled)
-                        {
-                            <span class="badge bg-success">@Revathryn.Resources.Strings.RepositoryEnabled</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">@Revathryn.Resources.Strings.RepositoryDisabled</span>
-                        }
+                    <div class="card-body d-flex flex-column">
+                        <h3 class="card-title">@summary.Repository.Name</h3>
+                        <p class="card-text text-muted text-truncate" title="@summary.Repository.LocalPath">@summary.Repository.LocalPath</p>
+
+                        <div class="mb-2">
+                            @if (summary.Repository.Enabled)
+                            {
+                                <span class="badge bg-success">@Revathryn.Resources.Strings.RepositoryEnabled</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@Revathryn.Resources.Strings.RepositoryDisabled</span>
+                            }
+
+                            <span class="badge bg-info text-dark">@summary.ReviewStatus</span>
+                        </div>
+
+                        <ul class="list-unstyled small mb-3">
+                            <li>@Revathryn.Resources.Strings.FilesDiscoveredLabel: <strong>@summary.FilesDiscovered</strong></li>
+                            <li>@Revathryn.Resources.Strings.FilesRequiringReviewLabel: <strong>@summary.FilesRequiringReview</strong></li>
+                            <li>@Revathryn.Resources.Strings.OutstandingReviewsLabel: <strong>@summary.OutstandingReviews</strong></li>
+                            <li>@Revathryn.Resources.Strings.FindingsLabel: <strong>@summary.FindingsCount</strong></li>
+                            <li>@Revathryn.Resources.Strings.OperationalFailuresLabel: <strong>@summary.OperationalFailuresCount</strong></li>
+                        </ul>
+
+                        <a asp-controller="Dashboard" asp-action="Repository" asp-route-id="@summary.Repository.Id" class="btn btn-outline-primary mt-auto">
+                            @Revathryn.Resources.Strings.ViewDetails
+                        </a>
                     </div>
                 </div>
             </div>

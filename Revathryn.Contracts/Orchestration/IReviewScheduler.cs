@@ -1,3 +1,5 @@
+using Revathryn.Contracts.Models;
+
 namespace Revathryn.Contracts.Orchestration
 {
     /// <summary>Schedules review operations for repositories and files.</summary>
@@ -8,5 +10,11 @@ namespace Revathryn.Contracts.Orchestration
 
         /// <summary>Enqueues review work for a single file based on applicable review types.</summary>
         Task<ReviewScheduleResult> ScheduleFileAsync(long repoFileId, CancellationToken cancellationToken = default);
+
+        /// <summary>Returns the enabled review types that apply to the file, respecting disabled links.</summary>
+        Task<IReadOnlyList<ReviewType>> GetApplicableReviewTypesAsync(RepoFile file, CancellationToken cancellationToken = default);
+
+        /// <summary>Determines whether the review type already has a current completed analysis for the file.</summary>
+        Task<bool> IsCurrentAsync(RepoFile file, ReviewType reviewType, CancellationToken cancellationToken = default);
     }
 }

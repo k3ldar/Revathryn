@@ -11,5 +11,11 @@ namespace Revathryn.Contracts.Review
 
         /// <summary>Findings produced by the review. Empty when no issues were identified.</summary>
         public List<ReviewResult> Results { get; set; } = [];
+
+        /// <summary>
+        /// Context keys the model requested before it can produce final results.
+        /// When non-empty, the caller should retrieve the requested context and retry.
+        /// </summary>
+        public List<string> ContextRequests { get; set; } = [];
     }
 }
