@@ -1,0 +1,569 @@
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
+
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Routing;
+
+using Revathryn.Contracts;
+using Revathryn.Contracts.Enums;
+using Revathryn.Contracts.Models;
+using Revathryn.Contracts.Persistence;
+using Revathryn.Controllers;
+using Revathryn.Models;
+using Revathryn.Models.Administration;
+using Revathryn.Resources;
+
+namespace Revathryn.Tests
+{
+    [TestClass]
+    [ExcludeFromCodeCoverage]
+    public class AdministrationControllerTests
+    {
+        public TestContext TestContext { get; set; }
+
+        [TestMethod]
+        public async Task CreateEngine_InvalidModelState_ReturnsViewPreservingSubmittedData()
+        {
+            FakeAIEngineRepository engineRepository = new();
+            AdministrationController controller = CreateController(engineRepository);
+
+            AIEngineEditViewModel model = new()
+            {
+                Name = "My Engine",
+                Model = "gpt-4o",
+                Endpoint = "https://example.invalid/v1",
+                SecretKeyName = "secret-key",
+                Provider = AIProvider.OpenAI,
+                Enabled = false,
+                IsDefault = true
+            };
+
+            controller.ModelState.AddModelError(nameof(AIEngineEditViewModel.Name), "required");
+
+            IActionResult result = await controller.CreateEngine(model, TestContext.CancellationToken);
+
+            ViewResult viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(Consts.EngineFormViewName, viewResult.ViewName);
+            Assert.AreSame(model, viewResult.Model);
+
+            List<BreadcrumbItem> breadcrumbs = viewResult.ViewData[Consts.BreadcrumbsViewDataKey] as List<BreadcrumbItem>;
+            Assert.IsNotNull(breadcrumbs);
+            Assert.HasCount(4, breadcrumbs);
+            Assert.AreEqual(0, engineRepository.AddCallCount);
+        }
+
+        [TestMethod]
+        public async Task CreateEngine_AddAsyncThrows_ReturnsViewPreservingDataAndError()
+        {
+            FakeAIEngineRepository engineRepository = new()
+            {
+                AddException = new InvalidOperationException("storage unavailable")
+            };
+
+            AdministrationController controller = CreateController(engineRepository);
+
+            AIEngineEditViewModel model = new()
+            {
+                Name = "Broken Engine",
+                Model = "gpt-4o"
+            };
+
+            IActionResult result = await controller.CreateEngine(model, TestContext.CancellationToken);
+
+            ViewResult viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(Consts.EngineFormViewName, viewResult.ViewName);
+            Assert.AreSame(model, viewResult.Model);
+            Assert.AreEqual(1, engineRepository.AddCallCount);
+
+            ModelStateEntry entry = controller.ModelState[string.Empty];
+            Assert.IsNotNull(entry);
+            Assert.HasCount(1, entry.Errors);
+            Assert.AreEqual("storage unavailable", entry.Errors[0].ErrorMessage);
+
+            List<BreadcrumbItem> breadcrumbs = viewResult.ViewData[Consts.BreadcrumbsViewDataKey] as List<BreadcrumbItem>;
+            Assert.IsNotNull(breadcrumbs);
+            Assert.HasCount(4, breadcrumbs);
+        }
+
+        [TestMethod]
+        public async Task CreateEngine_ValidModel_AddsEngineAndRedirectsToEngines()
+        {
+            FakeAIEngineRepository engineRepository = new();
+            AdministrationController controller = CreateController(engineRepository);
+
+            AIEngineEditViewModel model = new()
+            {
+                Name = "  My Engine  ",
+                Model = "  gpt-4o  ",
+                Endpoint = "  https://example.invalid/v1  ",
+                SecretKeyName = "  secret-key  ",
+                Provider = AIProvider.AzureOpenAI,
+                Enabled = true,
+                IsDefault = true
+            };
+
+            IActionResult result = await controller.CreateEngine(model, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(AdministrationController.Engines), redirect.ActionName);
+            Assert.AreEqual(1, engineRepository.AddCallCount);
+
+            AIEngine added = engineRepository.LastAddedEngine;
+            Assert.IsNotNull(added);
+            Assert.AreEqual("My Engine", added.Name);
+            Assert.AreEqual("gpt-4o", added.Model);
+            Assert.AreEqual("https://example.invalid/v1", added.Endpoint);
+            Assert.AreEqual("secret-key", added.SecretKeyName);
+            Assert.AreEqual(AIProvider.AzureOpenAI, added.Provider);
+            Assert.IsTrue(added.Enabled);
+            Assert.IsTrue(added.IsDefault);
+
+            Assert.AreEqual(Strings.EngineSavedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public void CreateEngine_Get_ReturnsEmptyFormModel()
+        {
+            AdministrationController controller = CreateController(new FakeAIEngineRepository());
+
+            IActionResult result = controller.CreateEngine();
+
+            ViewResult viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(Consts.EngineFormViewName, viewResult.ViewName);
+
+            AIEngineEditViewModel model = viewResult.Model as AIEngineEditViewModel;
+            Assert.IsNotNull(model);
+            Assert.AreEqual(0, model.Id);
+            Assert.AreEqual(string.Empty, model.Name);
+            Assert.AreEqual(string.Empty, model.Model);
+            Assert.IsTrue(model.Enabled);
+        }
+
+        [TestMethod]
+        public void ToEngine_TrimsValuesAndNormalisesNulls()
+        {
+            AIEngineEditViewModel model = new()
+            {
+                Id = 42,
+                Name = "  name  ",
+                Model = "  model  ",
+                Endpoint = null,
+                SecretKeyName = null,
+                Provider = AIProvider.Local,
+                Enabled = true,
+                IsDefault = true
+            };
+
+            AIEngine engine = model.ToEngine();
+
+            Assert.AreEqual(42, engine.Id);
+            Assert.AreEqual("name", engine.Name);
+            Assert.AreEqual("model", engine.Model);
+            Assert.AreEqual(string.Empty, engine.Endpoint);
+            Assert.AreEqual(string.Empty, engine.SecretKeyName);
+            Assert.AreEqual(AIProvider.Local, engine.Provider);
+            Assert.IsTrue(engine.Enabled);
+            Assert.IsTrue(engine.IsDefault);
+        }
+
+        [TestMethod]
+        public void FromEngine_CopiesAllProperties()
+        {
+            AIEngine engine = new()
+            {
+                Id = 7,
+                Name = "Engine",
+                Provider = AIProvider.Custom,
+                Endpoint = "https://example.invalid",
+                Model = "gpt-4o",
+                SecretKeyName = "secret",
+                Enabled = false,
+                IsDefault = true
+            };
+
+            AIEngineEditViewModel model = AIEngineEditViewModel.FromEngine(engine);
+
+            Assert.AreEqual(7, model.Id);
+            Assert.AreEqual("Engine", model.Name);
+            Assert.AreEqual(AIProvider.Custom, model.Provider);
+            Assert.AreEqual("https://example.invalid", model.Endpoint);
+            Assert.AreEqual("gpt-4o", model.Model);
+            Assert.AreEqual("secret", model.SecretKeyName);
+            Assert.IsFalse(model.Enabled);
+            Assert.IsTrue(model.IsDefault);
+        }
+
+        [TestMethod]
+        public void AIEngineEditViewModel_RequiresNameAndModel()
+        {
+            AIEngineEditViewModel model = new();
+
+            List<ValidationResult> results = new();
+            ValidationContext context = new(model);
+
+            bool isValid = Validator.TryValidateObject(model, context, results, validateAllProperties: true);
+
+            Assert.IsFalse(isValid);
+            Assert.HasCount(2, results);
+            Assert.IsTrue(results.Exists(r => r.MemberNames.Contains(nameof(AIEngineEditViewModel.Name))));
+            Assert.IsTrue(results.Exists(r => r.MemberNames.Contains(nameof(AIEngineEditViewModel.Model))));
+        }
+
+        [TestMethod]
+        public async Task EditEngine_Get_ReturnsFormModelFromExistingEngine()
+        {
+            FakeAIEngineRepository engineRepository = new();
+            engineRepository.Engines.Add(new AIEngine
+            {
+                Id = 5,
+                Name = "Engine",
+                Model = "gpt-4o",
+                Provider = AIProvider.OpenAI,
+                Endpoint = "https://example.invalid/v1",
+                SecretKeyName = "secret",
+                Enabled = true,
+                IsDefault = true
+            });
+
+            AdministrationController controller = CreateController(engineRepository);
+
+            IActionResult result = await controller.EditEngine(5, TestContext.CancellationToken);
+
+            ViewResult viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(Consts.EngineFormViewName, viewResult.ViewName);
+
+            AIEngineEditViewModel model = viewResult.Model as AIEngineEditViewModel;
+            Assert.IsNotNull(model);
+            Assert.AreEqual(5, model.Id);
+            Assert.AreEqual("Engine", model.Name);
+            Assert.AreEqual("gpt-4o", model.Model);
+            Assert.AreEqual("https://example.invalid/v1", model.Endpoint);
+            Assert.AreEqual(AIProvider.OpenAI, model.Provider);
+            Assert.IsTrue(model.IsDefault);
+
+            List<BreadcrumbItem> breadcrumbs = viewResult.ViewData[Consts.BreadcrumbsViewDataKey] as List<BreadcrumbItem>;
+            Assert.IsNotNull(breadcrumbs);
+            Assert.HasCount(4, breadcrumbs);
+        }
+
+        [TestMethod]
+        public async Task EditEngine_Get_NotFoundWhenMissing()
+        {
+            AdministrationController controller = CreateController(new FakeAIEngineRepository());
+
+            IActionResult result = await controller.EditEngine(99, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task EditEngine_InvalidModelState_ReturnsViewPreservingSubmittedData()
+        {
+            FakeAIEngineRepository engineRepository = new();
+            AdministrationController controller = CreateController(engineRepository);
+
+            AIEngineEditViewModel model = new()
+            {
+                Id = 5,
+                Name = "Engine",
+                Model = "gpt-4o"
+            };
+
+            controller.ModelState.AddModelError(nameof(AIEngineEditViewModel.Model), "required");
+
+            IActionResult result = await controller.EditEngine(model, TestContext.CancellationToken);
+
+            ViewResult viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(Consts.EngineFormViewName, viewResult.ViewName);
+            Assert.AreSame(model, viewResult.Model);
+            Assert.AreEqual(0, engineRepository.UpdateCallCount);
+        }
+
+        [TestMethod]
+        public async Task EditEngine_UpdateAsyncThrows_ReturnsViewPreservingDataAndError()
+        {
+            FakeAIEngineRepository engineRepository = new()
+            {
+                UpdateException = new InvalidOperationException("storage unavailable")
+            };
+
+            AdministrationController controller = CreateController(engineRepository);
+
+            AIEngineEditViewModel model = new()
+            {
+                Id = 5,
+                Name = "Engine",
+                Model = "gpt-4o"
+            };
+
+            IActionResult result = await controller.EditEngine(model, TestContext.CancellationToken);
+
+            ViewResult viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(Consts.EngineFormViewName, viewResult.ViewName);
+            Assert.AreSame(model, viewResult.Model);
+            Assert.AreEqual(1, engineRepository.UpdateCallCount);
+
+            ModelStateEntry entry = controller.ModelState[string.Empty];
+            Assert.IsNotNull(entry);
+            Assert.HasCount(1, entry.Errors);
+            Assert.AreEqual("storage unavailable", entry.Errors[0].ErrorMessage);
+        }
+
+        [TestMethod]
+        public async Task EditEngine_ValidModel_UpdatesEngineAndRedirectsToEngines()
+        {
+            FakeAIEngineRepository engineRepository = new();
+            AdministrationController controller = CreateController(engineRepository);
+
+            AIEngineEditViewModel model = new()
+            {
+                Id = 5,
+                Name = "  Engine  ",
+                Model = "  gpt-4o  ",
+                Endpoint = "  https://example.invalid/v1  ",
+                SecretKeyName = "  secret  ",
+                Provider = AIProvider.AzureOpenAI,
+                Enabled = true,
+                IsDefault = true
+            };
+
+            IActionResult result = await controller.EditEngine(model, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(AdministrationController.Engines), redirect.ActionName);
+            Assert.AreEqual(1, engineRepository.UpdateCallCount);
+
+            AIEngine updated = engineRepository.LastUpdatedEngine;
+            Assert.IsNotNull(updated);
+            Assert.AreEqual(5, updated.Id);
+            Assert.AreEqual("Engine", updated.Name);
+            Assert.AreEqual("gpt-4o", updated.Model);
+            Assert.AreEqual("https://example.invalid/v1", updated.Endpoint);
+            Assert.AreEqual("secret", updated.SecretKeyName);
+            Assert.AreEqual(AIProvider.AzureOpenAI, updated.Provider);
+
+            Assert.AreEqual(Strings.EngineSavedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public async Task DeleteEngine_Get_ReturnsEngineView()
+        {
+            FakeAIEngineRepository engineRepository = new();
+            AIEngine engine = new() { Id = 5, Name = "Engine", Model = "gpt-4o" };
+            engineRepository.Engines.Add(engine);
+
+            AdministrationController controller = CreateController(engineRepository);
+
+            IActionResult result = await controller.DeleteEngine(5, TestContext.CancellationToken);
+
+            ViewResult viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreSame(engine, viewResult.Model);
+
+            List<BreadcrumbItem> breadcrumbs = viewResult.ViewData[Consts.BreadcrumbsViewDataKey] as List<BreadcrumbItem>;
+            Assert.IsNotNull(breadcrumbs);
+            Assert.HasCount(3, breadcrumbs);
+        }
+
+        [TestMethod]
+        public async Task DeleteEngine_Get_NotFoundWhenMissing()
+        {
+            AdministrationController controller = CreateController(new FakeAIEngineRepository());
+
+            IActionResult result = await controller.DeleteEngine(99, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task DeleteEngineConfirmed_DeletesAndRedirects()
+        {
+            FakeAIEngineRepository engineRepository = new();
+            AdministrationController controller = CreateController(engineRepository);
+
+            IActionResult result = await controller.DeleteEngineConfirmed(5, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(AdministrationController.Engines), redirect.ActionName);
+            Assert.AreEqual(5, engineRepository.DeletedId);
+            Assert.AreEqual(1, engineRepository.DeleteCallCount);
+            Assert.AreEqual(Strings.EngineDeletedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        private static AdministrationController CreateController(IAIEngineRepository engineRepository)
+        {
+            DefaultHttpContext httpContext = new();
+
+            ActionContext actionContext = new(httpContext, new RouteData(), new ControllerActionDescriptor());
+
+            AdministrationController controller = new(new FakeAISettingsRepository(), engineRepository)
+            {
+                ControllerContext = new ControllerContext(actionContext),
+                Url = new FakeUrlHelper(actionContext),
+                TempData = new TempDataDictionary(httpContext, new FakeTempDataProvider())
+            };
+
+            return controller;
+        }
+
+        private sealed class FakeAIEngineRepository : IAIEngineRepository
+        {
+            public List<AIEngine> Engines { get; } = new();
+
+            public AIEngine LastAddedEngine { get; private set; }
+
+            public AIEngine LastUpdatedEngine { get; private set; }
+
+            public int AddCallCount { get; private set; }
+
+            public int UpdateCallCount { get; private set; }
+
+            public int DeleteCallCount { get; private set; }
+
+            public long DeletedId { get; private set; }
+
+            public Exception AddException { get; set; }
+
+            public Exception UpdateException { get; set; }
+
+            public long NextId { get; set; } = 1;
+
+            public Task<long> AddAsync(AIEngine engine, CancellationToken cancellationToken = default)
+            {
+                AddCallCount++;
+                LastAddedEngine = engine;
+
+                if (AddException is not null)
+                {
+                    throw AddException;
+                }
+
+                return Task.FromResult(NextId);
+            }
+
+            public Task<AIEngine> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Engines.FirstOrDefault(engine => engine.Id == id));
+            }
+
+            public Task<IReadOnlyList<AIEngine>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<AIEngine>>([.. Engines]);
+            }
+
+            public Task<IReadOnlyList<AIEngine>> GetEnabledAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<AIEngine>>([.. Engines.Where(engine => engine.Enabled)]);
+            }
+
+            public Task<AIEngine> GetDefaultAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Engines.FirstOrDefault(engine => engine.IsDefault));
+            }
+
+            public Task UpdateAsync(AIEngine engine, CancellationToken cancellationToken = default)
+            {
+                UpdateCallCount++;
+                LastUpdatedEngine = engine;
+
+                if (UpdateException is not null)
+                {
+                    throw UpdateException;
+                }
+
+                return Task.CompletedTask;
+            }
+
+            public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
+            {
+                DeleteCallCount++;
+                DeletedId = id;
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeAISettingsRepository : IAISettingsRepository
+        {
+            public Task<AISettings> GetAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new AISettings());
+            }
+
+            public Task UpdateAsync(AISettings settings, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeUrlHelper : IUrlHelper
+        {
+            private readonly ActionContext _actionContext;
+
+            public FakeUrlHelper(ActionContext actionContext)
+            {
+                _actionContext = actionContext;
+            }
+
+            public ActionContext ActionContext => _actionContext;
+
+            public string Action(UrlActionContext actionContext)
+            {
+                return "/test/" + actionContext.Action;
+            }
+
+            public string Content(string contentPath)
+            {
+                return contentPath;
+            }
+
+            public bool IsLocalUrl(string url)
+            {
+                return true;
+            }
+
+            public string RouteUrl(UrlRouteContext routeContext)
+            {
+                return "/test/route";
+            }
+
+            public string Link(string routeName, object values)
+            {
+                return "/test/link";
+            }
+        }
+
+        private sealed class FakeTempDataProvider : ITempDataProvider
+        {
+            private readonly Dictionary<string, object> _data = new();
+
+            public IDictionary<string, object> LoadTempData(HttpContext context)
+            {
+                return _data;
+            }
+
+            public void SaveTempData(HttpContext context, IDictionary<string, object> values)
+            {
+                _data.Clear();
+
+                foreach (KeyValuePair<string, object> pair in values)
+                {
+                    _data[pair.Key] = pair.Value;
+                }
+            }
+        }
+    }
+}

@@ -1,75 +1,150 @@
 # Revathryn
 
-Revathryn is a local-first, incremental code-review orchestration platform. It discovers local repositories, fingerprints source files, runs the retained C# analyser only when needed, and prepares a priority-ordered review queue for later AI review execution phases.
+**Repository intelligence. Deeper understanding. Better software.**
 
-## Solution layout
+Revathryn is an extensible repository intelligence and code analysis platform designed to help developers understand, inspect and maintain software projects.
 
-| Project | Responsibility |
-| --- | --- |
-| `Revathryn.Contracts` | Public models, interfaces, and enums. All interfaces live here. |
-| `Revathryn.Data` | SQLite persistence, schema, and repository implementations. |
-| `Revathryn.Engine` | Orchestration: scanning, fingerprinting, scheduling, queue, repository registration, DI wiring. |
-| `Revathryn.Review` | Existing C# analyser integration (`ICSharpAnalysisEngine`) plus review-engine stubs. |
-| `Revathryn.Resources` | User-facing strings. |
-| `Revathryn` | ASP.NET Core host. |
-| `*.Tests` | MSTest test projects (all test classes carry `[ExcludeFromCodeCoverage]`). |
+It aims to go beyond simple file scanning or isolated static analysis by providing a structured approach to repository discovery, code analysis, issue identification and operational monitoring.
 
-## Phase 3 — repository discovery and incremental analysis
+The goal is to build a platform that can progressively understand a software repository, identify potential problems and provide a manageable environment for reviewing and resolving findings.
 
-### Repository registration
+---
 
-`IRepositoryService` registers local folder repositories only. Registration:
+## Vision
 
-- validates the folder exists and is accessible,
-- normalises the path (absolute, trailing separators removed),
-- rejects a duplicate physical path case-insensitively,
-- persists metadata in SQLite,
-- creates the default review definitions (`C# Code Review` and `General Review`) with a computed `ReviewDefinitionVersion`.
+Software repositories are constantly evolving. Understanding their structure, identifying potential problems and maintaining visibility over their quality can become increasingly difficult as projects grow.
 
-Repositories can be enabled or disabled via `SetEnabledAsync`. GitHub and remote repositories are intentionally out of scope.
+Revathryn aims to simplify this process through a combination of:
 
-### Scanning and fingerprinting
+- **Repository intelligence** – Discovering and understanding repository structures and their contents.
+- **Incremental discovery** – Identifying changes efficiently rather than repeatedly processing everything.
+- **Code analysis** – Applying specialised analysers to identify potential issues and areas of concern.
+- **Issue management** – Consolidating analysis outcomes into actionable findings.
+- **Administration and visibility** – Providing a centralised interface for managing repositories, analysis and platform configuration.
+- **Operational resilience** – Ensuring reliable execution through recovery, retries, monitoring and fault handling.
 
-`IRepositoryScanner` enumerates files under a repository root and returns a `RepositoryScanResult`:
+The underlying philosophy is straightforward:
 
-- configurable excluded directories (defaults: `.git`, `.vs`, `bin`, `obj`, `node_modules`, `packages`, `build`, `dist`),
-- configurable included extensions (defaults: `cs`, `json`, `xml`, `config`, `csproj`, `props`, `targets`, `md`, `yml`, `yaml`),
-- `/`-normalised repository-relative paths as the persistent file identity alongside `RepositoryId`,
-- SHA256 as the authoritative content fingerprint,
-- graceful handling of files that become inaccessible during the scan (`ScanFailure`).
+> Understand the repository, analyse what matters, and make the results manageable.
 
-`RepoFile` identity is `(RepositoryId, RelativePath)`; absolute paths are never persisted.
+---
 
-### Incremental C# analysis
+## Core Capabilities
 
-`RepositoryProcessor` invokes the existing `ICSharpAnalysisEngine` only for discovered `.cs` files whose manifest says they need (re)analysis. Unchanged files are skipped, and a failed analysis is never recorded as successful, so the next scan retries it.
+Revathryn is being developed around several complementary capabilities.
 
-### Review scheduling
+### Repository Management
 
-`IReviewScheduler` determines which review types require work by comparing the current file `Sha256`, the review definition's `ReviewDefinitionVersion`, and the analysis engine version against the completed `RepoFileAnalysis` record. This implements scenarios A–H from the phase specification: new files, changed files, unchanged files, new review types, edited review definitions, disabled/removed review types, per-file exclusions, and re-enabled review types.
+Repository discovery and management form the foundation of the platform.
 
-`RepoFileAnalysis` represents only completed review work. Queueing never creates a completed analysis record.
+This includes:
 
-### Review queue
+- Repository scanning and discovery.
+- File identification and fingerprinting.
+- Incremental change detection.
+- Efficient processing of modified or newly discovered files.
+- Maintaining an understanding of repository structure.
 
-`IReviewQueue` (backed by `Queue`/`IQueueRepository`) is a transient priority queue:
+### Code Analysis
 
-- higher `Priority` processed first, then oldest `CreatedDate`,
-- `UNIQUE(RepoFileId, ReviewTypeId)` with `INSERT OR IGNORE` makes enqueueing idempotent,
-- priority respects `ReviewLinks.PriorityOverride` and falls back to the review type default,
-- no queue status field; entries stay pending until a later phase processes them.
+A modular analysis architecture allows specialised analysers to inspect repository contents.
 
-### Orchestration and concurrency
+The initial focus includes C# analysis, with an architecture intended to support additional languages and analysis capabilities over time.
 
-`IRepositoryProcessor` coordinates scan, file reconciliation, removal detection, incremental C# analysis, scheduling, and queue population, returning a `RepositoryScanSummary`. `ProcessAllEnabledAsync` scans every enabled repository.
+### Analysis and Issue Management
 
-`RepositoryScanLockRegistry` provides a per-repository `SemaphoreSlim(1,1)`, so a single repository is never scanned concurrently. File removal relies on SQLite foreign-key cascades: deleting a `RepoFile` removes its `ReviewLinks`, `RepoFileAnalysis`, and pending `Queue` rows, while `Findings` survive via `ON DELETE SET NULL`.
+Analysis results are consolidated into actionable findings.
 
-## Build and test
+The platform is designed to distinguish between the execution of analysis and the persistence of its outcomes, avoiding unnecessary historical records of individual processing operations.
 
-```powershell
-dotnet build Revathryn.slnx
-dotnet test Revathryn.slnx
-```
+### Administration and Dashboard
 
-All timestamps are UTC. The codebase uses explicit types (never `var`), Allman braces, one public class per file, and C# 13 features.
+A central administration interface will provide visibility and control over the platform.
+
+This includes:
+
+- Repository management.
+- Analysis configuration.
+- Processing and queue visibility.
+- Issue and findings management.
+- Platform health and operational status.
+
+### Reliability and Recovery
+
+Reliable operation is a fundamental part of the architecture.
+
+Planned capabilities include:
+
+- Retry handling.
+- Recovery from interrupted processing.
+- Monitoring and diagnostics.
+- Operational health visibility.
+- Resilient background processing.
+
+---
+
+## Architecture and Design Principles
+
+Revathryn is being developed with the following principles in mind:
+
+**Modularity**
+
+Individual capabilities should remain independently understandable and maintainable, with clear boundaries between components.
+
+**Extensibility**
+
+New analysers, repository types and processing capabilities should be introduced without requiring fundamental architectural changes.
+
+**Incremental Processing**
+
+Avoid unnecessary work by identifying what has changed and processing only what requires attention.
+
+**Separation of Concerns**
+
+Repository discovery, analysis execution, issue management, administration and operational monitoring should have clearly defined responsibilities.
+
+**Operational Visibility**
+
+The platform should make its own operation understandable, providing sufficient information to diagnose problems and manage its behaviour.
+
+**Pragmatic Persistence**
+
+Persist meaningful outcomes and information rather than creating unnecessary operational history.
+
+---
+
+## Technology
+
+The initial development is centred around:
+
+- C#
+- .NET
+- Modular analysis components
+- Repository and file fingerprinting
+- A web-based administration and dashboard interface
+
+Specific implementation details and technology choices will evolve as the architecture develops.
+
+---
+
+
+## Long-term Direction
+
+The longer-term ambition is for Revathryn to become a flexible repository intelligence platform capable of understanding software projects across multiple languages and technologies.
+
+Rather than being tied to a single analyser or development workflow, it should provide a foundation upon which additional analysis capabilities can be built.
+
+The intention is to create something that is useful not just for finding problems, but for making the ongoing understanding and maintenance of software repositories easier.
+
+---
+
+## Contributing
+
+The project is currently under active initial development.
+
+Contribution guidelines and development documentation will be introduced as the project and its interfaces mature.
+
+---
+
+**Revathryn**  
+*Understand more. Analyse intelligently. Build with confidence.*

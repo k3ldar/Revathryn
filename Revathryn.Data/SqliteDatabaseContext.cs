@@ -22,5 +22,22 @@ namespace Revathryn.Data
             SqliteTransaction transaction = connection.BeginTransaction();
             return new SqliteTransactionScope(connection, transaction);
         }
+
+        /// <summary>Verifies that the database is reachable and queryable.</summary>
+        public async Task<bool> CanConnectAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                using SqliteConnection connection = await _connectionFactory.OpenAsync(cancellationToken).ConfigureAwait(false);
+                using SqliteCommand command = connection.CreateCommand();
+                command.CommandText = "SELECT 1;";
+                await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (SqliteException)
+            {
+                return false;
+            }
+        }
     }
 }

@@ -155,6 +155,7 @@
         public const int ReviewWorkerMaxItemsPerCycle = 100;
         public const int MaximumThreadPoolSize = 500;
         public const int MaximumConcurrentRunningThreads = 50;
+        public const int ThreadCpuChangeNotificationDisabledValue = 0;
 
         public const int CpuDecimalPlaces = 2;
 
@@ -198,5 +199,29 @@
         public const string RunCycleOperation = "RunCycle";
         public const string CheckReadinessOperation = "CheckReadiness";
         public const string CheckLivenessOperation = "CheckLiveness";
+
+        // Health check names.
+        public const string DatabaseConnectivityCheck = "DatabaseConnectivity";
+        public const string BackgroundProcessingCheck = "BackgroundProcessing";
+        public const string AnalyserAvailabilityCheck = "AnalyserAvailability";
+        public const string LivenessCheck = "Liveness";
+
+        // Issue query defaults.
+        public const int DefaultIssuePageSize = 20;
+        public const int DefaultRecentIssueCount = 5;
+        public const int DefaultRecentScanCount = 10;
+
+        // UI and MVC request keys and route values.
+        public const string BreadcrumbsViewDataKey = "Breadcrumbs";
+        public const string SuccessMessageTempDataKey = "SuccessMessage";
+        public const string ErrorMessageTempDataKey = "ErrorMessage";
+        public const string DashboardControllerName = "Dashboard";
+        public const string DashboardDataActionName = "Data";
+        public const string DashboardContentViewName = "_DashboardContent";
+        public const int DashboardRefreshIntervalMilliseconds = 1000;
+        public const string EngineFormViewName = "EngineForm";
+        public const string DashboardErrorRoute = "/Dashboard/Error";
+        public const string DefaultRouteName = "default";
+        public const string DefaultRoutePattern = "{controller=Dashboard}/{action=Index}/{id?}";
     }
 }

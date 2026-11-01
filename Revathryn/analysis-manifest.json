@@ -1,0 +1,455 @@
+{
+  "ManifestVersion": 1,
+  "Entries": {
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingDefaultAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingDefaultAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingDefaultAttribute..json",
+      "SourceHash": "e838a3ca58195c522805175479923944451a2db293b3713ef15fc10dcc736c65",
+      "SourceLastWriteUtc": "2021-06-25T04:06:56Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.1770277Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingDelimitedStringAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingDelimitedStringAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingDelimitedStringAttribute..json",
+      "SourceHash": "f3d9fd917dbe5ce6450bdbfcfaf7cdfcc64d52a27f38ab1ed9bc906b6296160a",
+      "SourceLastWriteUtc": "2021-06-25T03:59:26Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.1997469Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingEmailAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingEmailAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingEmailAttribute..json",
+      "SourceHash": "7039925b29bafacca1eeaadd5c23ca857c5edcd84c38ab32423826a8776041a0",
+      "SourceLastWriteUtc": "2021-06-24T16:56:50Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2256994Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingGuidAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingGuidAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingGuidAttribute..json",
+      "SourceHash": "536acf37ea404d88b3f913704458fa7d63e6cb7423d05967b65fb84c669a8123",
+      "SourceLastWriteUtc": "2019-03-30T17:17:08Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2284343Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingHttpResponseAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingHttpResponseAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingHttpResponseAttribute..json",
+      "SourceHash": "0e5752a00fd18fa97205e2352dd0cd9d32b9a30d430873b66a406c4598d50855",
+      "SourceLastWriteUtc": "2021-06-24T14:43:42Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.246603Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingNameValuePairAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingNameValuePairAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingNameValuePairAttribute..json",
+      "SourceHash": "43f10a2a3b13c0a591a0abb611f9408b33461028981e2a8c99363564abbbc7fc",
+      "SourceLastWriteUtc": "2021-06-25T03:54:42Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.249131Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingOptionalAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingOptionalAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingOptionalAttribute..json",
+      "SourceHash": "25c6500d56762bd46e1908bb6de7f04fd3c7210252d509945c00e0609d40a46f",
+      "SourceLastWriteUtc": "2019-03-30T17:17:08Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2507971Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingPathExistsAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingPathExistsAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingPathExistsAttribute..json",
+      "SourceHash": "b179ce7dc40b69cf3b20e288ca363dc96b453907352babccbc86930f808e8663",
+      "SourceLastWriteUtc": "2019-03-30T17:17:08Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2523901Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingRangeAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingRangeAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingRangeAttribute..json",
+      "SourceHash": "7adfe490bb1d3b7bd828351aa41e55e431151505f68938aa991abac1b32f2e7a",
+      "SourceLastWriteUtc": "2021-06-24T16:41:14Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2540501Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingRegexAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingRegexAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingRegexAttribute..json",
+      "SourceHash": "516945cbdfe8ec20663d0e176dd4bab12c0a011d4ca1abb3051244e59f4d19fc",
+      "SourceLastWriteUtc": "2021-06-24T16:44:20Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2571735Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingStringAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingStringAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingStringAttribute..json",
+      "SourceHash": "84ffb95e8fb8632edbb5273b993a733db891dfb076d84f037426fb63acb58e96",
+      "SourceLastWriteUtc": "2021-06-24T16:52:18Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2701476Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingUriAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingUriAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingUriAttribute..json",
+      "SourceHash": "eeebc5277bede81551f69b8c64e84e91bfccfdbf704d7dda8a08d2a581bf1d7f",
+      "SourceLastWriteUtc": "2021-06-24T16:47:56Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2724439Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingValidPathAttribute.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Attributes\\SettingValidPathAttribute.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingValidPathAttribute..json",
+      "SourceHash": "1c9e94b714bd5fd84aeb4e296b4e976a99bb41cf4e42667f5c5fbefa2e6a4766",
+      "SourceLastWriteUtc": "2019-03-30T17:17:08Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2742811Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Enums\\ReplacableWords.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Enums\\ReplacableWords.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.ReplacableWords..json",
+      "SourceHash": "f0d2b3577ed011276b2eed2062fb3f5062d0c8260b2c6a23e086b02f0eae2d96",
+      "SourceLastWriteUtc": "2019-03-30T17:17:08Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2762673Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Exceptions\\SettingException.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Exceptions\\SettingException.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.SettingException..json",
+      "SourceHash": "58a03202255b34ab012aacb5ae20e8aa1c4fe0bedaff8b8eb4a83c3e7687d778",
+      "SourceLastWriteUtc": "2021-06-25T04:18:54Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.278824Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Interfaces\\IApplicationOverride.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Interfaces\\IApplicationOverride.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.IApplicationOverride..json",
+      "SourceHash": "ab435796a00c754b718151f82539e360e1c81350897590d64aa8eded0dc7c31d",
+      "SourceLastWriteUtc": "2021-06-26T07:46:20Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2830958Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Interfaces\\ISettingError.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Interfaces\\ISettingError.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.ISettingError..json",
+      "SourceHash": "0edbee59df42107ea3a4fece879fbc0f94892eb8bed683eaf5dcf3b05852c4e6",
+      "SourceLastWriteUtc": "2019-03-30T17:17:14Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2849912Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\Interfaces\\ISettingOverride.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\Interfaces\\ISettingOverride.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.ISettingOverride..json",
+      "SourceHash": "1869f355ecf3292d9e976111234c5f890aeefaf7383855fa3c398d66967584a9",
+      "SourceLastWriteUtc": "2019-03-30T17:17:08Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.2865424Z"
+    },
+    "C:\\GitProjects\\AppSettings\\src\\ValidateSettings.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\src\\ValidateSettings.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.ValidateSettings..json",
+      "SourceHash": "ed77ef842ef49b9a07461d0d24fa0875f1cd23bc62cafec794141d1cbb81b078",
+      "SourceLastWriteUtc": "2022-12-23T07:56:14Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3277857Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingDefaultAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingDefaultAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingDefaultAttributeTests..json",
+      "SourceHash": "a6bf4309c5a10f967cf90416085d6b1c6e13053262db84a74ccccc33773441fc",
+      "SourceLastWriteUtc": "2021-06-25T04:09:34Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3382291Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingDelimitedStringAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingDelimitedStringAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingDelimitedStringAttributeTests..json",
+      "SourceHash": "5f1c7aca4bf1bfd53d5bf85e4e12a6d07cec5c589967bf64271fc9b7d907ad37",
+      "SourceLastWriteUtc": "2021-06-25T03:59:26Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3423044Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingEmailAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingEmailAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingEmailAttributeTests..json",
+      "SourceHash": "1d419ebe3842458ab868914f9ac939f3cda7369bab004a0a984f0ff4d1113e54",
+      "SourceLastWriteUtc": "2021-06-24T17:02:02Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3449038Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingExceptionTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingExceptionTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingExceptionTests..json",
+      "SourceHash": "3c10006ab443d1d0eb75fce720d4b66cd07bc1845e0345719bcd6616922c23b1",
+      "SourceLastWriteUtc": "2021-06-25T04:18:54Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3469213Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingGuidAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingGuidAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingGuidAttributeTests..json",
+      "SourceHash": "b456519e570e5e45d746458fb663579f18c67713ab4baff0e26c447ea3acaa29",
+      "SourceLastWriteUtc": "2021-06-25T04:12:58Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3486917Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingHttpResponseAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingHttpResponseAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingHttpResponseAttributeTests..json",
+      "SourceHash": "77b35502a63ff29b267b8adadd875916e17e9eb26985b7897d00fbb5ab54abfd",
+      "SourceLastWriteUtc": "2021-06-24T16:36:24Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3572461Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingNameValuePairAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingNameValuePairAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingNameValuePairAttributeTests..json",
+      "SourceHash": "95bc27c6d5192e6c61946af62e6afdc33aeca4cf76583108ed6b47cb96660b51",
+      "SourceLastWriteUtc": "2021-06-25T03:54:42Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3602126Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingOptionalAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingOptionalAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingOptionalAttributeTests..json",
+      "SourceHash": "5ca359d1f7ac969b492f5f16f629096caab70edc10d633420d6af461b1c60513",
+      "SourceLastWriteUtc": "2021-06-24T16:48:48Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3619831Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingRangeAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingRangeAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingRangeAttributeTests..json",
+      "SourceHash": "b3a0df2a1d618a630309b1a6e2e1a5b63431681202a9fccf4ab5ff60a109cc21",
+      "SourceLastWriteUtc": "2021-06-24T16:40:54Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3647557Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingRegexAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingRegexAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingRegexAttributeTests..json",
+      "SourceHash": "ba2631eab0ef8015ace32ce93a27681a62b0269e47d6b1ded4f0310f3d074392",
+      "SourceLastWriteUtc": "2021-06-24T16:44:20Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3669847Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingStringAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingStringAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingStringAttributeTests..json",
+      "SourceHash": "28610b3ed63861ab578f63da0cfaca3653de8a587d5662811f2f5e462e5ab902",
+      "SourceLastWriteUtc": "2021-06-24T16:54:22Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3694509Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingUriAttributeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\Attributes\\SettingUriAttributeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.Attributes.SettingUriAttributeTests..json",
+      "SourceHash": "6d1d6b706a0799537bdafbeacb7536988a51215dcbc0b7772e33577275251e1b",
+      "SourceLastWriteUtc": "2021-06-24T16:47:34Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3718159Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\DefaultTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\DefaultTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.DefaultTests..json",
+      "SourceHash": "2214dbec38a52e348828528b659eeebbbe925af3966980a351e0981370ddbccb",
+      "SourceLastWriteUtc": "2021-08-03T06:28:24Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3765938Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\DelimitedStringTest.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\DelimitedStringTest.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.DelimitedStringTest..json",
+      "SourceHash": "8af7045325769f016d50641ffb9fe6a376406e21fa434cc9bca7bb8825a0c371",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3801666Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\EmailTest.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\EmailTest.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.EmailTest..json",
+      "SourceHash": "e1d10b0152b4ea81dbf873c687ca6027877c259bea5962a8844e4a7534a3128a",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3824545Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\GuidTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\GuidTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.GuidTests..json",
+      "SourceHash": "6b0eaff92e464ed7e3ad98576bd42a564114808e1dd1f60022296a4643b3f5aa",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3844427Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\HttpResponseTest.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\HttpResponseTest.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.HttpResponseTest..json",
+      "SourceHash": "172e61745548bae9d3acb3c332efed763d91fa4a603de0f9397e29212930f0c2",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3870057Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\NameValuePairTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\NameValuePairTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.NameValuePairTests..json",
+      "SourceHash": "4ea41c83a21c308b7df336d6ecf72c2ad29d6b594924fdc0ac0297c6f72fa7fc",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3890878Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\OptionalTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\OptionalTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.OptionalTests..json",
+      "SourceHash": "a04bf6c4f35533f5786e606906ad39b9474983f9585f695469c8b94ab6eb69ac",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3912305Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\PathExistsTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\PathExistsTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.PathExistsTests..json",
+      "SourceHash": "7bed61c1c89d48df93703f5f289c0d41bac78eb4545fc9594c997ff0bea709ad",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3932582Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\RangeTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\RangeTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.RangeTests..json",
+      "SourceHash": "cb7836f04fdda18a13b6f69450393dd145e5c8dea9680c9525a405fda34a91a3",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.3981097Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\RegexTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\RegexTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.RegexTests..json",
+      "SourceHash": "53c06357367e047a36aec63fda32aec2f342f95d5565fd2e5d978ec2796a1882",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.400042Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\StringTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\StringTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.StringTests..json",
+      "SourceHash": "b456578aaa1c345e238fc480a5d5f7f8dbf1b1184806b3f9bd37140352e4073b",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.4026733Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\UriTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\UriTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.UriTests..json",
+      "SourceHash": "b3a7049ec80247e3c3e5bf500db9dbaaa631bab448f682c48ed73e36316bcb41",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.4050358Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\ValidateSettingsTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\ValidateSettingsTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.ValidateSettingsTests..json",
+      "SourceHash": "39ed6d68a62fcb9104a1ce7d5c93f83c354e16b72feb5f5d732f372a5eea4d5b",
+      "SourceLastWriteUtc": "2021-06-26T16:24:30Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.4087711Z"
+    },
+    "C:\\GitProjects\\AppSettings\\Test\\ValidPathTests.cs": {
+      "SourcePath": "C:\\GitProjects\\AppSettings\\Test\\ValidPathTests.cs",
+      "Language": "CSharp",
+      "LanguageVersion": "14.0",
+      "AnalyserVersion": 1,
+      "OutputFile": "analysis-output\\AppSettings.Tests.ValidPathTests..json",
+      "SourceHash": "08acd18c7834374f134bd880f4be688c6379ba9697a5d33723fe753c4905938f",
+      "SourceLastWriteUtc": "2021-06-24T04:55:10Z",
+      "AnalysedUtc": "2026-10-31T14:44:31.4109041Z"
+    }
+  }
+}

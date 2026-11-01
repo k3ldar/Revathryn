@@ -14,6 +14,12 @@ namespace Revathryn.Contracts.Persistence
         /// <summary>Returns the first finding matching the repository and fingerprint, or null.</summary>
         Task<Finding> GetByFingerprintAsync(long repositoryId, string fingerprint, CancellationToken cancellationToken = default);
 
+        /// <summary>Returns a filtered, sorted and paged set of findings.</summary>
+        Task<FindingQueryResult> QueryAsync(FindingQuery query, CancellationToken cancellationToken = default);
+
+        /// <summary>Returns all outstanding, non-operational findings, most recent first.</summary>
+        Task<IReadOnlyList<Finding>> GetOutstandingAsync(CancellationToken cancellationToken = default);
+
         /// <summary>Inserts the finding and returns its assigned id.</summary>
         Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default);
 

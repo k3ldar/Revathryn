@@ -1,0 +1,51 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Repositories.RepositoryEditViewModel
+@{
+    string formAction = ViewData["FormAction"] as string ?? "Create";
+    string submitLabel = ViewData["SubmitLabel"] as string ?? Strings.SaveButton;
+}
+
+<form asp-action="@formAction" method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label">@Strings.NameLabel</label>
+        <input asp-for="Name" class="form-control" required />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label">@Strings.DescriptionLabel</label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="LocalPath" class="form-label">@Strings.LocalPathLabel</label>
+        <input asp-for="LocalPath" class="form-control" required />
+        <span asp-validation-for="LocalPath" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MaxContextRequests" class="form-label">@Strings.MaxContextRequestsLabel</label>
+        <input asp-for="MaxContextRequests" class="form-control" type="number" min="1" required />
+        <span asp-validation-for="MaxContextRequests" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="Enabled" class="form-check-input" />
+        <label asp-for="Enabled" class="form-check-label">@Strings.EnabledLabel</label>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="AutomaticReviewEnabled" class="form-check-input" />
+        <label asp-for="AutomaticReviewEnabled" class="form-check-label">@Strings.AutomaticReviewEnabledLabel</label>
+    </div>
+
+    <input asp-for="Id" type="hidden" />
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">@submitLabel</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">@Strings.CancelButton</a>
+    </div>
+</form>

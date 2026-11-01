@@ -38,6 +38,9 @@ namespace Revathryn.Engine
             services.AddSingleton<IRepositoryService, RepositoryService>();
             services.AddSingleton<IRepositoryFileService, RepositoryFileService>();
             services.AddSingleton<IRepositoryProcessor, RepositoryProcessor>();
+            services.AddSingleton<IHealthService, HealthService>();
+            services.AddSingleton<IIssueQueryService, IssueQueryService>();
+            services.AddSingleton<IDashboardQueryService, DashboardQueryService>();
 
             return services;
         }

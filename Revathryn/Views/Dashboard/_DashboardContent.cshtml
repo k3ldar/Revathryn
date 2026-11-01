@@ -1,0 +1,302 @@
+@using Revathryn.Resources
+@model Revathryn.Contracts.Models.DashboardSnapshot
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mb-4">
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header">@Strings.RepositorySummaryTitle</div>
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-8">@Strings.ConfiguredRepositoriesLabel</dt>
+                    <dd class="col-4 text-end">@Model.ConfiguredRepositoryCount</dd>
+
+                    <dt class="col-8">@Strings.DiscoveredRepositoriesLabel</dt>
+                    <dd class="col-4 text-end">@Model.DiscoveredRepositoryCount</dd>
+
+                    <dt class="col-8">@Strings.LastRepositoryScanLabel</dt>
+                    <dd class="col-4 text-end">@FormatUtc(Model.LastRepositoryScanUtc)</dd>
+
+                    <dt class="col-8">@Strings.RepositoryScanHealthLabel</dt>
+                    <dd class="col-4 text-end">
+                        @Model.Repositories.Count(item => !item.HasProblems) / @Model.Repositories.Count
+                    </dd>
+
+                    <dt class="col-8">@Strings.RepositoryProblemsLabel</dt>
+                    <dd class="col-4 text-end">@Model.Repositories.Count(item => item.HasProblems)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header">@Strings.AnalysisSummaryTitle</div>
+            <div class="card-body">
+                <dl class="row small mb-2">
+                    <dt class="col-8">@Strings.QueuedAnalysesLabel</dt>
+                    <dd class="col-4 text-end">@Model.QueuedAnalysisCount</dd>
+                </dl>
+                <p class="text-muted small mb-0">@Strings.AnalysisOutcomesRepresentedByIssues</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header">@Strings.IssueSummaryTitle</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small">@Strings.TotalOutstandingIssuesLabel</span>
+                    <span class="fw-bold">@Model.IssueSummary.TotalCount</span>
+                </div>
+
+                @if (Model.IssueSummary.BySeverity.All(item => item.Count == 0))
+                {
+                    <p class="text-muted small mb-0">@Strings.NoOutstandingIssues</p>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-1">
+                        @foreach (Revathryn.Contracts.Models.IssueSeverityCount severityCount in Model.IssueSummary.BySeverity)
+                        {
+                            if (severityCount.Count > 0)
+                            {
+                                <span class="badge @SeverityBadgeClass(severityCount.Severity)">@SeverityLabel(severityCount.Severity): @severityCount.Count</span>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header">@Strings.SystemSummaryTitle</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small">@Strings.ApplicationHealthLabel</span>
+                    <span class="badge @HealthStatusBadgeClass(Model.HealthReport.Status)">@HealthStatusLabel(Model.HealthReport.Status)</span>
+                </div>
+
+                <dl class="row small mb-0">
+                    <dt class="col-6">@Strings.UptimeLabel</dt>
+                    <dd class="col-6 text-end">@FormatUptime(Model.Uptime)</dd>
+
+                    <dt class="col-6">@Strings.StartedLabel</dt>
+                    <dd class="col-6 text-end">@FormatUtc(Model.StartTimeUtc)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card mb-3">
+            <div class="card-header">@Strings.RecentActivityTitle</div>
+            <div class="card-body">
+                <h2 class="h6">@Strings.RecentScansLabel</h2>
+
+                @if (Model.RecentScans.Count == 0)
+                {
+                    <p class="text-muted small">@Strings.NoRecentActivity</p>
+                }
+                else
+                {
+                    <ul class="list-group mb-3">
+                        @foreach (Revathryn.Contracts.Models.RecentScanItem scan in Model.RecentScans)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="text-truncate">
+                                    <a asp-controller="Repository" asp-action="Details" asp-route-id="@scan.RepositoryId" class="text-truncate">@scan.RepositoryName</a>
+                                    <div class="text-muted small">@FormatUtc(scan.Scan.CompletedUtc) · @scan.Scan.FilesDiscovered @Strings.FilesDiscoveredLabel</div>
+                                </div>
+                                <span class="badge @(scan.Scan.Succeeded ? "bg-success" : "bg-danger")">
+                                    @(scan.Scan.Succeeded ? Strings.ScanSucceededLabel : Strings.ScanFailedLabel)
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <h2 class="h6">@Strings.RecentlyIdentifiedIssuesLabel</h2>
+
+                @if (Model.IssueSummary.RecentlyIdentified.Count == 0)
+                {
+                    <p class="text-muted small mb-0">@Strings.NoOutstandingIssues</p>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (Revathryn.Contracts.Models.Finding finding in Model.IssueSummary.RecentlyIdentified)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="text-truncate me-2">
+                                    <div class="text-truncate">@finding.Title</div>
+                                    <div class="text-muted small">@RepositoryName(Model, finding.RepositoryId) · @FormatUtc(finding.CreatedDate)</div>
+                                </div>
+                                <span class="badge @SeverityBadgeClass(finding.Severity)">@SeverityLabel(finding.Severity)</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">@Strings.RepositoryOutstandingProblemsLabel</div>
+            <div class="card-body">
+                @if (!Model.Repositories.Any(item => item.HasProblems))
+                {
+                    <p class="text-muted mb-0">@Strings.NoRepositoryProblemsLabel</p>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (Revathryn.Contracts.Models.RepositoryDashboardItem item in Model.Repositories.Where(item => item.HasProblems))
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a asp-controller="Repository" asp-action="Details" asp-route-id="@item.Repository.Id" class="text-truncate">@item.Repository.Name</a>
+                                <span class="badge bg-danger">@ProblemLabel(item)</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header">@Strings.IssuesBySeverityLabel</div>
+            <div class="card-body">
+                @if (Model.IssueSummary.BySeverity.All(item => item.Count == 0))
+                {
+                    <p class="text-muted mb-0">@Strings.NoOutstandingIssues</p>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (Revathryn.Contracts.Models.IssueSeverityCount severityCount in Model.IssueSummary.BySeverity)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span class="badge @SeverityBadgeClass(severityCount.Severity)">@SeverityLabel(severityCount.Severity)</span>
+                                <span class="fw-bold">@severityCount.Count</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">@Strings.IssuesByRepositoryLabel</div>
+            <div class="card-body">
+                @if (Model.IssueSummary.ByRepository.Count == 0)
+                {
+                    <p class="text-muted mb-0">@Strings.NoOutstandingIssues</p>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (Revathryn.Contracts.Models.IssueRepositoryCount repositoryCount in Model.IssueSummary.ByRepository)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a asp-controller="Repository" asp-action="Details" asp-route-id="@repositoryCount.RepositoryId" class="text-truncate">@repositoryCount.RepositoryName</a>
+                                <span class="fw-bold">@repositoryCount.Count</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions
+{
+    private static string SeverityLabel(Revathryn.Contracts.Enums.FindingSeverity severity)
+    {
+        return severity switch
+        {
+            Revathryn.Contracts.Enums.FindingSeverity.Info => Strings.SeverityInfo,
+            Revathryn.Contracts.Enums.FindingSeverity.Low => Strings.SeverityLow,
+            Revathryn.Contracts.Enums.FindingSeverity.Medium => Strings.SeverityMedium,
+            Revathryn.Contracts.Enums.FindingSeverity.High => Strings.SeverityHigh,
+            Revathryn.Contracts.Enums.FindingSeverity.Critical => Strings.SeverityCritical,
+            _ => severity.ToString()
+        };
+    }
+
+    private static string SeverityBadgeClass(Revathryn.Contracts.Enums.FindingSeverity severity)
+    {
+        return severity switch
+        {
+            Revathryn.Contracts.Enums.FindingSeverity.Info => "bg-secondary",
+            Revathryn.Contracts.Enums.FindingSeverity.Low => "bg-info text-dark",
+            Revathryn.Contracts.Enums.FindingSeverity.Medium => "bg-warning text-dark",
+            Revathryn.Contracts.Enums.FindingSeverity.High => "bg-danger",
+            Revathryn.Contracts.Enums.FindingSeverity.Critical => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string HealthStatusLabel(Revathryn.Contracts.Enums.HealthStatus status)
+    {
+        return status switch
+        {
+            Revathryn.Contracts.Enums.HealthStatus.Healthy => Strings.HealthStatusHealthy,
+            Revathryn.Contracts.Enums.HealthStatus.Degraded => Strings.HealthStatusDegraded,
+            Revathryn.Contracts.Enums.HealthStatus.Unavailable => Strings.HealthStatusUnavailable,
+            _ => status.ToString()
+        };
+    }
+
+    private static string HealthStatusBadgeClass(Revathryn.Contracts.Enums.HealthStatus status)
+    {
+        return status switch
+        {
+            Revathryn.Contracts.Enums.HealthStatus.Healthy => "bg-success",
+            Revathryn.Contracts.Enums.HealthStatus.Degraded => "bg-warning text-dark",
+            Revathryn.Contracts.Enums.HealthStatus.Unavailable => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string FormatUtc(DateTime value)
+    {
+        return value.ToString("yyyy-MM-dd HH:mm 'UTC'");
+    }
+
+    private static string FormatUtc(DateTime? value)
+    {
+        return value.HasValue ? FormatUtc(value.Value) : Strings.NeverScannedLabel;
+    }
+
+    private static string FormatUptime(TimeSpan value)
+    {
+        if (value.TotalDays >= 1)
+        {
+            return $"{(int)value.TotalDays}d {value.Hours:00}:{value.Minutes:00}:{value.Seconds:00}";
+        }
+
+        return $"{value.Hours:00}:{value.Minutes:00}:{value.Seconds:00}";
+    }
+
+    private static string RepositoryName(Revathryn.Contracts.Models.DashboardSnapshot model, long repositoryId)
+    {
+        Revathryn.Contracts.Models.RepositoryDashboardItem item = model.Repositories.FirstOrDefault(candidate => candidate.Repository.Id == repositoryId);
+        return item is null ? repositoryId.ToString() : item.Repository.Name;
+    }
+
+    private static string ProblemLabel(Revathryn.Contracts.Models.RepositoryDashboardItem item)
+    {
+        if (item.PathMissing)
+        {
+            return Strings.PathMissingLabel;
+        }
+
+        return item.LastScan is not null && !item.LastScan.Succeeded ? Strings.ScanFailedLabel : Strings.RepositoryDiscoveryProblemLabel;
+    }
+}

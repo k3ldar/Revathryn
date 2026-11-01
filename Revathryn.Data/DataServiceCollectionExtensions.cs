@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using Revathryn.Contracts;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Persistence;
 
@@ -13,9 +14,11 @@ namespace Revathryn.Data
         /// <param name="configure">Optional callback for customising database options.</param>
         public static IServiceCollection AddDataServices(this IServiceCollection services, Action<DatabaseOptions> configure = null)
         {
-            DatabaseOptions options = new();
+            RevathrynSettings settings = new();
+            DatabaseOptions options = new(settings);
             configure?.Invoke(options);
 
+            services.AddSingleton(settings);
             services.AddSingleton(options);
             services.AddSingleton<SqliteConnectionFactory>();
             services.AddSingleton<IDatabaseContext, SqliteDatabaseContext>();

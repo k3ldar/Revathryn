@@ -725,7 +725,7 @@ namespace Revathryn.Data.Tests
                 Directory.CreateDirectory(_directory);
 
                 string databasePath = Path.Combine(_directory, "test.db");
-                Options = new DatabaseOptions { ConnectionString = $"Data Source={databasePath};Pooling=False" };
+                Options = new DatabaseOptions(new Contracts.RevathrynSettings("test")) { ConnectionString = $"Data Source={databasePath};Pooling=False" };
                 Factory = new SqliteConnectionFactory(Options);
 
                 SqliteDatabaseInitializer initializer = new(Factory);

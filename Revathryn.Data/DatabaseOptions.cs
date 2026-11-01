@@ -1,3 +1,5 @@
+using Revathryn.Contracts;
+
 using static Revathryn.Contracts.Consts;
 
 namespace Revathryn.Data
@@ -5,11 +7,12 @@ namespace Revathryn.Data
     /// <summary>Configuration for the SQLite persistence layer.</summary>
     public class DatabaseOptions
     {
-        public DatabaseOptions()
+        public DatabaseOptions(RevathrynSettings settings)
         {
-            string rootPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-            BackupDirectory = Path.Combine(rootPath, DefaultProgramDataPath, DefaultBackupDirectoryName);
-            ConnectionString = String.Format(DefaultDataStore, Path.Combine(rootPath, DefaultProgramDataPath, DefaultDatabaseFileName));
+            ArgumentNullException.ThrowIfNull(settings, nameof(settings));
+
+            BackupDirectory = Path.Combine(settings.BaseSettingsPath, DefaultBackupDirectoryName);
+            ConnectionString = String.Format(DefaultDataStore, Path.Combine(settings.BaseSettingsPath, DefaultDatabaseFileName));
         }
 
         /// <summary>SQLite connection string. Defaults to a local file database.</summary>

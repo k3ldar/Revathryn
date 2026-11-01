@@ -46,10 +46,17 @@ namespace Revathryn.Engine
         }
 
         /// <summary>Updates an existing repository.</summary>
-        public Task UpdateAsync(Repository repository, CancellationToken cancellationToken = default)
+        public async Task UpdateAsync(Repository repository, CancellationToken cancellationToken = default)
         {
+            ValidateLocalPath(repository.LocalPath);
+
+            string normalisedPath = NormalisePath(repository.LocalPath);
+            repository.LocalPath = normalisedPath;
+
+            await EnsureNotDuplicateAsync(normalisedPath, cancellationToken, repository.Id).ConfigureAwait(false);
+
             repository.LastModifiedDate = DateTime.UtcNow;
-            return _repositoryRepository.UpdateAsync(repository, cancellationToken);
+            await _repositoryRepository.UpdateAsync(repository, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>Deletes a repository and its dependent data.</summary>
@@ -78,12 +85,17 @@ namespace Revathryn.Engine
             await _repositoryRepository.UpdateAsync(repository, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task EnsureNotDuplicateAsync(string normalisedPath, CancellationToken cancellationToken)
+        private async Task EnsureNotDuplicateAsync(string normalisedPath, CancellationToken cancellationToken, long? excludeId = null)
         {
             IReadOnlyList<Repository> existing = await _repositoryRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (Repository repository in existing)
             {
+                if (excludeId.HasValue && repository.Id == excludeId.Value)
+                {
+                    continue;
+                }
+
                 if (string.Equals(NormalisePath(repository.LocalPath), normalisedPath, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException(string.Format(Strings.RepositoryAlreadyRegistered, normalisedPath));

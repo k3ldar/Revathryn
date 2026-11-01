@@ -1,0 +1,28 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.GeneralSettingsViewModel
+@{
+    ViewData["Title"] = Strings.GeneralSettingsTitle;
+}
+
+<h1>@Strings.GeneralSettingsHeading</h1>
+
+<form asp-action="Settings" method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="MasterPrompt" class="form-label">@Strings.MasterPromptLabel</label>
+        <textarea asp-for="MasterPrompt" class="form-control" rows="10"></textarea>
+        <span asp-validation-for="MasterPrompt" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3 text-muted small">
+        @Strings.LastModifiedLabel: @Model.LastModifiedDate.ToString("yyyy-MM-dd HH:mm 'UTC'")
+    </div>
+
+    <button type="submit" class="btn btn-primary">@Strings.SaveSettingsButton</button>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

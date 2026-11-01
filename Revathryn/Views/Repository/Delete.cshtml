@@ -1,0 +1,31 @@
+@using Revathryn.Resources
+@model Revathryn.Contracts.Models.Repository
+@{
+    ViewData["Title"] = Strings.DeleteButton;
+}
+
+<h1>@Strings.DeleteButton</h1>
+
+<div class="alert alert-danger">
+    @string.Format(Strings.DeleteRepositoryConfirmation, Model.Name)
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">@Strings.NameLabel</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">@Strings.LocalPathLabel</dt>
+            <dd class="col-sm-9">@Model.LocalPath</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">@Strings.DeleteButton</button>
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">@Strings.CancelButton</a>
+    </div>
+</form>

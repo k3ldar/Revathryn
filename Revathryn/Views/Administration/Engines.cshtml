@@ -1,0 +1,60 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.AIEngineListViewModel
+@{
+    ViewData["Title"] = Strings.AnalyserConfigurationTitle;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@Strings.AIEnginesTitle</h1>
+    <a asp-action="CreateEngine" class="btn btn-primary">@Strings.AddEngineButton</a>
+</div>
+
+@if (Model.Engines.Count == 0)
+{
+    <div class="alert alert-secondary">
+        @Strings.NoEnginesMessage
+    </div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (Revathryn.Contracts.Models.AIEngine engine in Model.Engines)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <span class="fw-semibold">@engine.Name</span>
+
+                            @if (engine.Enabled)
+                            {
+                                <span class="badge bg-success">@Strings.EnabledLabel</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@Strings.RepositoryDisabled</span>
+                            }
+
+                            @if (engine.IsDefault)
+                            {
+                                <span class="badge bg-primary">@Strings.IsDefaultLabel</span>
+                            }
+                        </div>
+
+                        <div class="text-muted small">@engine.Provider · @engine.Model</div>
+
+                        @if (!string.IsNullOrWhiteSpace(engine.Endpoint))
+                        {
+                            <div class="text-muted small text-truncate" title="@engine.Endpoint">@engine.Endpoint</div>
+                        }
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a asp-action="EditEngine" asp-route-id="@engine.Id" class="btn btn-outline-secondary btn-sm">@Strings.EditButton</a>
+                        <a asp-action="DeleteEngine" asp-route-id="@engine.Id" class="btn btn-outline-danger btn-sm">@Strings.DeleteButton</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

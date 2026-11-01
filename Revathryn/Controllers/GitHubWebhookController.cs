@@ -153,5 +153,3 @@ namespace Revathryn.Controllers
             => JsonSerializer.Deserialize<T>(body, JsonOptions);
     }
 }
-
-#pragma warning restore CC0009, CC0010}

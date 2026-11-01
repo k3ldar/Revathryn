@@ -4,37 +4,76 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Revathryn</title>
-    <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Revathryn.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Revathryn</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Dashboard" asp-action="Index">Revathryn</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#primaryNavigation" aria-controls="primaryNavigation"
+                        aria-expanded="false" aria-label="@Revathryn.Resources.Strings.ToggleNavigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="collapse navbar-collapse" id="primaryNavigation">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-controller="Dashboard" asp-action="Index">@Revathryn.Resources.Strings.DashboardTitle</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="repositoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                @Revathryn.Resources.Strings.RepositoriesTitle
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="repositoriesDropdown">
+                                <li><a class="dropdown-item" asp-controller="Repository" asp-action="Index">@Revathryn.Resources.Strings.RepositoryManagementTitle</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="administrationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                @Revathryn.Resources.Strings.AdministrationTitle
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="administrationDropdown">
+                                <li><a class="dropdown-item" asp-controller="Administration" asp-action="Settings">@Revathryn.Resources.Strings.GeneralSettingsTitle</a></li>
+                                <li><a class="dropdown-item" asp-controller="Administration" asp-action="Engines">@Revathryn.Resources.Strings.AnalyserConfigurationTitle</a></li>
+                            </ul>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Dashboard" asp-action="Index">@Revathryn.Resources.Strings.DashboardTitle</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-controller="System" asp-action="Index">@Revathryn.Resources.Strings.SystemHealthTitle</a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
+        @if (ViewData["Breadcrumbs"] is IReadOnlyList<Revathryn.Models.BreadcrumbItem> breadcrumbs)
+        {
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    @foreach (Revathryn.Models.BreadcrumbItem item in breadcrumbs)
+                    {
+                        if (item.IsActive)
+                        {
+                            <li class="breadcrumb-item active" aria-current="page">@item.Title</li>
+                        }
+                        else if (string.IsNullOrEmpty(item.Url))
+                        {
+                            <li class="breadcrumb-item">@item.Title</li>
+                        }
+                        else
+                        {
+                            <li class="breadcrumb-item"><a href="@item.Url">@item.Title</a></li>
+                        }
+                    }
+                </ol>
+            </nav>
+        }
+
+        <partial name="_StatusMessage" />
+
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
@@ -42,9 +81,10 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2026 - Si Carter. All rights reserved. - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2026 - Revathryn
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

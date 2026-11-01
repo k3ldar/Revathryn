@@ -1,0 +1,16 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Repositories.RepositoryEditViewModel
+@{
+    ViewData["Title"] = Strings.EditRepositoryTitle;
+    ViewData["FormAction"] = "Edit";
+    ViewData["SubmitLabel"] = Strings.SaveButton;
+}
+
+<h1>@Strings.EditRepositoryTitle</h1>
+
+@await Html.PartialAsync("_RepositoryForm", Model)
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

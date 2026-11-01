@@ -69,5 +69,7 @@ dotnet_diagnostic.MSTEST0044.severity = error
 dotnet_diagnostic.MSTEST0049.severity = none
 dotnet_diagnostic.MSTEST0058.severity = error
 
+dotnet_diagnostic.MVC1004.severity = error
+
 [*.Tests.csproj]
 dotnet_diagnostic.CA1861.severity = none

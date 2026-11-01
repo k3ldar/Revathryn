@@ -14,8 +14,6 @@ using Revathryn.Review;
 
 using Shared.Classes;
 
-#pragma warning disable CC0009
-
 namespace Revathryn
 {
     [ExcludeFromCodeCoverage(Justification = "Not unit testable.")]
@@ -26,7 +24,7 @@ namespace Revathryn
             ThreadManager.Initialise(new SharedLib.Win.WindowsCpuUsage());
             ThreadManager.MaximumPoolSize = Contracts.Consts.MaximumThreadPoolSize;
             ThreadManager.MaximumRunningThreads = Contracts.Consts.MaximumConcurrentRunningThreads;
-            ThreadManager.ThreadCpuChangeNotification = 0;
+            ThreadManager.ThreadCpuChangeNotification = Contracts.Consts.ThreadCpuChangeNotificationDisabledValue;
 
 
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -69,7 +67,7 @@ namespace Revathryn
                 // Configure the HTTP request pipeline.
                 if (!app.Environment.IsDevelopment())
                 {
-                    app.UseExceptionHandler("/Home/Error");
+                    app.UseExceptionHandler(Contracts.Consts.DashboardErrorRoute);
                     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                     app.UseHsts();
                 }
@@ -81,8 +79,8 @@ namespace Revathryn
 
                 app.MapStaticAssets();
                 app.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Dashboard}/{action=Index}/{id?}")
+                    name: Contracts.Consts.DefaultRouteName,
+                    pattern: Contracts.Consts.DefaultRoutePattern)
                     .WithStaticAssets();
 
                 app.Run();
@@ -95,5 +93,3 @@ namespace Revathryn
         }
     }
 }
-
-#pragma warning restore CC0009

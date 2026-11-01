@@ -1,0 +1,66 @@
+@using Revathryn.Contracts.Enums
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.AIEngineEditViewModel
+@{
+    string formAction = Model.Id == 0 ? "CreateEngine" : "EditEngine";
+    string title = Model.Id == 0 ? Strings.AddEngineTitle : Strings.EditEngineTitle;
+    ViewData["Title"] = title;
+}
+
+<h1>@title</h1>
+
+<form asp-action="@formAction" method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label">@Strings.EngineNameLabel</label>
+        <input asp-for="Name" class="form-control" required />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Provider" class="form-label">@Strings.ProviderLabel</label>
+        <select asp-for="Provider" asp-items="Html.GetEnumSelectList<AIProvider>()" class="form-select"></select>
+        <span asp-validation-for="Provider" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Model" class="form-label">@Strings.ModelLabel</label>
+        <input asp-for="Model" class="form-control" required />
+        <span asp-validation-for="Model" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Endpoint" class="form-label">@Strings.EndpointLabel</label>
+        <input asp-for="Endpoint" class="form-control" />
+        <span asp-validation-for="Endpoint" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="SecretKeyName" class="form-label">@Strings.SecretKeyNameLabel</label>
+        <input asp-for="SecretKeyName" class="form-control" />
+        <span asp-validation-for="SecretKeyName" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="Enabled" class="form-check-input" />
+        <label asp-for="Enabled" class="form-check-label">@Strings.EnabledLabel</label>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="IsDefault" class="form-check-input" />
+        <label asp-for="IsDefault" class="form-check-label">@Strings.IsDefaultLabel</label>
+    </div>
+
+    <input asp-for="Id" type="hidden" />
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">@Strings.SaveButton</button>
+        <a asp-action="Engines" class="btn btn-outline-secondary">@Strings.CancelButton</a>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

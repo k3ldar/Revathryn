@@ -1628,6 +1628,11 @@ namespace Revathryn.Engine.Tests
             {
                 return Task.FromResult<IReadOnlyList<RepositoryScanRecord>>([.. Records.Where(record => record.RepositoryId == repositoryId)]);
             }
+
+            public Task<IReadOnlyList<RepositoryScanRecord>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryScanRecord>>([.. Records]);
+            }
         }
 
         private sealed class CountingFileHasher : IFileHasher

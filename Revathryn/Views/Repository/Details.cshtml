@@ -1,0 +1,167 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Repositories.RepositoryManagementDetailsViewModel
+@{
+    ViewData["Title"] = Model.Repository.Name;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <h1 class="mb-1">@Model.Repository.Name</h1>
+        <p class="text-muted mb-0" title="@Model.Repository.LocalPath">@Model.Repository.LocalPath</p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Repository.Id" class="btn btn-outline-secondary">@Strings.EditButton</a>
+
+        <form asp-action="Scan" asp-route-id="@Model.Repository.Id" method="post" class="d-inline">
+            <button type="submit" class="btn btn-outline-success">@Strings.ScanButton</button>
+        </form>
+
+        <a asp-action="Delete" asp-route-id="@Model.Repository.Id" class="btn btn-outline-danger">@Strings.DeleteButton</a>
+    </div>
+</div>
+
+<div class="mb-3">
+    @if (Model.Repository.Enabled)
+    {
+        <span class="badge bg-success">@Strings.RepositoryEnabled</span>
+    }
+    else
+    {
+        <span class="badge bg-secondary">@Strings.RepositoryDisabled</span>
+    }
+
+    @if (Model.PathMissing)
+    {
+        <span class="badge bg-danger">@Strings.PathMissingLabel</span>
+    }
+    else if (Model.LastScan is not null && !Model.LastScan.Succeeded)
+    {
+        <span class="badge bg-danger">@Strings.ScanFailedLabel</span>
+    }
+</div>
+
+@if (Model.PathMissing)
+{
+    <div class="alert alert-warning">
+        @Strings.RepositoryPathMissingWarning
+    </div>
+}
+
+<div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">
+                    @if (Model.Repository.LastSuccessfulScanDate.HasValue)
+                    {
+                        @Model.Repository.LastSuccessfulScanDate.Value.ToString("yyyy-MM-dd HH:mm")
+                    }
+                    else
+                    {
+                        @Strings.NeverScannedLabel
+                    }
+                </div>
+                <div class="text-muted">@Strings.LastSuccessfulScanLabel</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@(Model.LastScan?.FilesDiscovered ?? 0)</div>
+                <div class="text-muted">@Strings.FilesDiscoveredLabel</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@Model.ReviewTypes.Count</div>
+                <div class="text-muted">@Strings.ReviewTypesLabel</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Repository.Description))
+{
+    <div class="card mb-4">
+        <div class="card-header">@Strings.DescriptionLabel</div>
+        <div class="card-body">@Model.Repository.Description</div>
+    </div>
+}
+
+<h2>@Strings.ReviewTypesLabel</h2>
+
+@if (Model.ReviewTypes.Count == 0)
+{
+    <p class="text-muted">@Strings.NoReviewTypesMessage</p>
+}
+else
+{
+    <div class="list-group mb-4">
+        @foreach (Revathryn.Contracts.Models.ReviewType reviewType in Model.ReviewTypes)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span class="fw-semibold">@reviewType.Name</span>
+
+                    @if (reviewType.Enabled)
+                    {
+                        <span class="badge bg-success">@Strings.EnabledLabel</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">@Strings.RepositoryDisabled</span>
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(reviewType.Description))
+                {
+                    <div class="text-muted small">@reviewType.Description</div>
+                }
+
+                <div class="text-muted small">
+                    @Strings.FileExtensionsLabel: @(string.IsNullOrWhiteSpace(reviewType.FileExtensions) ? Strings.AllFilesLabel : reviewType.FileExtensions)
+                    ·
+                    @Strings.PriorityLabel: @reviewType.DefaultPriority
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<h2>@Strings.ScanHistoryLabel</h2>
+
+@if (Model.Scans.Count == 0)
+{
+    <p class="text-muted">@Strings.ScanHistoryEmpty</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (Revathryn.Contracts.Models.RepositoryScanRecord scan in Model.Scans)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span>@scan.CompletedUtc.ToString("yyyy-MM-dd HH:mm 'UTC'")</span>
+
+                    <span class="badge @(scan.Succeeded ? "bg-success" : "bg-danger")">
+                        @Strings.ScanOutcomeLabel: @(scan.Succeeded ? Strings.ScanSucceededLabel : Strings.ScanFailedLabel)
+                    </span>
+                </div>
+
+                <div class="text-muted small">
+                    @Strings.FilesDiscoveredLabel: @scan.FilesDiscovered
+                    ·
+                    @Strings.NewFilesLabel: @scan.NewFiles
+                    ·
+                    @Strings.ChangedFilesLabel: @scan.ChangedFiles
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -51,6 +51,23 @@ namespace Revathryn.Data
             return results;
         }
 
+        /// <summary>Returns all scan records across repositories, most recent first.</summary>
+        public async Task<IReadOnlyList<RepositoryScanRecord>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = $"SELECT {SelectColumns} FROM RepositoryScans ORDER BY StartedUtc DESC;";
+
+            List<RepositoryScanRecord> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(MapRecord(reader));
+            }
+
+            return results;
+        }
+
         private static void AddParameters(SqliteCommand command, RepositoryScanRecord record)
         {
             command.Parameters.AddWithValue("@RepositoryId", record.RepositoryId);

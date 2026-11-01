@@ -321,6 +321,42 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to New files.
+        /// </summary>
+        public static string NewFilesLabel {
+            get {
+                return ResourceManager.GetString("NewFilesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Changed files.
+        /// </summary>
+        public static string ChangedFilesLabel {
+            get {
+                return ResourceManager.GetString("ChangedFilesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to File extensions.
+        /// </summary>
+        public static string FileExtensionsLabel {
+            get {
+                return ResourceManager.GetString("FileExtensionsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Priority.
+        /// </summary>
+        public static string PriorityLabel {
+            get {
+                return ResourceManager.GetString("PriorityLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Files discovered.
         /// </summary>
         public static string FilesDiscoveredLabel {
@@ -689,8 +725,1032 @@ namespace Revathryn.Resources {
             }
         }
 
+        /// <summary>
+        ///   Looks up a localized string similar to Database is reachable..
+        /// </summary>
+        public static string HealthDatabaseConnectivityHealthy {
+            get {
+                return ResourceManager.GetString("HealthDatabaseConnectivityHealthy", resourceCulture);
+            }
+        }
 
+        /// <summary>
+        ///   Looks up a localized string similar to Database could not be reached..
+        /// </summary>
+        public static string HealthDatabaseConnectivityUnavailable {
+            get {
+                return ResourceManager.GetString("HealthDatabaseConnectivityUnavailable", resourceCulture);
+            }
+        }
 
+        /// <summary>
+        ///   Looks up a localized string similar to Background processing is operational..
+        /// </summary>
+        public static string HealthBackgroundProcessingHealthy {
+            get {
+                return ResourceManager.GetString("HealthBackgroundProcessingHealthy", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Background processing check failed: {0}.
+        /// </summary>
+        public static string HealthBackgroundProcessingUnavailable {
+            get {
+                return ResourceManager.GetString("HealthBackgroundProcessingUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} enabled AI engine(s) configured..
+        /// </summary>
+        public static string HealthAnalyserAvailabilityHealthy {
+            get {
+                return ResourceManager.GetString("HealthAnalyserAvailabilityHealthy", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No enabled AI engine is configured..
+        /// </summary>
+        public static string HealthAnalyserAvailabilityDegraded {
+            get {
+                return ResourceManager.GetString("HealthAnalyserAvailabilityDegraded", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Analyser availability check failed: {0}.
+        /// </summary>
+        public static string HealthAnalyserAvailabilityUnavailable {
+            get {
+                return ResourceManager.GetString("HealthAnalyserAvailabilityUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Application is running..
+        /// </summary>
+        public static string HealthLivenessHealthy {
+            get {
+                return ResourceManager.GetString("HealthLivenessHealthy", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Toggle navigation.
+        /// </summary>
+        public static string ToggleNavigation {
+            get {
+                return ResourceManager.GetString("ToggleNavigation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository management.
+        /// </summary>
+        public static string RepositoryManagementTitle {
+            get {
+                return ResourceManager.GetString("RepositoryManagementTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Administration.
+        /// </summary>
+        public static string AdministrationTitle {
+            get {
+                return ResourceManager.GetString("AdministrationTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to General settings.
+        /// </summary>
+        public static string GeneralSettingsTitle {
+            get {
+                return ResourceManager.GetString("GeneralSettingsTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Analyser configuration.
+        /// </summary>
+        public static string AnalyserConfigurationTitle {
+            get {
+                return ResourceManager.GetString("AnalyserConfigurationTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to System health.
+        /// </summary>
+        public static string SystemHealthTitle {
+            get {
+                return ResourceManager.GetString("SystemHealthTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository summary.
+        /// </summary>
+        public static string RepositorySummaryTitle {
+            get {
+                return ResourceManager.GetString("RepositorySummaryTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Analysis summary.
+        /// </summary>
+        public static string AnalysisSummaryTitle {
+            get {
+                return ResourceManager.GetString("AnalysisSummaryTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Issue summary.
+        /// </summary>
+        public static string IssueSummaryTitle {
+            get {
+                return ResourceManager.GetString("IssueSummaryTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to System summary.
+        /// </summary>
+        public static string SystemSummaryTitle {
+            get {
+                return ResourceManager.GetString("SystemSummaryTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Recent activity.
+        /// </summary>
+        public static string RecentActivityTitle {
+            get {
+                return ResourceManager.GetString("RecentActivityTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Configured repositories.
+        /// </summary>
+        public static string ConfiguredRepositoriesLabel {
+            get {
+                return ResourceManager.GetString("ConfiguredRepositoriesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repositories discovered.
+        /// </summary>
+        public static string DiscoveredRepositoriesLabel {
+            get {
+                return ResourceManager.GetString("DiscoveredRepositoriesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Last repository scan.
+        /// </summary>
+        public static string LastRepositoryScanLabel {
+            get {
+                return ResourceManager.GetString("LastRepositoryScanLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository scan health.
+        /// </summary>
+        public static string RepositoryScanHealthLabel {
+            get {
+                return ResourceManager.GetString("RepositoryScanHealthLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository problems.
+        /// </summary>
+        public static string RepositoryProblemsLabel {
+            get {
+                return ResourceManager.GetString("RepositoryProblemsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Analyses queued.
+        /// </summary>
+        public static string QueuedAnalysesLabel {
+            get {
+                return ResourceManager.GetString("QueuedAnalysesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Completed analyses are represented by persisted issues..
+        /// </summary>
+        public static string AnalysisOutcomesRepresentedByIssues {
+            get {
+                return ResourceManager.GetString("AnalysisOutcomesRepresentedByIssues", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Total outstanding issues.
+        /// </summary>
+        public static string TotalOutstandingIssuesLabel {
+            get {
+                return ResourceManager.GetString("TotalOutstandingIssuesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Issues by severity.
+        /// </summary>
+        public static string IssuesBySeverityLabel {
+            get {
+                return ResourceManager.GetString("IssuesBySeverityLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Issues by repository.
+        /// </summary>
+        public static string IssuesByRepositoryLabel {
+            get {
+                return ResourceManager.GetString("IssuesByRepositoryLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Recently identified.
+        /// </summary>
+        public static string RecentlyIdentifiedIssuesLabel {
+            get {
+                return ResourceManager.GetString("RecentlyIdentifiedIssuesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Recently updated.
+        /// </summary>
+        public static string RecentlyUpdatedIssuesLabel {
+            get {
+                return ResourceManager.GetString("RecentlyUpdatedIssuesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Application health.
+        /// </summary>
+        public static string ApplicationHealthLabel {
+            get {
+                return ResourceManager.GetString("ApplicationHealthLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Database connectivity.
+        /// </summary>
+        public static string DatabaseConnectivityLabel {
+            get {
+                return ResourceManager.GetString("DatabaseConnectivityLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Background processing.
+        /// </summary>
+        public static string BackgroundProcessingLabel {
+            get {
+                return ResourceManager.GetString("BackgroundProcessingLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Analyser availability.
+        /// </summary>
+        public static string AnalyserAvailabilityLabel {
+            get {
+                return ResourceManager.GetString("AnalyserAvailabilityLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Uptime.
+        /// </summary>
+        public static string UptimeLabel {
+            get {
+                return ResourceManager.GetString("UptimeLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Started.
+        /// </summary>
+        public static string StartedLabel {
+            get {
+                return ResourceManager.GetString("StartedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No recent activity has been recorded..
+        /// </summary>
+        public static string NoRecentActivity {
+            get {
+                return ResourceManager.GetString("NoRecentActivity", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No outstanding issues..
+        /// </summary>
+        public static string NoOutstandingIssues {
+            get {
+                return ResourceManager.GetString("NoOutstandingIssues", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Never scanned.
+        /// </summary>
+        public static string NeverScannedLabel {
+            get {
+                return ResourceManager.GetString("NeverScannedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Succeeded.
+        /// </summary>
+        public static string ScanSucceededLabel {
+            get {
+                return ResourceManager.GetString("ScanSucceededLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Failed.
+        /// </summary>
+        public static string ScanFailedLabel {
+            get {
+                return ResourceManager.GetString("ScanFailedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Path missing.
+        /// </summary>
+        public static string PathMissingLabel {
+            get {
+                return ResourceManager.GetString("PathMissingLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Recent scans.
+        /// </summary>
+        public static string RecentScansLabel {
+            get {
+                return ResourceManager.GetString("RecentScansLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Outstanding problems.
+        /// </summary>
+        public static string RepositoryOutstandingProblemsLabel {
+            get {
+                return ResourceManager.GetString("RepositoryOutstandingProblemsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No repository problems detected..
+        /// </summary>
+        public static string NoRepositoryProblemsLabel {
+            get {
+                return ResourceManager.GetString("NoRepositoryProblemsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No scans have been recorded for this repository..
+        /// </summary>
+        public static string ScanHistoryEmpty {
+            get {
+                return ResourceManager.GetString("ScanHistoryEmpty", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Healthy.
+        /// </summary>
+        public static string HealthStatusHealthy {
+            get {
+                return ResourceManager.GetString("HealthStatusHealthy", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Degraded.
+        /// </summary>
+        public static string HealthStatusDegraded {
+            get {
+                return ResourceManager.GetString("HealthStatusDegraded", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Unavailable.
+        /// </summary>
+        public static string HealthStatusUnavailable {
+            get {
+                return ResourceManager.GetString("HealthStatusUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Info.
+        /// </summary>
+        public static string SeverityInfo {
+            get {
+                return ResourceManager.GetString("SeverityInfo", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Low.
+        /// </summary>
+        public static string SeverityLow {
+            get {
+                return ResourceManager.GetString("SeverityLow", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Medium.
+        /// </summary>
+        public static string SeverityMedium {
+            get {
+                return ResourceManager.GetString("SeverityMedium", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to High.
+        /// </summary>
+        public static string SeverityHigh {
+            get {
+                return ResourceManager.GetString("SeverityHigh", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Critical.
+        /// </summary>
+        public static string SeverityCritical {
+            get {
+                return ResourceManager.GetString("SeverityCritical", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Add repository.
+        /// </summary>
+        public static string AddRepositoryTitle {
+            get {
+                return ResourceManager.GetString("AddRepositoryTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Edit repository.
+        /// </summary>
+        public static string EditRepositoryTitle {
+            get {
+                return ResourceManager.GetString("EditRepositoryTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository details.
+        /// </summary>
+        public static string RepositoryDetailsTitle {
+            get {
+                return ResourceManager.GetString("RepositoryDetailsTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name.
+        /// </summary>
+        public static string NameLabel {
+            get {
+                return ResourceManager.GetString("NameLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Description.
+        /// </summary>
+        public static string DescriptionLabel {
+            get {
+                return ResourceManager.GetString("DescriptionLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Local path.
+        /// </summary>
+        public static string LocalPathLabel {
+            get {
+                return ResourceManager.GetString("LocalPathLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Automatic review enabled.
+        /// </summary>
+        public static string AutomaticReviewEnabledLabel {
+            get {
+                return ResourceManager.GetString("AutomaticReviewEnabledLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enabled.
+        /// </summary>
+        public static string EnabledLabel {
+            get {
+                return ResourceManager.GetString("EnabledLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Last scan.
+        /// </summary>
+        public static string LastScanLabel {
+            get {
+                return ResourceManager.GetString("LastScanLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Outcome.
+        /// </summary>
+        public static string ScanOutcomeLabel {
+            get {
+                return ResourceManager.GetString("ScanOutcomeLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The configured local path no longer exists..
+        /// </summary>
+        public static string RepositoryPathMissingWarning {
+            get {
+                return ResourceManager.GetString("RepositoryPathMissingWarning", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A name is required..
+        /// </summary>
+        public static string NameRequiredMessage {
+            get {
+                return ResourceManager.GetString("NameRequiredMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A local path is required..
+        /// </summary>
+        public static string LocalPathRequiredMessage {
+            get {
+                return ResourceManager.GetString("LocalPathRequiredMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Maximum context requests must be at least 1..
+        /// </summary>
+        public static string MaxContextRequestsRangeMessage {
+            get {
+                return ResourceManager.GetString("MaxContextRequestsRangeMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A model identifier is required..
+        /// </summary>
+        public static string ModelRequiredMessage {
+            get {
+                return ResourceManager.GetString("ModelRequiredMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Max context requests.
+        /// </summary>
+        public static string MaxContextRequestsLabel {
+            get {
+                return ResourceManager.GetString("MaxContextRequestsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Save.
+        /// </summary>
+        public static string SaveButton {
+            get {
+                return ResourceManager.GetString("SaveButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string CancelButton {
+            get {
+                return ResourceManager.GetString("CancelButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Back to repositories.
+        /// </summary>
+        public static string BackToRepositoriesButton {
+            get {
+                return ResourceManager.GetString("BackToRepositoriesButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to delete repository '{0}'? This removes all associated data..
+        /// </summary>
+        public static string DeleteRepositoryConfirmation {
+            get {
+                return ResourceManager.GetString("DeleteRepositoryConfirmation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Scan.
+        /// </summary>
+        public static string ScanButton {
+            get {
+                return ResourceManager.GetString("ScanButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Edit.
+        /// </summary>
+        public static string EditButton {
+            get {
+                return ResourceManager.GetString("EditButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Delete.
+        /// </summary>
+        public static string DeleteButton {
+            get {
+                return ResourceManager.GetString("DeleteButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Details.
+        /// </summary>
+        public static string DetailsButton {
+            get {
+                return ResourceManager.GetString("DetailsButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository saved successfully..
+        /// </summary>
+        public static string RepositorySavedMessage {
+            get {
+                return ResourceManager.GetString("RepositorySavedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository deleted..
+        /// </summary>
+        public static string RepositoryDeletedMessage {
+            get {
+                return ResourceManager.GetString("RepositoryDeletedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository scan completed: {0} files discovered, {1} new, {2} changed..
+        /// </summary>
+        public static string RepositoryScanCompletedMessage {
+            get {
+                return ResourceManager.GetString("RepositoryScanCompletedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository scan failed: {0}.
+        /// </summary>
+        public static string RepositoryScanFailedMessage {
+            get {
+                return ResourceManager.GetString("RepositoryScanFailedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Last successful scan.
+        /// </summary>
+        public static string LastSuccessfulScanLabel {
+            get {
+                return ResourceManager.GetString("LastSuccessfulScanLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Scan history.
+        /// </summary>
+        public static string ScanHistoryLabel {
+            get {
+                return ResourceManager.GetString("ScanHistoryLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review types.
+        /// </summary>
+        public static string ReviewTypesLabel {
+            get {
+                return ResourceManager.GetString("ReviewTypesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to All files.
+        /// </summary>
+        public static string AllFilesLabel {
+            get {
+                return ResourceManager.GetString("AllFilesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No review types have been configured..
+        /// </summary>
+        public static string NoReviewTypesMessage {
+            get {
+                return ResourceManager.GetString("NoReviewTypesMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review lifecycle.
+        /// </summary>
+        public static string ReviewLifecycleLabel {
+            get {
+                return ResourceManager.GetString("ReviewLifecycleLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Discovery problem.
+        /// </summary>
+        public static string RepositoryDiscoveryProblemLabel {
+            get {
+                return ResourceManager.GetString("RepositoryDiscoveryProblemLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to General settings.
+        /// </summary>
+        public static string GeneralSettingsHeading {
+            get {
+                return ResourceManager.GetString("GeneralSettingsHeading", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Master prompt.
+        /// </summary>
+        public static string MasterPromptLabel {
+            get {
+                return ResourceManager.GetString("MasterPromptLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Save settings.
+        /// </summary>
+        public static string SaveSettingsButton {
+            get {
+                return ResourceManager.GetString("SaveSettingsButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Settings saved successfully..
+        /// </summary>
+        public static string SettingsSavedMessage {
+            get {
+                return ResourceManager.GetString("SettingsSavedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Settings could not be saved: {0}.
+        /// </summary>
+        public static string SettingsSaveFailedMessage {
+            get {
+                return ResourceManager.GetString("SettingsSaveFailedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to AI engines.
+        /// </summary>
+        public static string AIEnginesTitle {
+            get {
+                return ResourceManager.GetString("AIEnginesTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Add engine.
+        /// </summary>
+        public static string AddEngineButton {
+            get {
+                return ResourceManager.GetString("AddEngineButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Add AI engine.
+        /// </summary>
+        public static string AddEngineTitle {
+            get {
+                return ResourceManager.GetString("AddEngineTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Edit AI engine.
+        /// </summary>
+        public static string EditEngineTitle {
+            get {
+                return ResourceManager.GetString("EditEngineTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name.
+        /// </summary>
+        public static string EngineNameLabel {
+            get {
+                return ResourceManager.GetString("EngineNameLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Provider.
+        /// </summary>
+        public static string ProviderLabel {
+            get {
+                return ResourceManager.GetString("ProviderLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Endpoint.
+        /// </summary>
+        public static string EndpointLabel {
+            get {
+                return ResourceManager.GetString("EndpointLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Model.
+        /// </summary>
+        public static string ModelLabel {
+            get {
+                return ResourceManager.GetString("ModelLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Secret key name.
+        /// </summary>
+        public static string SecretKeyNameLabel {
+            get {
+                return ResourceManager.GetString("SecretKeyNameLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Default engine.
+        /// </summary>
+        public static string IsDefaultLabel {
+            get {
+                return ResourceManager.GetString("IsDefaultLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No AI engines have been configured..
+        /// </summary>
+        public static string NoEnginesMessage {
+            get {
+                return ResourceManager.GetString("NoEnginesMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to AI engine saved successfully..
+        /// </summary>
+        public static string EngineSavedMessage {
+            get {
+                return ResourceManager.GetString("EngineSavedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to AI engine deleted..
+        /// </summary>
+        public static string EngineDeletedMessage {
+            get {
+                return ResourceManager.GetString("EngineDeletedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to delete AI engine '{0}'?.
+        /// </summary>
+        public static string EngineDeleteConfirmation {
+            get {
+                return ResourceManager.GetString("EngineDeleteConfirmation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to System health.
+        /// </summary>
+        public static string SystemHealthHeading {
+            get {
+                return ResourceManager.GetString("SystemHealthHeading", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Health checks.
+        /// </summary>
+        public static string HealthChecksTitle {
+            get {
+                return ResourceManager.GetString("HealthChecksTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Last checked.
+        /// </summary>
+        public static string LastCheckedLabel {
+            get {
+                return ResourceManager.GetString("LastCheckedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Last successful.
+        /// </summary>
+        public static string LastSuccessfulLabel {
+            get {
+                return ResourceManager.GetString("LastSuccessfulLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Application start.
+        /// </summary>
+        public static string ApplicationStartLabel {
+            get {
+                return ResourceManager.GetString("ApplicationStartLabel", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>

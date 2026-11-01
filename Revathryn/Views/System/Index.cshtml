@@ -1,0 +1,115 @@
+@using Revathryn.Resources
+@model Revathryn.Models.SystemHealth.SystemHealthViewModel
+@{
+    ViewData["Title"] = Strings.SystemHealthTitle;
+}
+
+<h1>@Strings.SystemHealthHeading</h1>
+
+<div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">
+                    <span class="badge @HealthStatusBadgeClass(Model.HealthReport.Status)">@HealthStatusLabel(Model.HealthReport.Status)</span>
+                </div>
+                <div class="text-muted">@Strings.ApplicationHealthLabel</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@FormatUptime(Model.Uptime)</div>
+                <div class="text-muted">@Strings.UptimeLabel</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@FormatUtc(Model.StartTimeUtc)</div>
+                <div class="text-muted">@Strings.ApplicationStartLabel</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>@Strings.HealthChecksTitle</h2>
+
+@if (Model.HealthReport.Checks.Count == 0)
+{
+    <p class="text-muted">@Strings.NoRecentActivity</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (Revathryn.Contracts.Reliability.HealthCheckResult check in Model.HealthReport.Checks)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+                    <span class="fw-semibold">@check.Name</span>
+                    <span class="badge @HealthStatusBadgeClass(check.Status)">@HealthStatusLabel(check.Status)</span>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(check.Detail))
+                {
+                    <div class="text-muted small">@check.Detail</div>
+                }
+
+                @if (check.LastSuccessfulUtc.HasValue)
+                {
+                    <div class="text-muted small">
+                        @Strings.LastSuccessfulLabel: @FormatUtc(check.LastSuccessfulUtc.Value)
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+<p class="text-muted small mt-3">
+    @Strings.LastCheckedLabel: @FormatUtc(Model.HealthReport.EvaluatedUtc)
+</p>
+
+@functions
+{
+    private static string HealthStatusLabel(Revathryn.Contracts.Enums.HealthStatus status)
+    {
+        return status switch
+        {
+            Revathryn.Contracts.Enums.HealthStatus.Healthy => Strings.HealthStatusHealthy,
+            Revathryn.Contracts.Enums.HealthStatus.Degraded => Strings.HealthStatusDegraded,
+            Revathryn.Contracts.Enums.HealthStatus.Unavailable => Strings.HealthStatusUnavailable,
+            _ => status.ToString()
+        };
+    }
+
+    private static string HealthStatusBadgeClass(Revathryn.Contracts.Enums.HealthStatus status)
+    {
+        return status switch
+        {
+            Revathryn.Contracts.Enums.HealthStatus.Healthy => "bg-success",
+            Revathryn.Contracts.Enums.HealthStatus.Degraded => "bg-warning text-dark",
+            Revathryn.Contracts.Enums.HealthStatus.Unavailable => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string FormatUtc(DateTime value)
+    {
+        return value.ToString("yyyy-MM-dd HH:mm 'UTC'");
+    }
+
+    private static string FormatUptime(TimeSpan value)
+    {
+        if (value.TotalDays >= 1)
+        {
+            return $"{(int)value.TotalDays}d {value.Hours:00}:{value.Minutes:00}:{value.Seconds:00}";
+        }
+
+        return $"{value.Hours:00}:{value.Minutes:00}:{value.Seconds:00}";
+    }
+}

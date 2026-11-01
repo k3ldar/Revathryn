@@ -1,0 +1,79 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Repositories.RepositoryListViewModel
+@{
+    ViewData["Title"] = Strings.RepositoryManagementTitle;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@Strings.RepositoryManagementTitle</h1>
+    <a asp-action="Create" class="btn btn-primary">@Strings.AddRepositoryTitle</a>
+</div>
+
+@if (Model.Repositories.Count == 0)
+{
+    <div class="alert alert-secondary">
+        @Strings.NoRepositories
+    </div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (Revathryn.Models.Repositories.RepositoryListItemViewModel item in Model.Repositories)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <a asp-action="Details" asp-route-id="@item.Repository.Id" class="fw-semibold text-decoration-none">@item.Repository.Name</a>
+
+                            @if (item.Repository.Enabled)
+                            {
+                                <span class="badge bg-success">@Strings.RepositoryEnabled</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@Strings.RepositoryDisabled</span>
+                            }
+
+                            @if (item.HasProblems)
+                            {
+                                <span class="badge bg-danger">
+                                    @(item.PathMissing ? Strings.PathMissingLabel : Strings.ScanFailedLabel)
+                                </span>
+                            }
+                        </div>
+
+                        <div class="text-muted small text-truncate" title="@item.Repository.LocalPath">@item.Repository.LocalPath</div>
+
+                        <div class="text-muted small mt-1">
+                            @Strings.LastScanLabel:
+                            @if (item.LastScan is null)
+                            {
+                                <span>@Strings.NeverScannedLabel</span>
+                            }
+                            else
+                            {
+                                <span>
+                                    @item.LastScan.CompletedUtc.ToString("yyyy-MM-dd HH:mm 'UTC'")
+                                    ·
+                                    @(item.LastScan.Succeeded ? Strings.ScanSucceededLabel : Strings.ScanFailedLabel)
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-action="Details" asp-route-id="@item.Repository.Id" class="btn btn-outline-primary btn-sm">@Strings.DetailsButton</a>
+                        <a asp-action="Edit" asp-route-id="@item.Repository.Id" class="btn btn-outline-secondary btn-sm">@Strings.EditButton</a>
+
+                        <form asp-action="Scan" asp-route-id="@item.Repository.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-success btn-sm">@Strings.ScanButton</button>
+                        </form>
+
+                        <a asp-action="Delete" asp-route-id="@item.Repository.Id" class="btn btn-outline-danger btn-sm">@Strings.DeleteButton</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

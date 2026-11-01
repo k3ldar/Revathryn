@@ -71,6 +71,75 @@ namespace Revathryn.Data
             return null;
         }
 
+        /// <summary>Returns a filtered, sorted and paged set of findings.</summary>
+        public async Task<FindingQueryResult> QueryAsync(FindingQuery query, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+
+            string whereClause = BuildWhereClause(query, out List<(string Name, object Value)> parameters);
+
+            int totalCount;
+            using (SqliteCommand countCommand = connection.CreateCommand())
+            {
+                countCommand.CommandText = $"SELECT COUNT(*) FROM Findings{whereClause};";
+                AddQueryParameters(countCommand, parameters);
+
+                object result = await countCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+                totalCount = Convert.ToInt32(result);
+
+                if (totalCount == 0)
+                {
+                    return new FindingQueryResult
+                    {
+                        Items = [],
+                        TotalCount = 0
+                    };
+                }
+            }
+
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = $"SELECT {SelectColumns} FROM Findings{whereClause}{BuildOrderByClause(query)} LIMIT @PageSize OFFSET @Offset;";
+            AddQueryParameters(command, parameters);
+            command.Parameters.AddWithValue("@PageSize", query.PageSize);
+            command.Parameters.AddWithValue("@Offset", query.PageIndex * query.PageSize);
+
+            List<Finding> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(MapFinding(reader));
+            }
+
+            return new FindingQueryResult
+            {
+                Items = results,
+                TotalCount = totalCount
+            };
+        }
+
+        /// <summary>Returns all outstanding, non-operational findings, most recent first.</summary>
+        public async Task<IReadOnlyList<Finding>> GetOutstandingAsync(CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = $"SELECT {SelectColumns} FROM Findings WHERE Category != @Category AND Status IN (@StatusNew, @StatusReviewed, @StatusDeferred) ORDER BY CreatedDate DESC;";
+            command.Parameters.AddWithValue("@Category", (int)FindingCategory.OperationalFailure);
+            command.Parameters.AddWithValue("@StatusNew", (int)FindingStatus.New);
+            command.Parameters.AddWithValue("@StatusReviewed", (int)FindingStatus.Reviewed);
+            command.Parameters.AddWithValue("@StatusDeferred", (int)FindingStatus.Deferred);
+
+            List<Finding> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(MapFinding(reader));
+            }
+
+            return results;
+        }
+
         /// <summary>Inserts the finding, or returns the existing id when an equivalent finding already exists.</summary>
         public async Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default)
         {
@@ -134,6 +203,71 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@Id", id);
 
             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        private static string BuildWhereClause(FindingQuery query, out List<(string Name, object Value)> parameters)
+        {
+            parameters = [];
+            List<string> conditions = [];
+
+            if (query.RepositoryId.HasValue)
+            {
+                conditions.Add("RepositoryId = @RepositoryId");
+                parameters.Add(("@RepositoryId", query.RepositoryId.Value));
+            }
+
+            if (query.Severity.HasValue)
+            {
+                conditions.Add("Severity = @Severity");
+                parameters.Add(("@Severity", (int)query.Severity.Value));
+            }
+
+            if (query.Category.HasValue)
+            {
+                conditions.Add("Category = @Category");
+                parameters.Add(("@Category", (int)query.Category.Value));
+            }
+
+            if (query.Status.HasValue)
+            {
+                conditions.Add("Status = @Status");
+                parameters.Add(("@Status", (int)query.Status.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.SearchText))
+            {
+                conditions.Add("(Title LIKE @SearchText OR Description LIKE @SearchText)");
+                parameters.Add(("@SearchText", $"%{query.SearchText.Trim()}%"));
+            }
+
+            if (conditions.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return $" WHERE {string.Join(" AND ", conditions)}";
+        }
+
+        private static string BuildOrderByClause(FindingQuery query)
+        {
+            string column = query.SortField switch
+            {
+                FindingSortField.LastModifiedDate => "LastModifiedDate",
+                FindingSortField.Severity => "Severity",
+                FindingSortField.Title => "Title",
+                _ => "CreatedDate"
+            };
+
+            string direction = query.SortDescending ? "DESC" : "ASC";
+            return $" ORDER BY {column} {direction}";
+        }
+
+        private static void AddQueryParameters(SqliteCommand command, List<(string Name, object Value)> parameters)
+        {
+            foreach ((string name, object value) in parameters)
+            {
+                command.Parameters.AddWithValue(name, value);
+            }
         }
 
         private static void AddParameters(SqliteCommand command, Finding finding)

@@ -1,5 +1,8 @@
+using System.Diagnostics;
+
 using Microsoft.AspNetCore.Mvc;
 
+using Revathryn.Contracts;
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Orchestration;
@@ -16,6 +19,7 @@ namespace Revathryn.Controllers
     {
         private const int PercentageScale = 100;
 
+        private readonly IDashboardQueryService _dashboardQueryService;
         private readonly IRepositoryService _repositoryService;
         private readonly IRepositoryFileService _repositoryFileService;
         private readonly IFindingRepository _findingRepository;
@@ -26,6 +30,7 @@ namespace Revathryn.Controllers
 
         /// <summary>Initialises a new controller.</summary>
         public DashboardController(
+            IDashboardQueryService dashboardQueryService,
             IRepositoryService repositoryService,
             IRepositoryFileService repositoryFileService,
             IFindingRepository findingRepository,
@@ -34,6 +39,7 @@ namespace Revathryn.Controllers
             IProjectRepository projectRepository,
             IReviewScheduler reviewScheduler)
         {
+            _dashboardQueryService = dashboardQueryService;
             _repositoryService = repositoryService;
             _repositoryFileService = repositoryFileService;
             _findingRepository = findingRepository;
@@ -43,21 +49,28 @@ namespace Revathryn.Controllers
             _reviewScheduler = reviewScheduler;
         }
 
-        /// <summary>Renders the administration dashboard.</summary>
+        /// <summary>Renders the operational administration dashboard.</summary>
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            IReadOnlyList<Repository> repositories = await _repositoryService.GetAllAsync(cancellationToken);
+            DashboardSnapshot snapshot = await _dashboardQueryService.GetSnapshotAsync(cancellationToken);
+            return View(snapshot);
+        }
 
-            List<RepositorySummaryViewModel> summaries = [];
+        /// <summary>Returns the current dashboard content for live polling refresh.</summary>
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public async Task<IActionResult> Data(CancellationToken cancellationToken)
+        {
+            DashboardSnapshot snapshot = await _dashboardQueryService.GetSnapshotAsync(cancellationToken);
+            return PartialView(Consts.DashboardContentViewName, snapshot);
+        }
 
-            foreach (Repository repository in repositories)
+        /// <summary>Renders the generic error view used by the exception handler.</summary>
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            ErrorViewModel model = new()
             {
-                summaries.Add(await BuildRepositorySummaryAsync(repository, cancellationToken));
-            }
-
-            DashboardViewModel model = new()
-            {
-                Repositories = summaries
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
             };
 
             return View(model);
@@ -96,28 +109,6 @@ namespace Revathryn.Controllers
 
             FileDetailsViewModel model = await BuildFileDetailsAsync(repository, file, cancellationToken);
             return View(model);
-        }
-
-        private async Task<RepositorySummaryViewModel> BuildRepositorySummaryAsync(Repository repository, CancellationToken cancellationToken)
-        {
-            IReadOnlyList<RepoFile> files = await _repositoryFileService.GetFilesAsync(repository.Id, cancellationToken);
-            IReadOnlyList<Finding> findings = await _findingRepository.GetByRepositoryAsync(repository.Id, cancellationToken);
-
-            FileCoverageResult coverage = await BuildFileCoverageAsync(files, cancellationToken);
-
-            int findingsCount = findings.Count(finding => finding.Category != FindingCategory.OperationalFailure);
-            int operationalFailures = findings.Count(finding => finding.Category == FindingCategory.OperationalFailure);
-
-            return new RepositorySummaryViewModel
-            {
-                Repository = repository,
-                FilesDiscovered = files.Count,
-                FilesRequiringReview = coverage.FilesRequiringReview,
-                OutstandingReviews = coverage.OutstandingReviews,
-                FindingsCount = findingsCount,
-                OperationalFailuresCount = operationalFailures,
-                ReviewStatus = ResolveStatus(files.Count, coverage.OutstandingReviews, findingsCount)
-            };
         }
 
         private async Task<RepositoryDetailsViewModel> BuildRepositoryDetailsAsync(Repository repository, CancellationToken cancellationToken)

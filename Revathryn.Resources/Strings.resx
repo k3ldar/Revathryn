@@ -194,6 +194,18 @@
 			<data name="ReviewWorkerCycleFailed" xml:space="preserve">
 			  <value>The review worker cycle failed.</value>
 			</data>
+			<data name="NewFilesLabel" xml:space="preserve">
+			  <value>New files</value>
+			</data>
+			<data name="ChangedFilesLabel" xml:space="preserve">
+			  <value>Changed files</value>
+			</data>
+			<data name="FileExtensionsLabel" xml:space="preserve">
+			  <value>File extensions</value>
+			</data>
+			<data name="PriorityLabel" xml:space="preserve">
+			  <value>Priority</value>
+			</data>
 			<data name="FilesDiscoveredLabel" xml:space="preserve">
 			  <value>Files discovered</value>
 			</data>
@@ -316,5 +328,347 @@
 			</data>
 			<data name="NoFileDetails" xml:space="preserve">
 			  <value>File not found.</value>
+			</data>
+			<data name="HealthDatabaseConnectivityHealthy" xml:space="preserve">
+			  <value>Database is reachable.</value>
+			</data>
+			<data name="HealthDatabaseConnectivityUnavailable" xml:space="preserve">
+			  <value>Database could not be reached.</value>
+			</data>
+			<data name="HealthBackgroundProcessingHealthy" xml:space="preserve">
+			  <value>Background processing is operational.</value>
+			</data>
+			<data name="HealthBackgroundProcessingUnavailable" xml:space="preserve">
+			  <value>Background processing check failed: {0}</value>
+			</data>
+			<data name="HealthAnalyserAvailabilityHealthy" xml:space="preserve">
+			  <value>{0} enabled AI engine(s) configured.</value>
+			</data>
+			<data name="HealthAnalyserAvailabilityDegraded" xml:space="preserve">
+			  <value>No enabled AI engine is configured.</value>
+			</data>
+			<data name="HealthAnalyserAvailabilityUnavailable" xml:space="preserve">
+			  <value>Analyser availability check failed: {0}</value>
+			</data>
+			<data name="HealthLivenessHealthy" xml:space="preserve">
+			  <value>Application is running.</value>
+			</data>
+			<data name="ToggleNavigation" xml:space="preserve">
+			  <value>Toggle navigation</value>
+			</data>
+			<data name="RepositoryManagementTitle" xml:space="preserve">
+			  <value>Repository management</value>
+			</data>
+			<data name="AdministrationTitle" xml:space="preserve">
+			  <value>Administration</value>
+			</data>
+			<data name="GeneralSettingsTitle" xml:space="preserve">
+			  <value>General settings</value>
+			</data>
+			<data name="AnalyserConfigurationTitle" xml:space="preserve">
+			  <value>Analyser configuration</value>
+			</data>
+			<data name="SystemHealthTitle" xml:space="preserve">
+			  <value>System health</value>
+			</data>
+			<data name="RepositorySummaryTitle" xml:space="preserve">
+			  <value>Repository summary</value>
+			</data>
+			<data name="AnalysisSummaryTitle" xml:space="preserve">
+			  <value>Analysis summary</value>
+			</data>
+			<data name="IssueSummaryTitle" xml:space="preserve">
+			  <value>Issue summary</value>
+			</data>
+			<data name="SystemSummaryTitle" xml:space="preserve">
+			  <value>System summary</value>
+			</data>
+			<data name="RecentActivityTitle" xml:space="preserve">
+			  <value>Recent activity</value>
+			</data>
+			<data name="ConfiguredRepositoriesLabel" xml:space="preserve">
+			  <value>Configured repositories</value>
+			</data>
+			<data name="DiscoveredRepositoriesLabel" xml:space="preserve">
+			  <value>Repositories discovered</value>
+			</data>
+			<data name="LastRepositoryScanLabel" xml:space="preserve">
+			  <value>Last repository scan</value>
+			</data>
+			<data name="RepositoryScanHealthLabel" xml:space="preserve">
+			  <value>Repository scan health</value>
+			</data>
+			<data name="RepositoryProblemsLabel" xml:space="preserve">
+			  <value>Repository problems</value>
+			</data>
+			<data name="QueuedAnalysesLabel" xml:space="preserve">
+			  <value>Analyses queued</value>
+			</data>
+			<data name="AnalysisOutcomesRepresentedByIssues" xml:space="preserve">
+			  <value>Completed analyses are represented by persisted issues.</value>
+			</data>
+			<data name="TotalOutstandingIssuesLabel" xml:space="preserve">
+			  <value>Total outstanding issues</value>
+			</data>
+			<data name="IssuesBySeverityLabel" xml:space="preserve">
+			  <value>Issues by severity</value>
+			</data>
+			<data name="IssuesByRepositoryLabel" xml:space="preserve">
+			  <value>Issues by repository</value>
+			</data>
+			<data name="RecentlyIdentifiedIssuesLabel" xml:space="preserve">
+			  <value>Recently identified</value>
+			</data>
+			<data name="RecentlyUpdatedIssuesLabel" xml:space="preserve">
+			  <value>Recently updated</value>
+			</data>
+			<data name="ApplicationHealthLabel" xml:space="preserve">
+			  <value>Application health</value>
+			</data>
+			<data name="DatabaseConnectivityLabel" xml:space="preserve">
+			  <value>Database connectivity</value>
+			</data>
+			<data name="BackgroundProcessingLabel" xml:space="preserve">
+			  <value>Background processing</value>
+			</data>
+			<data name="AnalyserAvailabilityLabel" xml:space="preserve">
+			  <value>Analyser availability</value>
+			</data>
+			<data name="UptimeLabel" xml:space="preserve">
+			  <value>Uptime</value>
+			</data>
+			<data name="StartedLabel" xml:space="preserve">
+			  <value>Started</value>
+			</data>
+			<data name="NoRecentActivity" xml:space="preserve">
+			  <value>No recent activity has been recorded.</value>
+			</data>
+			<data name="NoOutstandingIssues" xml:space="preserve">
+			  <value>No outstanding issues.</value>
+			</data>
+			<data name="NeverScannedLabel" xml:space="preserve">
+			  <value>Never scanned</value>
+			</data>
+			<data name="ScanSucceededLabel" xml:space="preserve">
+			  <value>Succeeded</value>
+			</data>
+			<data name="ScanFailedLabel" xml:space="preserve">
+			  <value>Failed</value>
+			</data>
+			<data name="PathMissingLabel" xml:space="preserve">
+			  <value>Path missing</value>
+			</data>
+			<data name="RecentScansLabel" xml:space="preserve">
+			  <value>Recent scans</value>
+			</data>
+			<data name="RepositoryOutstandingProblemsLabel" xml:space="preserve">
+			  <value>Outstanding problems</value>
+			</data>
+			<data name="NoRepositoryProblemsLabel" xml:space="preserve">
+			  <value>No repository problems detected.</value>
+			</data>
+			<data name="ScanHistoryEmpty" xml:space="preserve">
+			  <value>No scans have been recorded for this repository.</value>
+			</data>
+			<data name="HealthStatusHealthy" xml:space="preserve">
+			  <value>Healthy</value>
+			</data>
+			<data name="HealthStatusDegraded" xml:space="preserve">
+			  <value>Degraded</value>
+			</data>
+			<data name="HealthStatusUnavailable" xml:space="preserve">
+			  <value>Unavailable</value>
+			</data>
+			<data name="SeverityInfo" xml:space="preserve">
+			  <value>Info</value>
+			</data>
+			<data name="SeverityLow" xml:space="preserve">
+			  <value>Low</value>
+			</data>
+			<data name="SeverityMedium" xml:space="preserve">
+			  <value>Medium</value>
+			</data>
+			<data name="SeverityHigh" xml:space="preserve">
+			  <value>High</value>
+			</data>
+			<data name="SeverityCritical" xml:space="preserve">
+			  <value>Critical</value>
+			</data>
+			<data name="AddRepositoryTitle" xml:space="preserve">
+			  <value>Add repository</value>
+			</data>
+			<data name="EditRepositoryTitle" xml:space="preserve">
+			  <value>Edit repository</value>
+			</data>
+			<data name="RepositoryDetailsTitle" xml:space="preserve">
+			  <value>Repository details</value>
+			</data>
+			<data name="NameLabel" xml:space="preserve">
+			  <value>Name</value>
+			</data>
+			<data name="DescriptionLabel" xml:space="preserve">
+			  <value>Description</value>
+			</data>
+			<data name="LocalPathLabel" xml:space="preserve">
+			  <value>Local path</value>
+			</data>
+			<data name="AutomaticReviewEnabledLabel" xml:space="preserve">
+			  <value>Automatic review enabled</value>
+			</data>
+			<data name="EnabledLabel" xml:space="preserve">
+			  <value>Enabled</value>
+			</data>
+			<data name="LastScanLabel" xml:space="preserve">
+			  <value>Last scan</value>
+			</data>
+			<data name="ScanOutcomeLabel" xml:space="preserve">
+			  <value>Outcome</value>
+			</data>
+			<data name="RepositoryPathMissingWarning" xml:space="preserve">
+			  <value>The configured local path no longer exists.</value>
+			</data>
+			<data name="NameRequiredMessage" xml:space="preserve">
+			  <value>A name is required.</value>
+			</data>
+			<data name="LocalPathRequiredMessage" xml:space="preserve">
+			  <value>A local path is required.</value>
+			</data>
+			<data name="MaxContextRequestsRangeMessage" xml:space="preserve">
+			  <value>Maximum context requests must be at least 1.</value>
+			</data>
+			<data name="ModelRequiredMessage" xml:space="preserve">
+			  <value>A model identifier is required.</value>
+			</data>
+			<data name="MaxContextRequestsLabel" xml:space="preserve">
+			  <value>Max context requests</value>
+			</data>
+			<data name="SaveButton" xml:space="preserve">
+			  <value>Save</value>
+			</data>
+			<data name="CancelButton" xml:space="preserve">
+			  <value>Cancel</value>
+			</data>
+			<data name="BackToRepositoriesButton" xml:space="preserve">
+			  <value>Back to repositories</value>
+			</data>
+			<data name="DeleteRepositoryConfirmation" xml:space="preserve">
+			  <value>Are you sure you want to delete repository '{0}'? This removes all associated data.</value>
+			</data>
+			<data name="ScanButton" xml:space="preserve">
+			  <value>Scan</value>
+			</data>
+			<data name="EditButton" xml:space="preserve">
+			  <value>Edit</value>
+			</data>
+			<data name="DeleteButton" xml:space="preserve">
+			  <value>Delete</value>
+			</data>
+			<data name="DetailsButton" xml:space="preserve">
+			  <value>Details</value>
+			</data>
+			<data name="RepositorySavedMessage" xml:space="preserve">
+			  <value>Repository saved successfully.</value>
+			</data>
+			<data name="RepositoryDeletedMessage" xml:space="preserve">
+			  <value>Repository deleted.</value>
+			</data>
+			<data name="RepositoryScanCompletedMessage" xml:space="preserve">
+			  <value>Repository scan completed: {0} files discovered, {1} new, {2} changed.</value>
+			</data>
+			<data name="RepositoryScanFailedMessage" xml:space="preserve">
+			  <value>Repository scan failed: {0}</value>
+			</data>
+			<data name="LastSuccessfulScanLabel" xml:space="preserve">
+			  <value>Last successful scan</value>
+			</data>
+			<data name="ScanHistoryLabel" xml:space="preserve">
+			  <value>Scan history</value>
+			</data>
+			<data name="ReviewTypesLabel" xml:space="preserve">
+			  <value>Review types</value>
+			</data>
+			<data name="AllFilesLabel" xml:space="preserve">
+			  <value>All files</value>
+			</data>
+			<data name="NoReviewTypesMessage" xml:space="preserve">
+			  <value>No review types have been configured.</value>
+			</data>
+			<data name="ReviewLifecycleLabel" xml:space="preserve">
+			  <value>Review lifecycle</value>
+			</data>
+			<data name="RepositoryDiscoveryProblemLabel" xml:space="preserve">
+			  <value>Discovery problem</value>
+			</data>
+			<data name="GeneralSettingsHeading" xml:space="preserve">
+			  <value>General settings</value>
+			</data>
+			<data name="MasterPromptLabel" xml:space="preserve">
+			  <value>Master prompt</value>
+			</data>
+			<data name="SaveSettingsButton" xml:space="preserve">
+			  <value>Save settings</value>
+			</data>
+			<data name="SettingsSavedMessage" xml:space="preserve">
+			  <value>Settings saved successfully.</value>
+			</data>
+			<data name="SettingsSaveFailedMessage" xml:space="preserve">
+			  <value>Settings could not be saved: {0}</value>
+			</data>
+			<data name="AIEnginesTitle" xml:space="preserve">
+			  <value>AI engines</value>
+			</data>
+			<data name="AddEngineButton" xml:space="preserve">
+			  <value>Add engine</value>
+			</data>
+			<data name="AddEngineTitle" xml:space="preserve">
+			  <value>Add AI engine</value>
+			</data>
+			<data name="EditEngineTitle" xml:space="preserve">
+			  <value>Edit AI engine</value>
+			</data>
+			<data name="EngineNameLabel" xml:space="preserve">
+			  <value>Name</value>
+			</data>
+			<data name="ProviderLabel" xml:space="preserve">
+			  <value>Provider</value>
+			</data>
+			<data name="EndpointLabel" xml:space="preserve">
+			  <value>Endpoint</value>
+			</data>
+			<data name="ModelLabel" xml:space="preserve">
+			  <value>Model</value>
+			</data>
+			<data name="SecretKeyNameLabel" xml:space="preserve">
+			  <value>Secret key name</value>
+			</data>
+			<data name="IsDefaultLabel" xml:space="preserve">
+			  <value>Default engine</value>
+			</data>
+			<data name="NoEnginesMessage" xml:space="preserve">
+			  <value>No AI engines have been configured.</value>
+			</data>
+			<data name="EngineSavedMessage" xml:space="preserve">
+			  <value>AI engine saved successfully.</value>
+			</data>
+			<data name="EngineDeletedMessage" xml:space="preserve">
+			  <value>AI engine deleted.</value>
+			</data>
+			<data name="EngineDeleteConfirmation" xml:space="preserve">
+			  <value>Are you sure you want to delete AI engine '{0}'?</value>
+			</data>
+			<data name="SystemHealthHeading" xml:space="preserve">
+			  <value>System health</value>
+			</data>
+			<data name="HealthChecksTitle" xml:space="preserve">
+			  <value>Health checks</value>
+			</data>
+			<data name="LastCheckedLabel" xml:space="preserve">
+			  <value>Last checked</value>
+			</data>
+			<data name="LastSuccessfulLabel" xml:space="preserve">
+			  <value>Last successful</value>
+			</data>
+			<data name="ApplicationStartLabel" xml:space="preserve">
+			  <value>Application start</value>
 			</data>
 		  </root>
