@@ -262,7 +262,7 @@ namespace Revathryn.Engine.Tests
         {
             FakeRepositoryRepository repositories = new();
             FakeReviewTypeRepository reviewTypes = new();
-            RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes));
+            RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
 
             await Assert.ThrowsExactlyAsync<ArgumentException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = "  " }, TestContext.CancellationToken));
         }
@@ -274,7 +274,7 @@ namespace Revathryn.Engine.Tests
 
             FakeRepositoryRepository repositories = new();
             FakeReviewTypeRepository reviewTypes = new();
-            RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes));
+            RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
 
             await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = missing }, TestContext.CancellationToken));
         }
@@ -287,7 +287,7 @@ namespace Revathryn.Engine.Tests
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes));
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
 
                 await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
 
@@ -309,7 +309,7 @@ namespace Revathryn.Engine.Tests
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes));
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository
                 {
@@ -333,7 +333,7 @@ namespace Revathryn.Engine.Tests
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes));
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
 
@@ -651,7 +651,7 @@ namespace Revathryn.Engine.Tests
 
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes));
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
 
                 await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = filePath }, TestContext.CancellationToken));
             }
@@ -669,7 +669,7 @@ namespace Revathryn.Engine.Tests
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes));
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root, Description = "Before" }, TestContext.CancellationToken);
 
@@ -698,7 +698,7 @@ namespace Revathryn.Engine.Tests
 
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes));
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
                 await service.DeleteAsync(registered.Id, TestContext.CancellationToken);
@@ -706,6 +706,61 @@ namespace Revathryn.Engine.Tests
                 Assert.IsNull(await service.GetAsync(registered.Id, TestContext.CancellationToken));
                 Assert.IsTrue(Directory.Exists(root));
                 Assert.IsTrue(File.Exists(Path.Combine(root, "keep.cs")));
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task RepositoryService_RegisterAutomaticRepository_TriggersInitialReview()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "keep.cs"), "class Keep { }");
+
+                FakeRepositoryRepository repositories = new();
+                FakeReviewTypeRepository reviewTypes = new();
+                FakeRepositoryProcessor processor = new();
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), processor);
+
+                Repository registered = await service.RegisterAsync(new Repository
+                {
+                    Name = "Repo",
+                    LocalPath = root,
+                    Enabled = true,
+                    AutomaticReviewEnabled = true
+                }, TestContext.CancellationToken);
+
+                Assert.HasCount(1, processor.ProcessedIds);
+                Assert.AreEqual(registered.Id, processor.ProcessedIds[0]);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task RepositoryService_RegisterDisabledOrNonAutomaticRepository_DoesNotTriggerInitialReview()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                string manualRoot = Path.Combine(root, "manual");
+                Directory.CreateDirectory(manualRoot);
+
+                FakeRepositoryRepository repositories = new();
+                FakeReviewTypeRepository reviewTypes = new();
+                FakeRepositoryProcessor processor = new();
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), processor);
+
+                await service.RegisterAsync(new Repository { Name = "Disabled", LocalPath = root, Enabled = false, AutomaticReviewEnabled = true }, TestContext.CancellationToken);
+                await service.RegisterAsync(new Repository { Name = "Manual", LocalPath = manualRoot, Enabled = true, AutomaticReviewEnabled = false }, TestContext.CancellationToken);
+
+                Assert.HasCount(0, processor.ProcessedIds);
             }
             finally
             {

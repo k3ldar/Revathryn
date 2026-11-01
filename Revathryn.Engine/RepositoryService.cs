@@ -10,15 +10,17 @@ namespace Revathryn.Engine
     {
         private readonly IRepositoryRepository _repositoryRepository;
         private readonly IReviewTypeSeeder _reviewTypeSeeder;
+        private readonly IRepositoryProcessor _repositoryProcessor;
 
         /// <summary>Initialises a new service.</summary>
-        public RepositoryService(IRepositoryRepository repositoryRepository, IReviewTypeSeeder reviewTypeSeeder)
+        public RepositoryService(IRepositoryRepository repositoryRepository, IReviewTypeSeeder reviewTypeSeeder, IRepositoryProcessor repositoryProcessor)
         {
             _repositoryRepository = repositoryRepository;
             _reviewTypeSeeder = reviewTypeSeeder;
+            _repositoryProcessor = repositoryProcessor;
         }
 
-        /// <summary>Registers a local repository and seeds its built-in review definitions.</summary>
+        /// <summary>Registers a local repository, seeds its built-in review definitions, and triggers an initial review when automatic review is enabled.</summary>
         public async Task<Repository> RegisterAsync(Repository repository, CancellationToken cancellationToken = default)
         {
             ValidateLocalPath(repository.LocalPath);
@@ -36,6 +38,8 @@ namespace Revathryn.Engine
             repository.Id = id;
 
             await _reviewTypeSeeder.SeedAsync(id, cancellationToken).ConfigureAwait(false);
+
+            TriggerInitialReview(repository);
 
             return repository;
         }
@@ -123,6 +127,28 @@ namespace Revathryn.Engine
         private static string NormalisePath(string localPath)
         {
             return Path.TrimEndingDirectorySeparator(Path.GetFullPath(localPath));
+        }
+
+        private void TriggerInitialReview(Repository repository)
+        {
+            if (!repository.Enabled || !repository.AutomaticReviewEnabled)
+            {
+                return;
+            }
+
+            _ = ProcessInitialReviewAsync(repository.Id);
+        }
+
+        private async Task ProcessInitialReviewAsync(long repositoryId)
+        {
+            try
+            {
+                await _repositoryProcessor.ProcessAsync(repositoryId, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Best-effort background processing must not fail registration.
+            }
         }
     }
 }

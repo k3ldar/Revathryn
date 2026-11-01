@@ -126,7 +126,7 @@ namespace Revathryn.Engine.Tests
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
                 ReviewTypeSeeder seeder = new(reviewTypes);
-                RepositoryService service = new(repositories, seeder);
+                RepositoryService service = new(repositories, seeder, new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository
                 {

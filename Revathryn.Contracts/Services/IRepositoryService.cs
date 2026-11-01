@@ -5,7 +5,7 @@ namespace Revathryn.Contracts.Services
     /// <summary>Application-level repository management operations.</summary>
     public interface IRepositoryService
     {
-        /// <summary>Registers a local repository and copies default review definitions into it.</summary>
+        /// <summary>Registers a local repository, copies default review definitions into it, and triggers an initial review when automatic review is enabled.</summary>
         Task<Repository> RegisterAsync(Repository repository, CancellationToken cancellationToken = default);
 
         /// <summary>Updates an existing repository.</summary>
