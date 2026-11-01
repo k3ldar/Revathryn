@@ -5,6 +5,7 @@
         public const string DefaultProgramDataPath = "Revathryn";
         public const string DefaultBackupDirectoryName = "backups";
         public const string DefaultDatabaseFileName = "revathryn.db";
+        public const string DatabasePath = "db";
         public const string DefaultDataStore = "Data Source={0}";
         public const string FileTypeCSharp = "cs";
         public const string FileTypeJson = "json";
@@ -21,7 +22,8 @@
         public const string FileTypeYml = "yml";
         public const string FileTypeYaml = "yaml";
         public const string PathAnalysisOutput = "analysis-output";
-        public const string FileAnalysisManifest = "analysis-manifest.json";
+        public const string AnalysisManifestPrefix = "analysis-manifest-";
+        public const string DefaultRepositoryFolderName = "repository";
         public const string Star = "*";
         public const char CharAsterisk = '*';
         public const char CharQuestionMark = '?';
@@ -51,6 +53,7 @@
         public const char CharRightSquareBracket = ']';
         public const char CharSpace = ' ';
         public const char CharPlus = '+';
+        public const char CharHyphen = '-';
         public const string FullStop = ".";
         public const string StringArrayIdentifier = "[]";
         public const string StringSpace = " ";

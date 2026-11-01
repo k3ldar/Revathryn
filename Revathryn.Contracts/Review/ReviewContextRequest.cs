@@ -6,6 +6,9 @@ namespace Revathryn.Contracts.Review
         /// <summary>Owning repository.</summary>
         public long RepositoryId { get; set; }
 
+        /// <summary>Owning repository name, used to route per-repository analysis artefacts.</summary>
+        public string RepositoryName { get; set; } = string.Empty;
+
         /// <summary>The file for which context is requested.</summary>
         public long RepoFileId { get; set; }
 

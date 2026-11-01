@@ -25,24 +25,24 @@ namespace Revathryn.Review
         /// <summary>File search patterns the engine handles.</summary>
         public IReadOnlyList<string> FilePatterns => _analyser.FilePatterns;
 
-        /// <summary>Returns true when the file needs (re)analysis according to the manifest.</summary>
-        public bool RequiresAnalysis(string filePath)
+        /// <summary>Returns true when the file needs (re)analysis according to the repository's manifest.</summary>
+        public bool RequiresAnalysis(string repositoryName, string filePath)
         {
-            return _manifestManager.RequiresAnalysis(filePath, _analyser.AnalyserVersion);
+            return _manifestManager.RequiresAnalysis(repositoryName, filePath, _analyser.AnalyserVersion);
         }
 
-        /// <summary>Analyses a single source file.</summary>
-        public Task AnalyseAsync(string filePath, CancellationToken cancellationToken = default)
+        /// <summary>Analyses a single source file owned by the named repository.</summary>
+        public Task AnalyseAsync(string repositoryName, string filePath, CancellationToken cancellationToken = default)
         {
-            return Task.Run(() => _analyser.Analyse(filePath, _manifestManager), cancellationToken);
+            return Task.Run(() => _analyser.Analyse(repositoryName, filePath, _manifestManager), cancellationToken);
         }
 
         /// <summary>Analyses C# source and returns the extracted symbols as JSON.</summary>
-        public async Task<string> AnalyseSymbolsAsync(string filePath, CancellationToken cancellationToken = default)
+        public async Task<string> AnalyseSymbolsAsync(string repositoryName, string filePath, CancellationToken cancellationToken = default)
         {
-            await AnalyseAsync(filePath, cancellationToken).ConfigureAwait(false);
+            await AnalyseAsync(repositoryName, filePath, cancellationToken).ConfigureAwait(false);
 
-            IManifestEntry entry = _manifestManager.GetEntry(filePath);
+            IManifestEntry entry = _manifestManager.GetEntry(repositoryName, filePath);
 
             if (entry is null || string.IsNullOrWhiteSpace(entry.OutputFile) || !File.Exists(entry.OutputFile))
             {

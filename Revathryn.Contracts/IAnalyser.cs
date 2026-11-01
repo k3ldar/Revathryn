@@ -21,6 +21,10 @@
         /// </summary>
         int AnalyserVersion { get; }
 
-        void Analyse(string filePath, IManifestManager manifestManager);
+        /// <summary>Analyses a source file on behalf of the named repository.</summary>
+        /// <param name="repositoryName">Name of the repository that owns the file.</param>
+        /// <param name="filePath">Absolute path of the source file.</param>
+        /// <param name="manifestManager">Manifest manager used to gate and record the analysis.</param>
+        void Analyse(string repositoryName, string filePath, IManifestManager manifestManager);
     }
 }

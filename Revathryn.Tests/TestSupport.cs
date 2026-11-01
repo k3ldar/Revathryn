@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -8,6 +10,7 @@ using Microsoft.AspNetCore.Routing;
 namespace Revathryn.Tests
 {
     /// <summary>Shared plumbing used by MVC controller tests.</summary>
+    [ExcludeFromCodeCoverage]
     internal static class ControllerTestSupport
     {
         /// <summary>Creates a controller context backed by a fresh HTTP context.</summary>
@@ -20,6 +23,7 @@ namespace Revathryn.Tests
     }
 
     /// <summary>Test-only URL helper that avoids routing dependencies.</summary>
+    [ExcludeFromCodeCoverage]
     internal sealed class FakeUrlHelper : IUrlHelper
     {
         private readonly ActionContext _actionContext;
@@ -58,6 +62,7 @@ namespace Revathryn.Tests
     }
 
     /// <summary>Test-only temp data provider that persists values in memory.</summary>
+    [ExcludeFromCodeCoverage]
     internal sealed class FakeTempDataProvider : ITempDataProvider
     {
         private readonly Dictionary<string, object> _data = new();

@@ -66,9 +66,9 @@ namespace Revathryn.Review.CSharp
 
         public int AnalyserVersion => 1;
 
-        public void Analyse(string filePath, IManifestManager manifestManager)
+        public void Analyse(string repositoryName, string filePath, IManifestManager manifestManager)
         {
-            if (!manifestManager.RequiresAnalysis(filePath, AnalyserVersion))
+            if (!manifestManager.RequiresAnalysis(repositoryName, filePath, AnalyserVersion))
                 return;
 
             string source = File.ReadAllText(filePath);
@@ -81,7 +81,8 @@ namespace Revathryn.Review.CSharp
             if (symbols.Count == 0)
                 return;
 
-            Directory.CreateDirectory(_outputDirectory);
+            string repositoryDirectory = Path.Combine(_outputDirectory, RepositoryFileNaming.GetSafeName(repositoryName));
+            Directory.CreateDirectory(repositoryDirectory);
 
             string fileName = Path.GetFileNameWithoutExtension(filePath);
             string namespaceName = symbols[0].Namespace;
@@ -89,12 +90,12 @@ namespace Revathryn.Review.CSharp
                 ? $"{fileName}.{JsonFileExtension}"
                 : $"{namespaceName}.{fileName}.{JsonFileExtension}";
 
-            string outputPath = Path.Combine(_outputDirectory, outputName);
+            string outputPath = Path.Combine(repositoryDirectory, outputName);
 
             string json = JsonSerializer.Serialize(symbols, options);
             File.WriteAllText(outputPath, json);
 
-            manifestManager.RecordAnalysis(new ManifestEntry
+            manifestManager.RecordAnalysis(repositoryName, new ManifestEntry
             {
                 SourcePath = filePath,
                 Language = Language,

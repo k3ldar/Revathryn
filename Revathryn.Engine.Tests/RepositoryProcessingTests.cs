@@ -886,7 +886,46 @@ namespace Revathryn.Engine.Tests
                 Assert.AreEqual(1, recovered.FilesDiscovered);
                 Assert.AreEqual(1, recovered.NewFiles);
                 Assert.HasCount(2, scans.Records);
-                Assert.IsTrue(scans.Records[1].Succeeded);
+                Assert.IsTrue(scans.Records[^1].Succeeded);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task RepositoryProcessor_FailedScanWithoutChanges_IsRecordedAsFailed()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true });
+
+                FakeRepoFileRepository files = new();
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                FakeReviewLinkRepository links = new();
+                FakeRepoFileAnalysisRepository analyses = new();
+                FakeQueueRepository queue = new();
+                FakeCSharpAnalysisEngine analysisEngine = new();
+                FakeProjectDiscoveryService projectDiscovery = new();
+                FakeProjectRepository projects = new();
+                FakeRepositoryScanRepository scans = new();
+                FlakyScanner scanner = new();
+
+                ReviewScheduler scheduler = new(repositories, files, reviewTypes, links, analyses, new ReviewQueue(queue));
+                RepositoryProcessor processor = new(repositories, files, scanner, scheduler, analysisEngine, projectDiscovery, projects, scans, new RepositoryScanLockRegistry());
+
+                await Assert.ThrowsExactlyAsync<IOException>(() => processor.ProcessAsync(1, CancellationToken.None));
+
+                Assert.HasCount(1, scans.Records);
+                Assert.IsFalse(scans.Records[0].Succeeded);
+                Assert.AreEqual(0, scans.Records[0].FilesDiscovered);
+                Assert.IsFalse(scans.Records[0].HasChanges);
             }
             finally
             {
@@ -1562,17 +1601,17 @@ namespace Revathryn.Engine.Tests
 
             public bool ThrowOnAnalyse { get; set; }
 
-            public Task AnalyseAsync(string filePath, CancellationToken cancellationToken = default)
+            public Task AnalyseAsync(string repositoryName, string filePath, CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;
             }
 
-            public bool RequiresAnalysis(string filePath)
+            public bool RequiresAnalysis(string repositoryName, string filePath)
             {
                 return RequiresAnalysisResult;
             }
 
-            public Task<string> AnalyseSymbolsAsync(string filePath, CancellationToken cancellationToken = default)
+            public Task<string> AnalyseSymbolsAsync(string repositoryName, string filePath, CancellationToken cancellationToken = default)
             {
                 if (ThrowOnAnalyse)
                 {

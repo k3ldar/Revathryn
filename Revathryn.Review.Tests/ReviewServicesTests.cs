@@ -28,18 +28,18 @@ namespace Revathryn.Review.Tests
                 File.WriteAllText(sourcePath, "namespace Demo { public class Program { public void Run() { } } }");
 
                 string outputDirectory = Path.Combine(root, "output");
-                string manifestPath = Path.Combine(root, "manifest.json");
+                const string repositoryName = "Demo Repo";
 
                 CSharpAnalyser analyser = new(outputDirectory);
-                ManifestManager manifestManager = new(manifestPath);
+                ManifestManager manifestManager = new(outputDirectory);
                 CSharpAnalysisEngine engine = new(analyser, manifestManager);
 
-                string json = await engine.AnalyseSymbolsAsync(sourcePath, TestContext.CancellationToken);
+                string json = await engine.AnalyseSymbolsAsync(repositoryName, sourcePath, TestContext.CancellationToken);
 
                 Assert.IsFalse(string.IsNullOrWhiteSpace(json));
                 StringAssert.Contains(json, "Program");
 
-                IManifestEntry entry = manifestManager.GetEntry(sourcePath);
+                IManifestEntry entry = manifestManager.GetEntry(repositoryName, sourcePath);
                 Assert.IsNotNull(entry);
                 Assert.AreEqual("CSharp", entry.Language);
                 Assert.AreEqual(1, entry.AnalyserVersion);
@@ -57,7 +57,7 @@ namespace Revathryn.Review.Tests
             try
             {
                 CSharpAnalyser analyser = new(outputDirectory);
-                ManifestManager manifestManager = new(Path.Combine(outputDirectory, "manifest.json"));
+                ManifestManager manifestManager = new(outputDirectory);
                 CSharpAnalysisEngine engine = new(analyser, manifestManager);
 
                 Assert.AreEqual("C# Analyser", engine.Name);
@@ -221,6 +221,7 @@ namespace Revathryn.Review.Tests
                 ReviewContextRequest request = new()
                 {
                     RepositoryId = 1,
+                    RepositoryName = "Demo Repo",
                     RepoFileId = 1,
                     Language = "CSharp",
                     ContextKey = Consts.ContextKeySymbols,
@@ -352,16 +353,16 @@ namespace Revathryn.Review.Tests
                 _entry = entry;
             }
 
-            public bool RequiresAnalysis(string filePath, int currentAnalyserVersion)
+            public bool RequiresAnalysis(string repositoryName, string filePath, int currentAnalyserVersion)
             {
                 return false;
             }
 
-            public void RecordAnalysis(IManifestEntry entry)
+            public void RecordAnalysis(string repositoryName, IManifestEntry entry)
             {
             }
 
-            public IManifestEntry GetEntry(string filePath)
+            public IManifestEntry GetEntry(string repositoryName, string filePath)
             {
                 return string.Equals(filePath, _entry.SourcePath, StringComparison.OrdinalIgnoreCase) ? _entry : null;
             }

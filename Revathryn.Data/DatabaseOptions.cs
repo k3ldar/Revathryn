@@ -12,7 +12,7 @@ namespace Revathryn.Data
             ArgumentNullException.ThrowIfNull(settings, nameof(settings));
 
             BackupDirectory = Path.Combine(settings.BaseSettingsPath, DefaultBackupDirectoryName);
-            ConnectionString = String.Format(DefaultDataStore, Path.Combine(settings.BaseSettingsPath, DefaultDatabaseFileName));
+            ConnectionString = String.Format(DefaultDataStore, Path.Combine(settings.BaseSettingsPath, DatabasePath, DefaultDatabaseFileName));
         }
 
         /// <summary>SQLite connection string. Defaults to a local file database.</summary>

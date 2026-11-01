@@ -246,7 +246,11 @@ namespace Revathryn.Engine
                 RenamedFiles = summary.RenamedFiles
             };
 
-            await _scanRepository.AddAsync(record, cancellationToken).ConfigureAwait(false);
+            // Persist changed scans, and always persist failures so the dashboard can surface them.
+            if (record.HasChanges || !succeeded)
+            {
+                await _scanRepository.AddAsync(record, cancellationToken).ConfigureAwait(false);
+            }
 
             if (succeeded)
             {
@@ -272,12 +276,12 @@ namespace Revathryn.Engine
 
                 try
                 {
-                    if (!_cSharpAnalysisEngine.RequiresAnalysis(absolutePath))
+                    if (!_cSharpAnalysisEngine.RequiresAnalysis(repository.Name, absolutePath))
                     {
                         continue;
                     }
 
-                    _ = await _cSharpAnalysisEngine.AnalyseSymbolsAsync(absolutePath, cancellationToken).ConfigureAwait(false);
+                    _ = await _cSharpAnalysisEngine.AnalyseSymbolsAsync(repository.Name, absolutePath, cancellationToken).ConfigureAwait(false);
                     summary.CSharpFilesAnalysed++;
                 }
                 catch (OperationCanceledException)

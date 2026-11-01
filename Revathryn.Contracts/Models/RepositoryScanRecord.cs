@@ -35,5 +35,10 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Number of files reliably detected as renamed or moved.</summary>
         public int RenamedFiles { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether any files were added, changed, removed, or renamed.
+        /// </summary>
+        public bool HasChanges => NewFiles > 0 || ChangedFiles > 0 || RemovedFiles > 0 || RenamedFiles > 0;
     }
 }

@@ -4,6 +4,7 @@ using AspNetCore.PluginManager;
 
 using PluginManager;
 
+using Revathryn.Contracts;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Reliability;
@@ -43,14 +44,16 @@ namespace Revathryn
             {
                 PluginManagerService.ConfigureServices(builder.Services);
 
+                RevathrynSettings settings = new();
+                builder.Services.AddSingleton(settings);
 
                 // Add services to the container.
                 builder.Services.AddSingleton(new UptimeModel());
                 builder.Services.AddControllersWithViews();
-                builder.Services.AddDataServices();
+                builder.Services.AddDataServices(settings);
                 builder.Services.AddEngineServices();
                 builder.Services.AddSingleton<IOperationalLogSink, OperationalLoggingSink>();
-                builder.Services.AddReviewServices();
+                builder.Services.AddReviewServices(settings);
                 builder.Services.AddHostedService<ReviewWorkerService>();
 
                 //builder.Host.UseWindowsService();

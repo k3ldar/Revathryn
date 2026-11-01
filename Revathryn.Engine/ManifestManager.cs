@@ -4,25 +4,36 @@ using System.Text.Json.Serialization;
 
 using Revathryn.Contracts;
 
+using static Revathryn.Contracts.Consts;
+
 namespace Revathryn.Engine
 {
     /// <summary>
     /// File-backed implementation of <see cref="IManifestManager"/>.
-    /// Stores manifest data as a JSON file at the path supplied on construction.
-    /// Replace this class with a database-backed implementation in the future
-    /// without changing any other layer.
+    /// Stores one manifest per repository as a JSON file under the output
+    /// directory supplied on construction. Replace this class with a
+    /// database-backed implementation in the future without changing any
+    /// other layer.
     /// </summary>
-    public class ManifestManager(string manifestPath) : IManifestManager
+    public class ManifestManager : IManifestManager
     {
-        private readonly string _manifestPath = manifestPath;
-        private readonly Manifest _manifest = Load(manifestPath);
-
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             WriteIndented = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             Converters = { new ManifestEntryConverter() }
         };
+
+        private readonly string _outputDirectory;
+        private readonly Dictionary<string, Manifest> _manifests;
+
+        /// <summary>Initialises a new manifest manager rooted at the supplied output directory.</summary>
+        /// <param name="outputDirectory">Directory under which per-repository manifests are stored.</param>
+        public ManifestManager(string outputDirectory)
+        {
+            _outputDirectory = outputDirectory;
+            _manifests = new Dictionary<string, Manifest>(StringComparer.Ordinal);
+        }
 
         /// <summary>
         /// Tells System.Text.Json to deserialise <see cref="IManifestEntry"/> as the
@@ -38,9 +49,11 @@ namespace Revathryn.Engine
                 => JsonSerializer.Serialize(writer, (ManifestEntry)value, options);
         }
 
-        public bool RequiresAnalysis(string filePath, int currentAnalyserVersion)
+        public bool RequiresAnalysis(string repositoryName, string filePath, int currentAnalyserVersion)
         {
-            if (!_manifest.Entries.TryGetValue(filePath, out IManifestEntry existing))
+            Manifest manifest = GetManifest(repositoryName);
+
+            if (!manifest.Entries.TryGetValue(filePath, out IManifestEntry existing))
             {
                 return true;
             }
@@ -64,16 +77,49 @@ namespace Revathryn.Engine
             return !string.Equals(currentHash, existing.SourceHash, StringComparison.Ordinal);
         }
 
-        public void RecordAnalysis(IManifestEntry entry)
+        public void RecordAnalysis(string repositoryName, IManifestEntry entry)
         {
-            _manifest.Entries[entry.SourcePath] = entry;
-            Save();
+            Manifest manifest = GetManifest(repositoryName);
+            manifest.Entries[entry.SourcePath] = entry;
+            Save(repositoryName, manifest);
         }
 
-        public IManifestEntry GetEntry(string filePath)
+        public IManifestEntry GetEntry(string repositoryName, string filePath)
         {
-            _ = _manifest.Entries.TryGetValue(filePath, out IManifestEntry entry);
+            Manifest manifest = GetManifest(repositoryName);
+            _ = manifest.Entries.TryGetValue(filePath, out IManifestEntry entry);
             return entry;
+        }
+
+        private Manifest GetManifest(string repositoryName)
+        {
+            if (_manifests.TryGetValue(repositoryName, out Manifest manifest))
+            {
+                return manifest;
+            }
+
+            manifest = Load(ResolveManifestPath(repositoryName));
+            _manifests[repositoryName] = manifest;
+            return manifest;
+        }
+
+        private string ResolveManifestPath(string repositoryName)
+        {
+            string safeName = RepositoryFileNaming.GetSafeName(repositoryName);
+            return Path.Combine(_outputDirectory, string.Concat(AnalysisManifestPrefix, safeName, JsonFileExtension));
+        }
+
+        private void Save(string repositoryName, Manifest manifest)
+        {
+            string manifestPath = ResolveManifestPath(repositoryName);
+
+            if (!string.IsNullOrEmpty(_outputDirectory))
+            {
+                _ = Directory.CreateDirectory(_outputDirectory);
+            }
+
+            string json = JsonSerializer.Serialize(manifest, _jsonOptions);
+            File.WriteAllText(manifestPath, json);
         }
 
         private static Manifest Load(string path)
@@ -94,19 +140,6 @@ namespace Revathryn.Engine
                 // Corrupt manifest — start fresh
                 return new Manifest();
             }
-        }
-
-        private void Save()
-        {
-            string directory = Path.GetDirectoryName(_manifestPath);
-
-            if (!string.IsNullOrEmpty(directory))
-            {
-                _ = Directory.CreateDirectory(directory);
-            }
-
-            string json = JsonSerializer.Serialize(_manifest, _jsonOptions);
-            File.WriteAllText(_manifestPath, json);
         }
 
         public static string ComputeHash(string filePath)

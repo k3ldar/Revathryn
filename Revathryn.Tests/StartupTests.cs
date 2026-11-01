@@ -19,13 +19,14 @@ namespace Revathryn.Tests
         [TestMethod]
         public void ServiceProvider_ResolvesCoreServices()
         {
+            Contracts.RevathrynSettings settings = new(Path.GetTempPath());
             ServiceCollection services = new();
 
             services.AddLogging();
             services.AddControllersWithViews();
-            services.AddDataServices(options => options.ConnectionString = "Data Source=revathryn-test.db");
+            services.AddDataServices(settings);
             services.AddEngineServices();
-            services.AddReviewServices();
+            services.AddReviewServices(settings);
 
             using ServiceProvider provider = services.BuildServiceProvider();
 

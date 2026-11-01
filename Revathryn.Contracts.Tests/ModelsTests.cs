@@ -60,6 +60,7 @@ namespace Revathryn.Contracts.Tests
             ReviewContextRequest request = new()
             {
                 RepositoryId = 7,
+                RepositoryName = "Demo Repo",
                 RepoFileId = 11,
                 Language = "CSharp",
                 ContextKey = "symbols",
@@ -67,6 +68,7 @@ namespace Revathryn.Contracts.Tests
             };
 
             Assert.AreEqual(7, request.RepositoryId);
+            Assert.AreEqual("Demo Repo", request.RepositoryName);
             Assert.AreEqual(11, request.RepoFileId);
             Assert.AreEqual("CSharp", request.Language);
             Assert.AreEqual("symbols", request.ContextKey);

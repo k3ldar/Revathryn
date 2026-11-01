@@ -12,15 +12,17 @@ namespace Revathryn.Review
     {
         /// <summary>Adds the Revathryn review engines to the service collection.</summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="configure">Optional callback for customising review options.</param>
-        public static IServiceCollection AddReviewServices(this IServiceCollection services, Action<ReviewOptions> configure = null)
+        /// <param name="settings">The Revathryn settings.</param>
+        public static IServiceCollection AddReviewServices(this IServiceCollection services, RevathrynSettings settings)
         {
-            ReviewOptions options = new();
-            configure?.Invoke(options);
+            ArgumentNullException.ThrowIfNull(services, nameof(services));
+            ArgumentNullException.ThrowIfNull(settings, nameof(settings));
+
+            ReviewOptions options = new(settings);
 
             services.AddSingleton(options);
             services.AddSingleton<IAnalyser>(_ => new CSharpAnalyser(options.AnalysisOutputDirectory));
-            services.AddSingleton<IManifestManager>(_ => new ManifestManager(options.ManifestPath));
+            services.AddSingleton<IManifestManager>(_ => new ManifestManager(options.AnalysisOutputDirectory));
             services.AddSingleton<ICSharpAnalysisEngine, CSharpAnalysisEngine>();
             services.AddSingleton<IAnalysisEngine, CSharpAnalysisEngine>();
             services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(Consts.OpenAIRequestTimeoutSeconds) });

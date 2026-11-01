@@ -43,7 +43,7 @@ namespace Revathryn.Review
                 return response;
             }
 
-            IManifestEntry entry = _manifestManager.GetEntry(request.SourcePath);
+            IManifestEntry entry = _manifestManager.GetEntry(request.RepositoryName, request.SourcePath);
 
             if (entry is null || string.IsNullOrWhiteSpace(entry.OutputFile) || !File.Exists(entry.OutputFile))
             {

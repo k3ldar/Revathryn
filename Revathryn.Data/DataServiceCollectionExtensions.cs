@@ -12,11 +12,12 @@ namespace Revathryn.Data
         /// <summary>Adds the Revathryn persistence layer to the service collection.</summary>
         /// <param name="services">The service collection.</param>
         /// <param name="configure">Optional callback for customising database options.</param>
-        public static IServiceCollection AddDataServices(this IServiceCollection services, Action<DatabaseOptions> configure = null)
+        public static IServiceCollection AddDataServices(this IServiceCollection services, RevathrynSettings settings)
         {
-            RevathrynSettings settings = new();
+            ArgumentNullException.ThrowIfNull(services, nameof(services));
+            ArgumentNullException.ThrowIfNull(settings, nameof(settings));
+
             DatabaseOptions options = new(settings);
-            configure?.Invoke(options);
 
             services.AddSingleton(settings);
             services.AddSingleton(options);

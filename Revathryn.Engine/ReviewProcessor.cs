@@ -250,6 +250,7 @@ namespace Revathryn.Engine
                 ReviewContextRequest contextRequest = new()
                 {
                     RepositoryId = request.RepositoryId,
+                    RepositoryName = repository.Name,
                     RepoFileId = request.RepoFileId,
                     Language = request.Language,
                     ContextKey = contextKey,

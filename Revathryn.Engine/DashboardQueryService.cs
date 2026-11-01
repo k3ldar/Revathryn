@@ -95,8 +95,15 @@ namespace Revathryn.Engine
         private static IReadOnlyList<RecentScanItem> BuildRecentScans(IReadOnlyList<RepositoryScanRecord> scans, Dictionary<long, Repository> repositoriesById)
         {
             List<RecentScanItem> items = [];
-            foreach (RepositoryScanRecord scan in scans.Take(DefaultRecentScanCount))
+            HashSet<long> seenRepositoryIds = [];
+
+            foreach (RepositoryScanRecord scan in scans)
             {
+                if (!seenRepositoryIds.Add(scan.RepositoryId))
+                {
+                    continue;
+                }
+
                 repositoriesById.TryGetValue(scan.RepositoryId, out Repository repository);
                 items.Add(new RecentScanItem
                 {
@@ -104,6 +111,11 @@ namespace Revathryn.Engine
                     RepositoryName = repository?.Name ?? scan.RepositoryId.ToString(),
                     Scan = scan
                 });
+
+                if (items.Count == DefaultRecentScanCount)
+                {
+                    break;
+                }
             }
 
             return items;
