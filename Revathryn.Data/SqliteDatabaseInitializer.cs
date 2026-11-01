@@ -45,7 +45,8 @@ namespace Revathryn.Data
                 SqliteDatabaseSchema.CreateAIEngines,
                 SqliteDatabaseSchema.CreateAISettings,
                 SqliteDatabaseSchema.CreateRepoProjects,
-                SqliteDatabaseSchema.CreateRepositoryScans);
+                SqliteDatabaseSchema.CreateRepositoryScans,
+                SqliteDatabaseSchema.CreateReviewUsage);
 
             command.ExecuteNonQuery();
 

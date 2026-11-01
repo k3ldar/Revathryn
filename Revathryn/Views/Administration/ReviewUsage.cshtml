@@ -1,0 +1,109 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.ReviewUsageListViewModel
+@{
+    ViewData["Title"] = Strings.ReviewUsageAdministrationTitle;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@Strings.ReviewUsageAdministrationTitle</h1>
+    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary">@Strings.DashboardTitle</a>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header">@Strings.TotalReviewsLabel</div>
+            <div class="card-body">
+                <div class="display-6">@Model.Summary.TotalReviewCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header">@Strings.TotalTokensLabel</div>
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-6">@Strings.PromptTokensLabel</dt>
+                    <dd class="col-6 text-end">@Model.Summary.TotalPromptTokens</dd>
+
+                    <dt class="col-6">@Strings.CompletionTokensLabel</dt>
+                    <dd class="col-6 text-end">@Model.Summary.TotalCompletionTokens</dd>
+
+                    <dt class="col-6">@Strings.CachedTokensLabel</dt>
+                    <dd class="col-6 text-end">@Model.Summary.TotalCachedTokens</dd>
+
+                    <dt class="col-6">@Strings.CacheHitRateLabel</dt>
+                    <dd class="col-6 text-end">@FormatPercent(Model.Summary.TotalCacheHitPercent)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header">@Strings.ReviewUsageTodayTitle</div>
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-6">@Strings.ReviewsTodayLabel</dt>
+                    <dd class="col-6 text-end">@Model.Summary.TodayReviewCount</dd>
+
+                    <dt class="col-6">@Strings.TotalTokensLabel</dt>
+                    <dd class="col-6 text-end">@Model.Summary.TodayTotalTokens</dd>
+
+                    <dt class="col-6">@Strings.CachedTokensLabel</dt>
+                    <dd class="col-6 text-end">@Model.Summary.TodayCachedTokens</dd>
+
+                    <dt class="col-6">@Strings.CacheHitRateLabel</dt>
+                    <dd class="col-6 text-end">@FormatPercent(Model.Summary.TodayCacheHitPercent)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.UsageRecords.Count == 0)
+{
+    <div class="alert alert-secondary">@Strings.ReviewUsageEmpty</div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (Revathryn.Contracts.Models.ReviewUsage usage in Model.UsageRecords)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <span class="fw-semibold">@usage.EngineName</span>
+                            <span class="badge bg-secondary">@usage.EngineModel</span>
+                        </div>
+
+                        <div class="text-muted small">@Strings.CompletedLabel: @FormatUtc(usage.OccurredUtc)</div>
+
+                        <div class="text-muted small">
+                            @Strings.AttemptsLabel: @usage.AttemptCount ·
+                            @Strings.PromptTokensLabel: @usage.PromptTokens ·
+                            @Strings.CompletionTokensLabel: @usage.CompletionTokens ·
+                            @Strings.TotalTokensLabel: @usage.TotalTokens ·
+                            @Strings.CachedTokensLabel: @usage.CachedTokens
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@functions
+{
+    private static string FormatUtc(DateTime value)
+    {
+        return value.ToString("yyyy-MM-dd HH:mm 'UTC'");
+    }
+
+    private static string FormatPercent(double value)
+    {
+        return $"{value:0.0}%";
+    }
+}

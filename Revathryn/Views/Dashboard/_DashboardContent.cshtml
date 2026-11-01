@@ -1,3 +1,4 @@
+@using Revathryn.Contracts
 @using Revathryn.Resources
 @model Revathryn.Contracts.Models.DashboardSnapshot
 
@@ -94,9 +95,61 @@
 
                     <dt class="col-6">@Strings.StartedLabel</dt>
                     <dd class="col-6 text-end">@FormatUtc(Model.StartTimeUtc)</dd>
+
+                    <dt class="col-6">@Strings.CpuUsageLabel</dt>
+                    <dd class="col-6 text-end">@FormatCpuUsage(Model.ResourceMetrics.CpuUsagePercent)</dd>
+
+                    <dt class="col-6">@Strings.ManagedHeapLabel</dt>
+                    <dd class="col-6 text-end">@FormatBytes(Model.ResourceMetrics.ManagedHeapBytes)</dd>
+
+                    <dt class="col-6">@Strings.GcCommittedLabel</dt>
+                    <dd class="col-6 text-end">@FormatBytes(Model.ResourceMetrics.GcCommittedBytes)</dd>
+
+                    <dt class="col-6">@Strings.TotalAllocatedLabel</dt>
+                    <dd class="col-6 text-end">@FormatBytes(Model.ResourceMetrics.TotalAllocatedBytes)</dd>
+
+                    <dt class="col-6">@Strings.WorkingSetLabel</dt>
+                    <dd class="col-6 text-end">@FormatBytes(Model.ResourceMetrics.WorkingSetBytes)</dd>
+
+                    <dt class="col-6">@Strings.PrivateMemoryLabel</dt>
+                    <dd class="col-6 text-end">@FormatBytes(Model.ResourceMetrics.PrivateMemoryBytes)</dd>
+
+                    <dt class="col-6">@Strings.ThreadPoolThreadsLabel</dt>
+                    <dd class="col-6 text-end">@Model.ResourceMetrics.ThreadPoolThreadCount</dd>
+
+                    <dt class="col-6">@Strings.ThreadPoolPendingWorkLabel</dt>
+                    <dd class="col-6 text-end">@Model.ResourceMetrics.ThreadPoolPendingWorkItemCount</dd>
                 </dl>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>@Strings.ReviewUsageTodayTitle</span>
+        <a asp-controller="Administration" asp-action="ReviewUsage" class="small">@Strings.ViewAllReviewUsageLink</a>
+    </div>
+    <div class="card-body">
+        <dl class="row small mb-0">
+            <dt class="col-6 col-md-2">@Strings.ReviewsTodayLabel</dt>
+            <dd class="col-6 col-md-2 text-end">@Model.ReviewUsage.TodayReviewCount</dd>
+
+            <dt class="col-6 col-md-2">@Strings.PromptTokensLabel</dt>
+            <dd class="col-6 col-md-2 text-end">@Model.ReviewUsage.TodayPromptTokens</dd>
+
+            <dt class="col-6 col-md-2">@Strings.CompletionTokensLabel</dt>
+            <dd class="col-6 col-md-2 text-end">@Model.ReviewUsage.TodayCompletionTokens</dd>
+
+            <dt class="col-6 col-md-2">@Strings.TotalTokensLabel</dt>
+            <dd class="col-6 col-md-2 text-end">@Model.ReviewUsage.TodayTotalTokens</dd>
+
+            <dt class="col-6 col-md-2">@Strings.CachedTokensLabel</dt>
+            <dd class="col-6 col-md-2 text-end">@Model.ReviewUsage.TodayCachedTokens</dd>
+
+            <dt class="col-6 col-md-2">@Strings.CacheHitRateLabel</dt>
+            <dd class="col-6 col-md-2 text-end">@FormatPercent(Model.ReviewUsage.TodayCacheHitPercent)</dd>
+        </dl>
     </div>
 </div>
 
@@ -291,6 +344,40 @@
         }
 
         return $"{value.Hours:00}:{value.Minutes:00}:{value.Seconds:00}";
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        const long Kilobyte = Consts.BytesPerKilobyte;
+        const long Megabyte = Kilobyte * Consts.BytesPerKilobyte;
+        const long Gigabyte = Megabyte * Consts.BytesPerKilobyte;
+
+        if (bytes >= Gigabyte)
+        {
+            return $"{bytes / (double)Gigabyte:0.0} GB";
+        }
+
+        if (bytes >= Megabyte)
+        {
+            return $"{bytes / (double)Megabyte:0.0} MB";
+        }
+
+        if (bytes >= Kilobyte)
+        {
+            return $"{bytes / (double)Kilobyte:0.0} KB";
+        }
+
+        return $"{bytes} B";
+    }
+
+    private static string FormatCpuUsage(double value)
+    {
+        return $"{value.ToString($"F{Consts.CpuDecimalPlaces}")} %";
+    }
+
+    private static string FormatPercent(double value)
+    {
+        return $"{value:0.0}%";
     }
 
     private static string RepositoryName(Revathryn.Contracts.Models.DashboardSnapshot model, long repositoryId)

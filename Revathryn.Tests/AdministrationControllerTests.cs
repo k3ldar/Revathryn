@@ -404,13 +404,36 @@ namespace Revathryn.Tests
             Assert.AreEqual(Strings.EngineDeletedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
         }
 
-        private static AdministrationController CreateController(IAIEngineRepository engineRepository)
+        [TestMethod]
+        public async Task ReviewUsage_ReturnsViewWithSummaryAndRecords()
+        {
+            FakeReviewUsageRepository usageRepository = new()
+            {
+                Summary = new ReviewUsageSummary { TotalReviewCount = 3, TodayReviewCount = 1 },
+                Records = [new ReviewUsage { Id = 1, EngineName = "OpenAI", EngineModel = "gpt-4o" }]
+            };
+
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), usageRepository);
+
+            IActionResult result = await controller.ReviewUsage(TestContext.CancellationToken);
+
+            ViewResult view = result as ViewResult;
+            Assert.IsNotNull(view);
+            ReviewUsageListViewModel model = view.Model as ReviewUsageListViewModel;
+            Assert.IsNotNull(model);
+            Assert.AreEqual(3, model.Summary.TotalReviewCount);
+            Assert.AreEqual(1, model.Summary.TodayReviewCount);
+            Assert.HasCount(1, model.UsageRecords);
+            Assert.AreEqual("OpenAI", model.UsageRecords[0].EngineName);
+        }
+
+        private static AdministrationController CreateController(IAIEngineRepository engineRepository, FakeReviewUsageRepository usageRepository = null)
         {
             DefaultHttpContext httpContext = new();
 
             ActionContext actionContext = new(httpContext, new RouteData(), new ControllerActionDescriptor());
 
-            AdministrationController controller = new(new FakeAISettingsRepository(), engineRepository)
+            AdministrationController controller = new(new FakeAISettingsRepository(), engineRepository, usageRepository ?? new FakeReviewUsageRepository())
             {
                 ControllerContext = new ControllerContext(actionContext),
                 Url = new FakeUrlHelper(actionContext),
@@ -506,6 +529,28 @@ namespace Revathryn.Tests
             public Task UpdateAsync(AISettings settings, CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeReviewUsageRepository : IReviewUsageRepository
+        {
+            public ReviewUsageSummary Summary { get; set; } = new();
+
+            public IReadOnlyList<ReviewUsage> Records { get; set; } = [];
+
+            public Task<long> AddAsync(ReviewUsage usage, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(0L);
+            }
+
+            public Task<IReadOnlyList<ReviewUsage>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Records);
+            }
+
+            public Task<ReviewUsageSummary> GetSummaryAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Summary);
             }
         }
 

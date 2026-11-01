@@ -30,6 +30,7 @@ namespace Revathryn.Engine
         private readonly IAIReviewEngine _aiReviewEngine;
         private readonly IReviewContextProvider _contextProvider;
         private readonly IRetryPolicyProvider _retryPolicyProvider;
+        private readonly IReviewUsageRepository _reviewUsageRepository;
         private readonly ResilienceOptions _resilienceOptions;
 
         /// <summary>Initialises a new processor.</summary>
@@ -44,6 +45,7 @@ namespace Revathryn.Engine
             IAIReviewEngine aiReviewEngine,
             IReviewContextProvider contextProvider,
             IRetryPolicyProvider retryPolicyProvider,
+            IReviewUsageRepository reviewUsageRepository,
             ResilienceOptions resilienceOptions)
         {
             _reviewQueue = reviewQueue;
@@ -56,6 +58,7 @@ namespace Revathryn.Engine
             _aiReviewEngine = aiReviewEngine;
             _contextProvider = contextProvider;
             _retryPolicyProvider = retryPolicyProvider;
+            _reviewUsageRepository = reviewUsageRepository;
             _resilienceOptions = resilienceOptions;
         }
 
@@ -133,6 +136,7 @@ namespace Revathryn.Engine
 
             int maxContextRequests = repository.MaxContextRequests > 0 ? repository.MaxContextRequests : Consts.DefaultMaxContextRequests;
             int contextIterations = 0;
+            List<ReviewUsage> usageRecords = [];
 
             while (true)
             {
@@ -140,8 +144,11 @@ namespace Revathryn.Engine
 
                 if (!response.Success)
                 {
+                    await PersistUsageRecordAsync(item, response, cancellationToken).ConfigureAwait(false);
                     return ProcessingResult.Failed(response.Error);
                 }
+
+                usageRecords.Add(BuildUsageRecord(item, response));
 
                 if (response.ContextRequests is null || response.ContextRequests.Count == 0)
                 {
@@ -150,7 +157,7 @@ namespace Revathryn.Engine
                         return ProcessingResult.Failed(Strings.AIEngineResponseIncomplete);
                     }
 
-                    await PersistOutcomeAsync(item, file, reviewType, response, cancellationToken).ConfigureAwait(false);
+                    await PersistOutcomeAsync(item, file, reviewType, response, usageRecords, cancellationToken).ConfigureAwait(false);
                     return ProcessingResult.Success();
                 }
 
@@ -199,6 +206,7 @@ namespace Revathryn.Engine
             RepoFile file,
             ReviewType reviewType,
             ReviewResponse response,
+            IReadOnlyList<ReviewUsage> usageRecords,
             CancellationToken cancellationToken)
         {
             List<Finding> findings = [];
@@ -233,6 +241,7 @@ namespace Revathryn.Engine
                 AnalysisVersion = Consts.AnalysisVersion,
                 ReviewDefinitionVersion = reviewType.ReviewDefinitionVersion,
                 Findings = findings,
+                UsageRecords = usageRecords,
                 CompletedUtc = DateTime.UtcNow
             };
 
@@ -337,6 +346,38 @@ namespace Revathryn.Engine
             return string.IsNullOrWhiteSpace(title)
                 ? content
                 : string.Concat(Consts.CharLeftSquareBracket, title, Consts.CharRightSquareBracket, Environment.NewLine, content);
+        }
+
+        private static ReviewUsage BuildUsageRecord(ReviewResponse response)
+        {
+            TokenUsage usage = response.Usage ?? new TokenUsage();
+
+            return new ReviewUsage
+            {
+                EngineId = response.EngineId,
+                EngineName = response.EngineName ?? string.Empty,
+                EngineModel = response.EngineModel ?? string.Empty,
+                AttemptCount = usage.AttemptCount,
+                PromptTokens = usage.PromptTokens,
+                CompletionTokens = usage.CompletionTokens,
+                TotalTokens = usage.TotalTokens,
+                CachedTokens = usage.CachedTokens,
+                OccurredUtc = DateTime.UtcNow
+            };
+        }
+
+        private static ReviewUsage BuildUsageRecord(QueueItem item, ReviewResponse response)
+        {
+            ReviewUsage usage = BuildUsageRecord(response);
+            usage.RepositoryId = item.RepositoryId;
+            usage.RepoFileId = item.RepoFileId;
+            usage.ReviewTypeId = item.ReviewTypeId;
+            return usage;
+        }
+
+        private async Task PersistUsageRecordAsync(QueueItem item, ReviewResponse response, CancellationToken cancellationToken)
+        {
+            await _reviewUsageRepository.AddAsync(BuildUsageRecord(item, response), cancellationToken).ConfigureAwait(false);
         }
 
         private static string BuildFindingFingerprint(QueueItem item, ReviewResult result)

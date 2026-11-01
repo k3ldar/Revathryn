@@ -9,6 +9,7 @@ using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
+using Revathryn.Contracts.Reliability;
 using Revathryn.Contracts.Review;
 using Revathryn.Resources;
 
@@ -27,6 +28,7 @@ namespace Revathryn.Review
         private const string BearerScheme = "Bearer";
         private const string SystemRole = "system";
         private const string UserRole = "user";
+        private const string AssistantRole = "assistant";
         private const string ResponseTypeJsonObject = "json_object";
         private const string CodeFence = "```";
         private const string FileContentHeader = "File content:";
@@ -41,16 +43,19 @@ namespace Revathryn.Review
         private readonly IAIEngineRepository _engineRepository;
         private readonly ISecretsProvider _secretsProvider;
         private readonly HttpClient _httpClient;
+        private readonly IOperationalDiagnostics _diagnostics;
 
         /// <summary>Initialises a new OpenAI-compatible review engine.</summary>
         public OpenAIReviewEngine(
             IAIEngineRepository engineRepository,
             ISecretsProvider secretsProvider,
-            HttpClient httpClient)
+            HttpClient httpClient,
+            IOperationalDiagnostics diagnostics)
         {
             _engineRepository = engineRepository;
             _secretsProvider = secretsProvider;
             _httpClient = httpClient;
+            _diagnostics = diagnostics;
         }
 
         /// <summary>Runs a review request and returns the resulting findings.</summary>
@@ -67,40 +72,52 @@ namespace Revathryn.Review
 
             string apiKey = await _secretsProvider.GetSecretAsync(engine.SecretKeyName, cancellationToken).ConfigureAwait(false);
 
-            string requestJson = BuildRequestJson(engine, request);
+            List<OpenAIMessage> correctionMessages = null;
+            TokenUsage usage = new();
 
-            using HttpRequestMessage httpRequest = new(HttpMethod.Post, BuildEndpoint(engine.Endpoint));
-
-            if (!string.IsNullOrWhiteSpace(apiKey))
+            for (int attempt = 0; ; attempt++)
             {
-                httpRequest.Headers.Authorization = new AuthenticationHeaderValue(BearerScheme, apiKey);
+                string requestJson = BuildRequestJson(engine, request, correctionMessages);
+
+                SendResult sendResult = await SendReviewRequestAsync(engine, apiKey, requestJson, cancellationToken).ConfigureAwait(false);
+
+                if (!sendResult.Success)
+                {
+                    return Failure(sendResult.Error, engine, usage);
+                }
+
+                AccumulateUsage(usage, sendResult.Body);
+
+                try
+                {
+                    ReviewResponse response = ParseReviewOutput(sendResult.Body);
+                    AttachEngine(response, engine, usage);
+                    return response;
+                }
+                catch (InvalidAIResponseException exception) when (attempt < Consts.AIReviewCorrectionMaxAttempts)
+                {
+                    _diagnostics.Log(
+                        OperationalLogLevel.Warning,
+                        Consts.OpenAIReviewEngineComponent,
+                        Consts.ReviewOperation,
+                        exception.Message,
+                        exception,
+                        retryAttempt: attempt + 1);
+
+                    correctionMessages = BuildCorrectionMessages(sendResult.Body, exception);
+                }
+                catch (InvalidAIResponseException exception)
+                {
+                    _diagnostics.Log(
+                        OperationalLogLevel.Error,
+                        Consts.OpenAIReviewEngineComponent,
+                        Consts.ReviewOperation,
+                        exception.Message,
+                        exception);
+
+                    return Failure(exception.Message, engine, usage);
+                }
             }
-
-            httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, JsonMediaType);
-
-            HttpResponseMessage httpResponse;
-
-            try
-            {
-                httpResponse = await _httpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                return Failure(exception.Message);
-            }
-
-            string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-            if (!httpResponse.IsSuccessStatusCode)
-            {
-                return Failure(ExtractApiError(body, httpResponse.StatusCode));
-            }
-
-            return ParseReviewOutput(body);
         }
 
         private async Task<AIEngine> ResolveEngineAsync(CancellationToken cancellationToken)
@@ -116,16 +133,23 @@ namespace Revathryn.Review
             return enabledEngines.Count == 0 ? null : enabledEngines[0];
         }
 
-        private static string BuildRequestJson(AIEngine engine, ReviewRequest request)
+        private static string BuildRequestJson(AIEngine engine, ReviewRequest request, List<OpenAIMessage> correctionMessages = null)
         {
+            List<OpenAIMessage> messages =
+            [
+                new OpenAIMessage { Role = SystemRole, Content = request.Prompt ?? string.Empty },
+                new OpenAIMessage { Role = UserRole, Content = BuildUserContent(request) }
+            ];
+
+            if (correctionMessages is not null && correctionMessages.Count > 0)
+            {
+                messages.AddRange(correctionMessages);
+            }
+
             OpenAIChatCompletionRequest payload = new()
             {
                 Model = engine.Model,
-                Messages =
-                [
-                    new OpenAIMessage { Role = SystemRole, Content = request.Prompt ?? string.Empty },
-                    new OpenAIMessage { Role = UserRole, Content = BuildUserContent(request) }
-                ],
+                Messages = messages,
                 ResponseFormat = new OpenAIResponseFormat { Type = ResponseTypeJsonObject },
                 Temperature = 0,
                 MaxCompletionTokens = engine.MaxTokens > 0 ? engine.MaxTokens : DefaultAIMaxTokens
@@ -161,28 +185,28 @@ namespace Revathryn.Review
         }
 
         private static ReviewResponse ParseReviewOutput(string body)
-        {
+         {
             try
             {
                 OpenAIChatCompletionResponse completion = JsonSerializer.Deserialize<OpenAIChatCompletionResponse>(body);
 
                 if (completion?.Choices is null || completion.Choices.Count == 0)
                 {
-                    return Failure(Strings.AIEngineResponseIncomplete);
+                    throw new InvalidAIResponseException(Strings.AIEngineResponseIncomplete);
                 }
 
                 string content = completion.Choices[0].Message?.Content;
 
                 if (string.IsNullOrWhiteSpace(content))
                 {
-                    return Failure(Strings.AIEngineResponseIncomplete);
+                    throw new InvalidAIResponseException(Strings.AIEngineResponseIncomplete);
                 }
 
                 ReviewOutput output = JsonSerializer.Deserialize<ReviewOutput>(ExtractJsonContent(content));
 
                 if (output?.Results is null)
                 {
-                    return Failure(Strings.AIEngineResponseIncomplete);
+                    throw new InvalidAIResponseException(Strings.AIEngineResponseIncomplete);
                 }
 
                 ReviewResponse response = new()
@@ -205,10 +229,89 @@ namespace Revathryn.Review
 
                 return response;
             }
+            catch (JsonException exception)
+            {
+                throw new InvalidAIResponseException(Strings.AIEngineResponseInvalid, exception);
+            }
+        }
+
+        private async Task<SendResult> SendReviewRequestAsync(AIEngine engine, string apiKey, string requestJson, CancellationToken cancellationToken)
+        {
+            using HttpRequestMessage httpRequest = new(HttpMethod.Post, BuildEndpoint(engine.Endpoint));
+
+            if (!string.IsNullOrWhiteSpace(apiKey))
+            {
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue(BearerScheme, apiKey);
+            }
+
+            httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, JsonMediaType);
+
+            HttpResponseMessage httpResponse;
+
+            try
+            {
+                httpResponse = await _httpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                return SendResult.Failed(exception.Message);
+            }
+
+            string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                return SendResult.Failed(ExtractApiError(body, httpResponse.StatusCode));
+            }
+
+            return SendResult.Succeeded(body);
+        }
+
+        private static List<OpenAIMessage> BuildCorrectionMessages(string body, InvalidAIResponseException exception)
+        {
+            return
+            [
+                new OpenAIMessage { Role = AssistantRole, Content = ExtractAssistantContent(body) },
+                new OpenAIMessage { Role = UserRole, Content = BuildCorrectionPrompt(exception) }
+            ];
+        }
+
+        private static string ExtractAssistantContent(string body)
+        {
+            try
+            {
+                OpenAIChatCompletionResponse completion = JsonSerializer.Deserialize<OpenAIChatCompletionResponse>(body);
+
+                if (completion?.Choices is not null && completion.Choices.Count > 0)
+                {
+                    string content = completion.Choices[0].Message?.Content;
+
+                    if (!string.IsNullOrWhiteSpace(content))
+                    {
+                        return content;
+                    }
+                }
+            }
             catch (JsonException)
             {
-                return Failure(Strings.AIEngineResponseInvalid);
+                // Fall back to echoing the raw body when the outer response cannot be parsed.
             }
+
+            return body;
+        }
+
+        private static string BuildCorrectionPrompt(InvalidAIResponseException exception)
+        {
+            if (exception.JsonError is null || string.IsNullOrWhiteSpace(exception.JsonError.Message))
+            {
+                return Strings.AIEngineCorrectionRequest;
+            }
+
+            return string.Format(Strings.AIEngineCorrectionRequestWithDetail, exception.JsonError.Message);
         }
 
         private static string ExtractJsonContent(string content)
@@ -280,11 +383,73 @@ namespace Revathryn.Review
 
         private static ReviewResponse Failure(string error)
         {
-            return new ReviewResponse
+            return Failure(error, null, new TokenUsage());
+        }
+
+        private static ReviewResponse Failure(string error, AIEngine engine, TokenUsage usage)
+        {
+            ReviewResponse response = new()
             {
                 Success = false,
                 Error = error ?? Strings.UnknownReviewError
             };
+
+            AttachEngine(response, engine, usage);
+            return response;
+        }
+
+        private static void AttachEngine(ReviewResponse response, AIEngine engine, TokenUsage usage)
+        {
+            response.Usage = usage ?? new TokenUsage();
+
+            if (engine is null)
+            {
+                return;
+            }
+
+            response.EngineId = engine.Id;
+            response.EngineName = engine.Name;
+            response.EngineModel = engine.Model;
+        }
+
+        private static void AccumulateUsage(TokenUsage usage, string body)
+        {
+            usage.AttemptCount++;
+
+            try
+            {
+                OpenAIChatCompletionResponse completion = JsonSerializer.Deserialize<OpenAIChatCompletionResponse>(body);
+                OpenAIUsage report = completion?.Usage;
+
+                if (report is null)
+                {
+                    return;
+                }
+
+                usage.PromptTokens += Math.Max(0, report.PromptTokens);
+                usage.CompletionTokens += Math.Max(0, report.CompletionTokens);
+                usage.TotalTokens += Math.Max(0, report.TotalTokens);
+                usage.CachedTokens += Math.Max(0, ResolveCachedTokens(report));
+            }
+            catch (JsonException)
+            {
+                // Usage is best-effort; the caller handles malformed response bodies.
+            }
+        }
+
+        private static int ResolveCachedTokens(OpenAIUsage usage)
+        {
+            if (usage.PromptTokensDetails?.CachedTokens > 0)
+            {
+                return usage.PromptTokensDetails.CachedTokens;
+            }
+
+            if (usage.CachedTokens > 0)
+            {
+                return usage.CachedTokens;
+            }
+
+            return Math.Max(0, usage.CacheReadInputTokens);
         }
 
         private sealed class OpenAIChatCompletionRequest
@@ -327,6 +492,36 @@ namespace Revathryn.Review
 
             [JsonPropertyName("error")]
             public OpenAIErrorBody Error { get; set; }
+
+            [JsonPropertyName("usage")]
+            public OpenAIUsage Usage { get; set; }
+        }
+
+        private sealed class OpenAIUsage
+        {
+            [JsonPropertyName("prompt_tokens")]
+            public int PromptTokens { get; set; }
+
+            [JsonPropertyName("completion_tokens")]
+            public int CompletionTokens { get; set; }
+
+            [JsonPropertyName("total_tokens")]
+            public int TotalTokens { get; set; }
+
+            [JsonPropertyName("cached_tokens")]
+            public int CachedTokens { get; set; }
+
+            [JsonPropertyName("prompt_tokens_details")]
+            public OpenAIPromptTokensDetails PromptTokensDetails { get; set; }
+
+            [JsonPropertyName("cache_read_input_tokens")]
+            public int CacheReadInputTokens { get; set; }
+        }
+
+        private sealed class OpenAIPromptTokensDetails
+        {
+            [JsonPropertyName("cached_tokens")]
+            public int CachedTokens { get; set; }
         }
 
         private sealed class OpenAIChoice
@@ -372,6 +567,41 @@ namespace Revathryn.Review
 
             [JsonPropertyName("suggestedFix")]
             public string SuggestedFix { get; set; }
+        }
+
+        private sealed class SendResult
+        {
+            public bool Success { get; init; }
+
+            public string Body { get; init; }
+
+            public string Error { get; init; }
+
+            public static SendResult Succeeded(string body)
+            {
+                return new() { Success = true, Body = body };
+            }
+
+            public static SendResult Failed(string error)
+            {
+                return new() { Success = false, Error = error };
+            }
+        }
+
+        private sealed class InvalidAIResponseException : Exception
+        {
+            public InvalidAIResponseException(string message)
+                : base(message)
+            {
+            }
+
+            public InvalidAIResponseException(string message, JsonException jsonError)
+                : base(message, jsonError)
+            {
+                JsonError = jsonError;
+            }
+
+            public JsonException JsonError { get; }
         }
     }
 }

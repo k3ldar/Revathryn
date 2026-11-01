@@ -8,6 +8,7 @@ using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
+using Revathryn.Contracts.Reliability;
 using Revathryn.Contracts.Review;
 using Revathryn.Engine;
 using Revathryn.Review.CSharp;
@@ -37,7 +38,7 @@ namespace Revathryn.Review.Tests
                 string json = await engine.AnalyseSymbolsAsync(repositoryName, sourcePath, TestContext.CancellationToken);
 
                 Assert.IsFalse(string.IsNullOrWhiteSpace(json));
-                StringAssert.Contains(json, "Program");
+                Assert.Contains("Program", json);
 
                 IManifestEntry entry = manifestManager.GetEntry(repositoryName, sourcePath);
                 Assert.IsNotNull(entry);
@@ -98,7 +99,13 @@ namespace Revathryn.Review.Tests
                         "content": "{\"results\":[{\"fingerprint\":\"fp-1\",\"severity\":\"High\",\"title\":\"Title\",\"description\":\"Description\",\"suggestedFix\":\"Fix\"}],\"contextRequests\":[]}"
                       }
                     }
-                  ]
+                  ],
+                  "usage": {
+                    "prompt_tokens": 120,
+                    "completion_tokens": 30,
+                    "total_tokens": 150,
+                    "prompt_tokens_details": { "cached_tokens": 60 }
+                  }
                 }
                 """;
 
@@ -108,7 +115,8 @@ namespace Revathryn.Review.Tests
             OpenAIReviewEngine engine = new(
                 new FakeAIEngineRepository(configuredEngine),
                 new FakeSecretsProvider("api-key"),
-                httpClient);
+                httpClient,
+                new FakeOperationalDiagnostics());
 
             ReviewRequest request = new()
             {
@@ -130,6 +138,15 @@ namespace Revathryn.Review.Tests
             Assert.AreEqual("fp-1", response.Results[0].Fingerprint);
             Assert.AreEqual(FindingSeverity.High, response.Results[0].Severity);
             Assert.AreEqual("Title", response.Results[0].Title);
+            Assert.AreEqual(1, response.EngineId);
+            Assert.AreEqual("OpenAI", response.EngineName);
+            Assert.AreEqual("test-model", response.EngineModel);
+            Assert.IsNotNull(response.Usage);
+            Assert.AreEqual(1, response.Usage.AttemptCount);
+            Assert.AreEqual(120, response.Usage.PromptTokens);
+            Assert.AreEqual(30, response.Usage.CompletionTokens);
+            Assert.AreEqual(150, response.Usage.TotalTokens);
+            Assert.AreEqual(60, response.Usage.CachedTokens);
         }
 
         [TestMethod]
@@ -156,7 +173,13 @@ namespace Revathryn.Review.Tests
                         "content": "this is not json"
                       }
                     }
-                  ]
+                  ],
+                  "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "cached_tokens": 2
+                  }
                 }
                 """;
 
@@ -166,7 +189,8 @@ namespace Revathryn.Review.Tests
             OpenAIReviewEngine engine = new(
                 new FakeAIEngineRepository(configuredEngine),
                 new FakeSecretsProvider("api-key"),
-                httpClient);
+                httpClient,
+                new FakeOperationalDiagnostics());
 
             ReviewRequest request = new()
             {
@@ -185,6 +209,109 @@ namespace Revathryn.Review.Tests
             Assert.IsFalse(response.Success);
             Assert.IsFalse(string.IsNullOrWhiteSpace(response.Error));
             Assert.HasCount(0, response.Results);
+            Assert.AreEqual(2, handler.RequestCount);
+            Assert.AreEqual(1, response.EngineId);
+            Assert.AreEqual("OpenAI", response.EngineName);
+            Assert.IsNotNull(response.Usage);
+            Assert.AreEqual(2, response.Usage.AttemptCount);
+            Assert.AreEqual(20, response.Usage.PromptTokens);
+            Assert.AreEqual(10, response.Usage.CompletionTokens);
+            Assert.AreEqual(30, response.Usage.TotalTokens);
+            Assert.AreEqual(4, response.Usage.CachedTokens);
+        }
+
+        [TestMethod]
+        public async Task OpenAIReviewEngine_InvalidJsonThenValid_ReturnsResultsAfterOneRetry()
+        {
+            // Arrange
+            AIEngine configuredEngine = new()
+            {
+                Id = 1,
+                Name = "OpenAI",
+                Provider = AIProvider.OpenAI,
+                Endpoint = "https://example.test/v1",
+                Model = "test-model",
+                SecretKeyName = "test-secret",
+                Enabled = true,
+                IsDefault = true
+            };
+
+            string invalidCompletionBody = """
+                {
+                  "choices": [
+                    {
+                      "message": {
+                        "content": "this is not json"
+                      }
+                    }
+                  ],
+                  "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "cached_tokens": 2
+                  }
+                }
+                """;
+
+            string validCompletionBody = """
+                {
+                  "choices": [
+                    {
+                      "message": {
+                        "content": "{\"results\":[{\"fingerprint\":\"fp-1\",\"severity\":\"High\",\"title\":\"Title\",\"description\":\"Description\",\"suggestedFix\":\"Fix\"}],\"contextRequests\":[]}"
+                      }
+                    }
+                  ],
+                  "usage": {
+                    "prompt_tokens": 120,
+                    "completion_tokens": 30,
+                    "total_tokens": 150,
+                    "prompt_tokens_details": { "cached_tokens": 60 }
+                  }
+                }
+                """;
+
+            StubHttpMessageHandler handler = new(
+            [
+                new StubResponse(HttpStatusCode.OK, invalidCompletionBody, "application/json"),
+                new StubResponse(HttpStatusCode.OK, validCompletionBody, "application/json")
+            ]);
+            HttpClient httpClient = new(handler);
+
+            OpenAIReviewEngine engine = new(
+                new FakeAIEngineRepository(configuredEngine),
+                new FakeSecretsProvider("api-key"),
+                httpClient,
+                new FakeOperationalDiagnostics());
+
+            ReviewRequest request = new()
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                ReviewTypeId = 1,
+                Language = "CSharp",
+                FileContent = "class Program { }",
+                Prompt = "Review this file."
+            };
+
+            // Act
+            ReviewResponse response = await engine.ReviewAsync(request, TestContext.CancellationToken);
+
+            // Assert
+            Assert.IsTrue(response.Success);
+            Assert.HasCount(1, response.Results);
+            Assert.AreEqual("fp-1", response.Results[0].Fingerprint);
+            Assert.AreEqual(2, handler.RequestCount);
+            Assert.Contains("not valid JSON", handler.RequestBodies[1]);
+            Assert.AreEqual(1, response.EngineId);
+            Assert.AreEqual("OpenAI", response.EngineName);
+            Assert.IsNotNull(response.Usage);
+            Assert.AreEqual(2, response.Usage.AttemptCount);
+            Assert.AreEqual(130, response.Usage.PromptTokens);
+            Assert.AreEqual(35, response.Usage.CompletionTokens);
+            Assert.AreEqual(165, response.Usage.TotalTokens);
+            Assert.AreEqual(62, response.Usage.CachedTokens);
         }
 
         [TestMethod]
@@ -252,25 +379,76 @@ namespace Revathryn.Review.Tests
 
         private sealed class StubHttpMessageHandler : HttpMessageHandler
         {
-            private readonly HttpStatusCode _statusCode;
-            private readonly string _body;
-            private readonly string _mediaType;
+            private readonly Queue<StubResponse> _responses;
+            private readonly List<string> _requestBodies = [];
 
             public StubHttpMessageHandler(HttpStatusCode statusCode, string body, string mediaType)
+                : this([new StubResponse(statusCode, body, mediaType)])
             {
-                _statusCode = statusCode;
-                _body = body;
-                _mediaType = mediaType;
             }
 
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            public StubHttpMessageHandler(IEnumerable<StubResponse> responses)
             {
-                HttpResponseMessage response = new(_statusCode)
+                _responses = new Queue<StubResponse>(responses);
+            }
+
+            public int RequestCount
+            {
+                get { return _requestBodies.Count; }
+            }
+
+            public IReadOnlyList<string> RequestBodies
+            {
+                get { return _requestBodies; }
+            }
+
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                _requestBodies.Add(await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
+
+                if (_responses.Count == 0)
                 {
-                    Content = new StringContent(_body, Encoding.UTF8, _mediaType)
+                    throw new InvalidOperationException("No stub responses configured.");
+                }
+
+                StubResponse next = _responses.Count == 1 ? _responses.Peek() : _responses.Dequeue();
+
+                HttpResponseMessage response = new(next.StatusCode)
+                {
+                    Content = new StringContent(next.Body, Encoding.UTF8, next.MediaType)
                 };
 
-                return Task.FromResult(response);
+                return response;
+            }
+        }
+
+        private sealed class StubResponse
+        {
+            public StubResponse(HttpStatusCode statusCode, string body, string mediaType)
+            {
+                StatusCode = statusCode;
+                Body = body;
+                MediaType = mediaType;
+            }
+
+            public HttpStatusCode StatusCode { get; }
+
+            public string Body { get; }
+
+            public string MediaType { get; }
+        }
+
+        private sealed class FakeOperationalDiagnostics : IOperationalDiagnostics
+        {
+            public void Log(
+                OperationalLogLevel level,
+                string component,
+                string operation,
+                string message,
+                Exception exception = null,
+                TimeSpan? duration = null,
+                int? retryAttempt = null)
+            {
             }
         }
 

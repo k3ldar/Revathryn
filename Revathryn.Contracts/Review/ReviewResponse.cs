@@ -1,3 +1,5 @@
+using Revathryn.Contracts.Models;
+
 namespace Revathryn.Contracts.Review
 {
     /// <summary>Outcome of a review execution.</summary>
@@ -8,6 +10,18 @@ namespace Revathryn.Contracts.Review
 
         /// <summary>Optional error message when <see cref="Success"/> is false.</summary>
         public string Error { get; set; } = string.Empty;
+
+        /// <summary>Identifier of the engine that served the review.</summary>
+        public long EngineId { get; set; }
+
+        /// <summary>Display name of the engine that served the review.</summary>
+        public string EngineName { get; set; } = string.Empty;
+
+        /// <summary>Model identifier used by the engine.</summary>
+        public string EngineModel { get; set; } = string.Empty;
+
+        /// <summary>Token usage accumulated across the internal correction attempts.</summary>
+        public TokenUsage Usage { get; set; }
 
         /// <summary>Findings produced by the review. Empty when no issues were identified.</summary>
         public List<ReviewResult> Results { get; set; } = [];

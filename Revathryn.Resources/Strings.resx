@@ -191,6 +191,12 @@
 			<data name="AIEngineResponseInvalid" xml:space="preserve">
 			  <value>The AI engine returned a response that could not be parsed.</value>
 			</data>
+			<data name="AIEngineCorrectionRequest" xml:space="preserve">
+			  <value>Your previous response was not valid JSON. Please respond again with valid JSON only.</value>
+			</data>
+			<data name="AIEngineCorrectionRequestWithDetail" xml:space="preserve">
+			  <value>Your previous response was not valid JSON: {0} Please respond again with valid JSON only.</value>
+			</data>
 			<data name="AIEngineHttpError" xml:space="preserve">
 			  <value>The AI engine returned HTTP status {0}.</value>
 			</data>
@@ -442,6 +448,30 @@
 			</data>
 			<data name="StartedLabel" xml:space="preserve">
 			  <value>Started</value>
+			</data>
+			<data name="CpuUsageLabel" xml:space="preserve">
+			  <value>CPU usage</value>
+			</data>
+			<data name="ManagedHeapLabel" xml:space="preserve">
+			  <value>Managed heap</value>
+			</data>
+			<data name="GcCommittedLabel" xml:space="preserve">
+			  <value>GC committed</value>
+			</data>
+			<data name="TotalAllocatedLabel" xml:space="preserve">
+			  <value>Total allocated</value>
+			</data>
+			<data name="WorkingSetLabel" xml:space="preserve">
+			  <value>Working set</value>
+			</data>
+			<data name="PrivateMemoryLabel" xml:space="preserve">
+			  <value>Private memory</value>
+			</data>
+			<data name="ThreadPoolThreadsLabel" xml:space="preserve">
+			  <value>Thread pool threads</value>
+			</data>
+			<data name="ThreadPoolPendingWorkLabel" xml:space="preserve">
+			  <value>Thread pool queue</value>
 			</data>
 			<data name="NoRecentActivity" xml:space="preserve">
 			  <value>No recent activity has been recorded.</value>
@@ -704,7 +734,49 @@
 			<data name="ReviewCancelled" xml:space="preserve">
 			  <value>The review was cancelled before it completed.</value>
 			</data>
-			<data name="ReviewTypeNotAvailable" xml:space="preserve">
-			  <value>The review type is not available.</value>
-			</data>
-		  </root>
+			  <data name="ReviewTypeNotAvailable" xml:space="preserve">
+				<value>The review type is not available.</value>
+			  </data>
+			  <data name="ReviewUsageTitle" xml:space="preserve">
+				<value>Review usage</value>
+			  </data>
+			  <data name="ReviewUsageTodayTitle" xml:space="preserve">
+				<value>Review usage today</value>
+			  </data>
+			  <data name="ReviewUsageAdministrationTitle" xml:space="preserve">
+				<value>Review usage history</value>
+			  </data>
+			  <data name="ViewAllReviewUsageLink" xml:space="preserve">
+				<value>View all review usage</value>
+			  </data>
+			  <data name="TotalReviewsLabel" xml:space="preserve">
+				<value>Total reviews</value>
+			  </data>
+			  <data name="ReviewsTodayLabel" xml:space="preserve">
+				<value>Reviews today</value>
+			  </data>
+			  <data name="PromptTokensLabel" xml:space="preserve">
+				<value>Prompt tokens</value>
+			  </data>
+			  <data name="CompletionTokensLabel" xml:space="preserve">
+				<value>Completion tokens</value>
+			  </data>
+			  <data name="TotalTokensLabel" xml:space="preserve">
+				<value>Total tokens</value>
+			  </data>
+			  <data name="CachedTokensLabel" xml:space="preserve">
+				<value>Cached tokens</value>
+			  </data>
+			  <data name="CacheHitRateLabel" xml:space="preserve">
+				<value>Cache hit rate</value>
+			  </data>
+			  <data name="AttemptsLabel" xml:space="preserve">
+				<value>Attempts</value>
+			  </data>
+			  <data name="EngineLabel" xml:space="preserve">
+				<value>Engine</value>
+			  </data>
+			  <data name="ReviewUsageEmpty" xml:space="preserve">
+				<value>No review usage has been recorded yet.</value>
+			  </data>
+			</root>

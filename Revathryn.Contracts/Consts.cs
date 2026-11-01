@@ -157,6 +157,7 @@
         public const string OpenAIResponseFormatJsonObject = "json_object";
         public const int DefaultAIMaxTokens = 4096;
         public const int MinimumAIMaxTokens = 1;
+        public const int AIReviewCorrectionMaxAttempts = 1;
         public const int ReviewWorkerDelayMilliseconds = 30000;
         public const int ReviewWorkerMaxItemsPerCycle = 100;
         public const int MaximumThreadPoolSize = 500;
@@ -164,6 +165,8 @@
         public const int ThreadCpuChangeNotificationDisabledValue = 0;
 
         public const int CpuDecimalPlaces = 2;
+        public const double CpuUsagePercentageScale = 100.0;
+        public const long BytesPerKilobyte = 1024;
 
         // SQLite error codes used to classify transient resource contention.
         public const int SqliteBusyErrorCode = 5;

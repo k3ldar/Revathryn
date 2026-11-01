@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Threading;
+
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Reliability;
@@ -16,6 +19,7 @@ namespace Revathryn.Engine
         private readonly IIssueQueryService _issueQueryService;
         private readonly IHealthService _healthService;
         private readonly IFindingRepository _findingRepository;
+        private readonly IReviewUsageRepository _reviewUsageRepository;
         private readonly UptimeModel _uptimeModel;
 
         /// <summary>Initialises a new dashboard query service.</summary>
@@ -26,6 +30,7 @@ namespace Revathryn.Engine
             IIssueQueryService issueQueryService,
             IHealthService healthService,
             IFindingRepository findingRepository,
+            IReviewUsageRepository reviewUsageRepository,
             UptimeModel uptimeModel)
         {
             _repositoryRepository = repositoryRepository;
@@ -34,6 +39,7 @@ namespace Revathryn.Engine
             _issueQueryService = issueQueryService;
             _healthService = healthService;
             _findingRepository = findingRepository;
+            _reviewUsageRepository = reviewUsageRepository;
             _uptimeModel = uptimeModel;
         }
 
@@ -80,6 +86,7 @@ namespace Revathryn.Engine
             HealthReport healthReport = await _healthService.GetReadinessAsync(cancellationToken).ConfigureAwait(false);
             QueueMetrics queueMetrics = await _queueRepository.GetMetricsAsync(cancellationToken).ConfigureAwait(false);
             int failedAnalysisCount = await _findingRepository.CountOutstandingOperationalFailuresAsync(cancellationToken).ConfigureAwait(false);
+            ReviewUsageSummary reviewUsage = await _reviewUsageRepository.GetSummaryAsync(cancellationToken).ConfigureAwait(false);
 
             return new DashboardSnapshot
             {
@@ -94,8 +101,40 @@ namespace Revathryn.Engine
                 HealthReport = healthReport,
                 StartTimeUtc = _uptimeModel.StartTime,
                 Uptime = _uptimeModel.Duration,
+                ResourceMetrics = CaptureResourceMetrics(),
+                ReviewUsage = reviewUsage,
                 RecentScans = recentScans
             };
+        }
+
+        private SystemResourceMetrics CaptureResourceMetrics()
+        {
+            using Process process = Process.GetCurrentProcess();
+            GCMemoryInfo gcMemoryInfo = GC.GetGCMemoryInfo();
+
+            return new SystemResourceMetrics
+            {
+                ManagedHeapBytes = GC.GetTotalMemory(false),
+                GcCommittedBytes = gcMemoryInfo.TotalCommittedBytes,
+                TotalAllocatedBytes = GC.GetTotalAllocatedBytes(true),
+                WorkingSetBytes = process.WorkingSet64,
+                PrivateMemoryBytes = process.PrivateMemorySize64,
+                ThreadPoolThreadCount = ThreadPool.ThreadCount,
+                ThreadPoolPendingWorkItemCount = ThreadPool.PendingWorkItemCount,
+                CpuUsagePercent = CalculateCpuUsagePercent(process.TotalProcessorTime)
+            };
+        }
+
+        private double CalculateCpuUsagePercent(TimeSpan processCpuTime)
+        {
+            double elapsedMilliseconds = _uptimeModel.Duration.TotalMilliseconds;
+
+            if (elapsedMilliseconds <= 0)
+            {
+                return 0;
+            }
+
+            return processCpuTime.TotalMilliseconds * CpuUsagePercentageScale / elapsedMilliseconds;
         }
 
         private static IReadOnlyList<RecentScanItem> BuildRecentScans(IReadOnlyList<RepositoryScanRecord> scans, Dictionary<long, Repository> repositoriesById)

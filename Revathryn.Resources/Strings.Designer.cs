@@ -303,6 +303,24 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Your previous response was not valid JSON. Please respond again with valid JSON only..
+        /// </summary>
+        public static string AIEngineCorrectionRequest {
+            get {
+                return ResourceManager.GetString("AIEngineCorrectionRequest", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your previous response was not valid JSON: {0} Please respond again with valid JSON only..
+        /// </summary>
+        public static string AIEngineCorrectionRequestWithDetail {
+            get {
+                return ResourceManager.GetString("AIEngineCorrectionRequestWithDetail", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to The AI engine returned HTTP status {0}..
         /// </summary>
         public static string AIEngineHttpError {
@@ -1064,6 +1082,78 @@ namespace Revathryn.Resources {
         public static string StartedLabel {
             get {
                 return ResourceManager.GetString("StartedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to CPU usage.
+        /// </summary>
+        public static string CpuUsageLabel {
+            get {
+                return ResourceManager.GetString("CpuUsageLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Managed heap.
+        /// </summary>
+        public static string ManagedHeapLabel {
+            get {
+                return ResourceManager.GetString("ManagedHeapLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to GC committed.
+        /// </summary>
+        public static string GcCommittedLabel {
+            get {
+                return ResourceManager.GetString("GcCommittedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Total allocated.
+        /// </summary>
+        public static string TotalAllocatedLabel {
+            get {
+                return ResourceManager.GetString("TotalAllocatedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Working set.
+        /// </summary>
+        public static string WorkingSetLabel {
+            get {
+                return ResourceManager.GetString("WorkingSetLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Private memory.
+        /// </summary>
+        public static string PrivateMemoryLabel {
+            get {
+                return ResourceManager.GetString("PrivateMemoryLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Thread pool threads.
+        /// </summary>
+        public static string ThreadPoolThreadsLabel {
+            get {
+                return ResourceManager.GetString("ThreadPoolThreadsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Thread pool queue.
+        /// </summary>
+        public static string ThreadPoolPendingWorkLabel {
+            get {
+                return ResourceManager.GetString("ThreadPoolPendingWorkLabel", resourceCulture);
             }
         }
 
@@ -1857,6 +1947,132 @@ namespace Revathryn.Resources {
         public static string ReviewTypeNotAvailable {
             get {
                 return ResourceManager.GetString("ReviewTypeNotAvailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review usage.
+        /// </summary>
+        public static string ReviewUsageTitle {
+            get {
+                return ResourceManager.GetString("ReviewUsageTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review usage today.
+        /// </summary>
+        public static string ReviewUsageTodayTitle {
+            get {
+                return ResourceManager.GetString("ReviewUsageTodayTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review usage history.
+        /// </summary>
+        public static string ReviewUsageAdministrationTitle {
+            get {
+                return ResourceManager.GetString("ReviewUsageAdministrationTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to View all review usage.
+        /// </summary>
+        public static string ViewAllReviewUsageLink {
+            get {
+                return ResourceManager.GetString("ViewAllReviewUsageLink", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Total reviews.
+        /// </summary>
+        public static string TotalReviewsLabel {
+            get {
+                return ResourceManager.GetString("TotalReviewsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Reviews today.
+        /// </summary>
+        public static string ReviewsTodayLabel {
+            get {
+                return ResourceManager.GetString("ReviewsTodayLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Prompt tokens.
+        /// </summary>
+        public static string PromptTokensLabel {
+            get {
+                return ResourceManager.GetString("PromptTokensLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Completion tokens.
+        /// </summary>
+        public static string CompletionTokensLabel {
+            get {
+                return ResourceManager.GetString("CompletionTokensLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Total tokens.
+        /// </summary>
+        public static string TotalTokensLabel {
+            get {
+                return ResourceManager.GetString("TotalTokensLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Cached tokens.
+        /// </summary>
+        public static string CachedTokensLabel {
+            get {
+                return ResourceManager.GetString("CachedTokensLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Cache hit rate.
+        /// </summary>
+        public static string CacheHitRateLabel {
+            get {
+                return ResourceManager.GetString("CacheHitRateLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Attempts.
+        /// </summary>
+        public static string AttemptsLabel {
+            get {
+                return ResourceManager.GetString("AttemptsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Engine.
+        /// </summary>
+        public static string EngineLabel {
+            get {
+                return ResourceManager.GetString("EngineLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No review usage has been recorded yet..
+        /// </summary>
+        public static string ReviewUsageEmpty {
+            get {
+                return ResourceManager.GetString("ReviewUsageEmpty", resourceCulture);
             }
         }
 

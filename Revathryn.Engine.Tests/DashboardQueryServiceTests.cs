@@ -132,6 +132,7 @@ namespace Revathryn.Engine.Tests
                 new FakeIssueQueryService(),
                 new FakeHealthService(),
                 findings,
+                new FakeReviewUsageRepository(),
                 new UptimeModel());
 
             DashboardSnapshot snapshot = await service.GetSnapshotAsync(TestContext.CancellationToken);
@@ -142,6 +143,37 @@ namespace Revathryn.Engine.Tests
             Assert.AreEqual(1, snapshot.QueueMetrics.RetryCount);
             Assert.AreEqual(2, snapshot.FailedAnalysisCount);
             Assert.AreEqual(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), snapshot.QueueMetrics.OldestPendingUtc.Value);
+        }
+
+        [TestMethod]
+        public async Task GetSnapshotAsync_MapsReviewUsageSummaryToSnapshot()
+        {
+            FakeRepositoryRepository repositories = new();
+            FakeRepositoryScanRepository scans = new();
+            FakeReviewUsageRepository usage = new()
+            {
+                Summary = new ReviewUsageSummary
+                {
+                    TotalReviewCount = 5,
+                    TodayReviewCount = 2
+                }
+            };
+
+            DashboardQueryService service = new(
+                repositories,
+                scans,
+                new FakeQueueRepository(),
+                new FakeIssueQueryService(),
+                new FakeHealthService(),
+                new FakeFindingRepository(),
+                usage,
+                new UptimeModel());
+
+            DashboardSnapshot snapshot = await service.GetSnapshotAsync(TestContext.CancellationToken);
+
+            Assert.IsNotNull(snapshot.ReviewUsage);
+            Assert.AreEqual(5, snapshot.ReviewUsage.TotalReviewCount);
+            Assert.AreEqual(2, snapshot.ReviewUsage.TodayReviewCount);
         }
 
         [TestMethod]
@@ -176,6 +208,7 @@ namespace Revathryn.Engine.Tests
                 new FakeIssueQueryService(),
                 new FakeHealthService(),
                 new FakeFindingRepository(),
+                new FakeReviewUsageRepository(),
                 new UptimeModel());
         }
 
@@ -356,6 +389,28 @@ namespace Revathryn.Engine.Tests
             public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeReviewUsageRepository : IReviewUsageRepository
+        {
+            public ReviewUsageSummary Summary { get; set; } = new();
+
+            public IReadOnlyList<ReviewUsage> Records { get; set; } = [];
+
+            public Task<long> AddAsync(ReviewUsage usage, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(0L);
+            }
+
+            public Task<IReadOnlyList<ReviewUsage>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Records);
+            }
+
+            public Task<ReviewUsageSummary> GetSummaryAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Summary);
             }
         }
 

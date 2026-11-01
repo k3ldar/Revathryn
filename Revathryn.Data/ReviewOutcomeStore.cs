@@ -30,6 +30,27 @@ namespace Revathryn.Data
                 await FindingRepository.AddAsync(connection, transaction, finding, cancellationToken).ConfigureAwait(false);
             }
 
+            foreach (ReviewUsage usage in outcome.UsageRecords ?? [])
+            {
+                ReviewUsage record = new()
+                {
+                    RepositoryId = outcome.RepositoryId,
+                    RepoFileId = outcome.RepoFileId,
+                    ReviewTypeId = outcome.ReviewTypeId,
+                    EngineId = usage.EngineId,
+                    EngineName = usage.EngineName,
+                    EngineModel = usage.EngineModel,
+                    AttemptCount = usage.AttemptCount,
+                    PromptTokens = usage.PromptTokens,
+                    CompletionTokens = usage.CompletionTokens,
+                    TotalTokens = usage.TotalTokens,
+                    CachedTokens = usage.CachedTokens,
+                    OccurredUtc = usage.OccurredUtc == default ? outcome.CompletedUtc : usage.OccurredUtc
+                };
+
+                await ReviewUsageRepository.AddAsync(connection, transaction, record, cancellationToken).ConfigureAwait(false);
+            }
+
             RepoFileAnalysis analysis = new()
             {
                 RepositoryId = outcome.RepositoryId,

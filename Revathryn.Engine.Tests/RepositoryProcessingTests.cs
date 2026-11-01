@@ -1865,6 +1865,88 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
+        public async Task ReviewProcessor_FailedReview_PersistsUsageRecord()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    Priority = 100,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new()
+                {
+                    Response = new ReviewResponse
+                    {
+                        Success = false,
+                        Error = "boom",
+                        EngineId = 7,
+                        EngineName = "OpenAI",
+                        EngineModel = "gpt-4o",
+                        Usage = new TokenUsage
+                        {
+                            AttemptCount = 1,
+                            PromptTokens = 12,
+                            CompletionTokens = 3,
+                            TotalTokens = 15,
+                            CachedTokens = 4
+                        }
+                    }
+                };
+
+                FakeReviewUsageRepository usageRepository = new();
+                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                options.DefaultRetry.MaxAttempts = 3;
+
+                ReviewProcessor processor = CreateReviewProcessor(
+                    queue,
+                    repositories,
+                    files,
+                    reviewTypes,
+                    engine,
+                    new FakeRetryPolicy(),
+                    options,
+                    usageRepository: usageRepository);
+
+                bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.IsTrue(processed);
+                Assert.HasCount(1, usageRepository.Added);
+                Assert.AreEqual(1, usageRepository.Added[0].RepositoryId);
+                Assert.AreEqual(1, usageRepository.Added[0].RepoFileId);
+                Assert.AreEqual(1, usageRepository.Added[0].ReviewTypeId);
+                Assert.AreEqual(7, usageRepository.Added[0].EngineId);
+                Assert.AreEqual("OpenAI", usageRepository.Added[0].EngineName);
+                Assert.AreEqual("gpt-4o", usageRepository.Added[0].EngineModel);
+                Assert.AreEqual(12, usageRepository.Added[0].PromptTokens);
+                Assert.AreEqual(3, usageRepository.Added[0].CompletionTokens);
+                Assert.AreEqual(15, usageRepository.Added[0].TotalTokens);
+                Assert.AreEqual(4, usageRepository.Added[0].CachedTokens);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
         public async Task ReviewProcessor_MaxAttemptsExhausted_RemovesItemAndRecordsOperationalFinding()
         {
             string root = CreateTempDirectory();
@@ -1968,7 +2050,8 @@ namespace Revathryn.Engine.Tests
             IRetryPolicy retryPolicy,
             ResilienceOptions options,
             FakeFindingRepository findings = null,
-            FakeReviewOutcomeStore outcomes = null)
+            FakeReviewOutcomeStore outcomes = null,
+            FakeReviewUsageRepository usageRepository = null)
         {
             return new ReviewProcessor(
                 new ReviewQueue(queue),
@@ -1981,6 +2064,7 @@ namespace Revathryn.Engine.Tests
                 engine,
                 new FakeReviewContextProvider(),
                 new FakeRetryPolicyProvider(retryPolicy),
+                usageRepository ?? new FakeReviewUsageRepository(),
                 options);
         }
 
@@ -2002,6 +2086,27 @@ namespace Revathryn.Engine.Tests
             {
                 Outcomes.Add(outcome);
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeReviewUsageRepository : IReviewUsageRepository
+        {
+            public List<ReviewUsage> Added { get; } = [];
+
+            public Task<long> AddAsync(ReviewUsage usage, CancellationToken cancellationToken = default)
+            {
+                Added.Add(usage);
+                return Task.FromResult((long)Added.Count);
+            }
+
+            public Task<IReadOnlyList<ReviewUsage>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ReviewUsage>>(Added);
+            }
+
+            public Task<ReviewUsageSummary> GetSummaryAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new ReviewUsageSummary());
             }
         }
 

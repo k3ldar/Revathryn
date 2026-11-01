@@ -18,11 +18,73 @@ namespace Revathryn.Data.Tests
 
             using SqliteConnection connection = database.Factory.Open();
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('Repositories', 'RepoFiles', 'ReviewTypes', 'ReviewLinks', 'RepoFileAnalysis', 'Queue', 'Findings', 'AIEngines', 'AISettings', 'RepoProjects', 'RepositoryScans');";
+            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('Repositories', 'RepoFiles', 'ReviewTypes', 'ReviewLinks', 'RepoFileAnalysis', 'Queue', 'Findings', 'AIEngines', 'AISettings', 'RepoProjects', 'RepositoryScans', 'ReviewUsage');";
 
             object result = command.ExecuteScalar();
 
-            Assert.AreEqual(11, Convert.ToInt32(result));
+            Assert.AreEqual(12, Convert.ToInt32(result));
+        }
+
+        [TestMethod]
+        public async Task ReviewUsageRepository_PersistsAndAggregatesSummary()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            ReviewUsageRepository usageRepository = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            long todayId = await usageRepository.AddAsync(new ReviewUsage
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                EngineId = 1,
+                EngineName = "GPT",
+                EngineModel = "gpt-4o",
+                AttemptCount = 2,
+                PromptTokens = 100,
+                CompletionTokens = 50,
+                TotalTokens = 150,
+                CachedTokens = 80,
+                OccurredUtc = DateTime.UtcNow
+            }, TestContext.CancellationToken);
+
+            long yesterdayId = await usageRepository.AddAsync(new ReviewUsage
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                EngineId = 2,
+                EngineName = "Claude",
+                EngineModel = "claude-3",
+                AttemptCount = 1,
+                PromptTokens = 40,
+                CompletionTokens = 20,
+                TotalTokens = 60,
+                CachedTokens = 10,
+                OccurredUtc = DateTime.UtcNow.AddDays(-1)
+            }, TestContext.CancellationToken);
+
+            IReadOnlyList<ReviewUsage> all = await usageRepository.GetAllAsync(TestContext.CancellationToken);
+            Assert.HasCount(2, all);
+            Assert.AreEqual(todayId, all[0].Id);
+            Assert.AreEqual(yesterdayId, all[1].Id);
+
+            ReviewUsageSummary summary = await usageRepository.GetSummaryAsync(TestContext.CancellationToken);
+            Assert.AreEqual(2, summary.TotalReviewCount);
+            Assert.AreEqual(140, summary.TotalPromptTokens);
+            Assert.AreEqual(70, summary.TotalCompletionTokens);
+            Assert.AreEqual(210, summary.TotalTokens);
+            Assert.AreEqual(90, summary.TotalCachedTokens);
+            Assert.AreEqual(1, summary.TodayReviewCount);
+            Assert.AreEqual(100, summary.TodayPromptTokens);
+            Assert.AreEqual(150, summary.TodayTotalTokens);
+            Assert.AreEqual(80, summary.TodayCachedTokens);
         }
 
         [TestMethod]
@@ -168,7 +230,7 @@ namespace Revathryn.Data.Tests
             Assert.AreEqual(5, pending[0].Priority);
             Assert.AreEqual("failure", pending[0].LastError);
             Assert.IsTrue(pending[0].NextAttemptUtc.HasValue);
-            Assert.IsTrue(pending[0].NextAttemptUtc.Value >= nextAttemptUtc.AddSeconds(-5));
+            Assert.IsGreaterThanOrEqualTo(nextAttemptUtc.AddSeconds(-5), pending[0].NextAttemptUtc.Value);
         }
 
         [TestMethod]

@@ -24,6 +24,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Findings produced by the review.</summary>
         public IReadOnlyList<Finding> Findings { get; set; } = [];
 
+        /// <summary>Per-invocation usage records accumulated while processing the queue item.</summary>
+        public IReadOnlyList<ReviewUsage> UsageRecords { get; set; } = [];
+
         /// <summary>UTC timestamp of the completed review.</summary>
         public DateTime CompletedUtc { get; set; } = DateTime.UtcNow;
     }

@@ -38,7 +38,13 @@ namespace Revathryn.Contracts.Models
         /// <summary>Elapsed time since the application started.</summary>
         public TimeSpan Uptime { get; set; }
 
+        /// <summary>Current process resource metrics.</summary>
+        public SystemResourceMetrics ResourceMetrics { get; set; } = new();
+
         /// <summary>Most recent scan records across repositories.</summary>
         public IReadOnlyList<RecentScanItem> RecentScans { get; set; } = [];
+
+        /// <summary>Aggregated AI review usage metrics.</summary>
+        public ReviewUsageSummary ReviewUsage { get; set; } = new();
     }
 }

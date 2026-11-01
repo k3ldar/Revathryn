@@ -14,12 +14,17 @@ namespace Revathryn.Controllers
     {
         private readonly IAISettingsRepository _aiSettingsRepository;
         private readonly IAIEngineRepository _aiEngineRepository;
+        private readonly IReviewUsageRepository _reviewUsageRepository;
 
         /// <summary>Initialises a new administration controller.</summary>
-        public AdministrationController(IAISettingsRepository aiSettingsRepository, IAIEngineRepository aiEngineRepository)
+        public AdministrationController(
+            IAISettingsRepository aiSettingsRepository,
+            IAIEngineRepository aiEngineRepository,
+            IReviewUsageRepository reviewUsageRepository)
         {
             _aiSettingsRepository = aiSettingsRepository;
             _aiEngineRepository = aiEngineRepository;
+            _reviewUsageRepository = reviewUsageRepository;
         }
 
         /// <summary>Renders general platform settings.</summary>
@@ -172,6 +177,22 @@ namespace Revathryn.Controllers
             await _aiEngineRepository.DeleteAsync(id, cancellationToken);
             TempData[Consts.SuccessMessageTempDataKey] = Strings.EngineDeletedMessage;
             return RedirectToAction(nameof(Engines));
+        }
+
+        /// <summary>Lists all AI review usage records.</summary>
+        [HttpGet]
+        public async Task<IActionResult> ReviewUsage(CancellationToken cancellationToken)
+        {
+            IReadOnlyList<ReviewUsage> usageRecords = await _reviewUsageRepository.GetAllAsync(cancellationToken);
+            ReviewUsageSummary summary = await _reviewUsageRepository.GetSummaryAsync(cancellationToken);
+
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.ReviewUsageAdministrationTitle);
+
+            return View(new ReviewUsageListViewModel
+            {
+                Summary = summary,
+                UsageRecords = usageRecords
+            });
         }
 
         private List<BreadcrumbItem> BuildAdministrationBreadcrumbs(string activeTitle)

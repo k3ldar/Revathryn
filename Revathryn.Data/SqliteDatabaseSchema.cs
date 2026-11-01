@@ -198,6 +198,28 @@ namespace Revathryn.Data
             );
             """;
 
+        /// <summary>Creates the ReviewUsage table.</summary>
+        internal const string CreateReviewUsage = """
+            CREATE TABLE IF NOT EXISTS ReviewUsage (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                RepositoryId INTEGER NOT NULL,
+                RepoFileId INTEGER NOT NULL,
+                ReviewTypeId INTEGER NOT NULL,
+                EngineId INTEGER NOT NULL,
+                EngineName TEXT NOT NULL DEFAULT '',
+                EngineModel TEXT NOT NULL DEFAULT '',
+                AttemptCount INTEGER NOT NULL DEFAULT 0,
+                PromptTokens INTEGER NOT NULL DEFAULT 0,
+                CompletionTokens INTEGER NOT NULL DEFAULT 0,
+                TotalTokens INTEGER NOT NULL DEFAULT 0,
+                CachedTokens INTEGER NOT NULL DEFAULT 0,
+                OccurredUtc TEXT NOT NULL,
+                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
+                FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE,
+                FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE CASCADE
+            );
+            """;
+
         /// <summary>Creates the non-unique query indexes.</summary>
         internal static readonly string[] CreateIndexes =
         [
@@ -218,6 +240,8 @@ namespace Revathryn.Data
             "CREATE INDEX IF NOT EXISTS IX_Findings_Status ON Findings (Status);",
             "CREATE INDEX IF NOT EXISTS IX_RepoProjects_RepositoryId ON RepoProjects (RepositoryId);",
             "CREATE INDEX IF NOT EXISTS IX_RepositoryScans_RepositoryId ON RepositoryScans (RepositoryId, StartedUtc DESC);",
+            "CREATE INDEX IF NOT EXISTS IX_ReviewUsage_RepositoryId ON ReviewUsage (RepositoryId);",
+            "CREATE INDEX IF NOT EXISTS IX_ReviewUsage_OccurredUtc ON ReviewUsage (OccurredUtc DESC);",
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_ReviewTypes_Repository_Key ON ReviewTypes (RepositoryId, Key) WHERE Key <> '';"
         ];
     }
