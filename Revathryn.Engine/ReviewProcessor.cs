@@ -7,6 +7,7 @@ using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Orchestration;
 using Revathryn.Contracts.Persistence;
+using Revathryn.Contracts.Reliability;
 using Revathryn.Contracts.Review;
 using Revathryn.Resources;
 
@@ -28,6 +29,8 @@ namespace Revathryn.Engine
         private readonly IAISettingsRepository _aiSettingsRepository;
         private readonly IAIReviewEngine _aiReviewEngine;
         private readonly IReviewContextProvider _contextProvider;
+        private readonly IRetryPolicyProvider _retryPolicyProvider;
+        private readonly ResilienceOptions _resilienceOptions;
 
         /// <summary>Initialises a new processor.</summary>
         public ReviewProcessor(
@@ -39,7 +42,9 @@ namespace Revathryn.Engine
             IFindingRepository findingRepository,
             IAISettingsRepository aiSettingsRepository,
             IAIReviewEngine aiReviewEngine,
-            IReviewContextProvider contextProvider)
+            IReviewContextProvider contextProvider,
+            IRetryPolicyProvider retryPolicyProvider,
+            ResilienceOptions resilienceOptions)
         {
             _reviewQueue = reviewQueue;
             _repositoryRepository = repositoryRepository;
@@ -50,12 +55,15 @@ namespace Revathryn.Engine
             _aiSettingsRepository = aiSettingsRepository;
             _aiReviewEngine = aiReviewEngine;
             _contextProvider = contextProvider;
+            _retryPolicyProvider = retryPolicyProvider;
+            _resilienceOptions = resilienceOptions;
         }
 
-        /// <summary>Processes the next pending queue item, or returns false when the queue is empty.</summary>
+        /// <summary>Processes the next eligible queue item, or returns false when the queue is empty.</summary>
         public async Task<bool> ProcessNextAsync(CancellationToken cancellationToken = default)
         {
-            QueueItem item = await _reviewQueue.DequeueAsync(cancellationToken).ConfigureAwait(false);
+            DateTime leasedUntilUtc = DateTime.UtcNow.Add(_resilienceOptions.QueueLeaseDuration);
+            QueueItem item = await _reviewQueue.ClaimNextAsync(leasedUntilUtc, cancellationToken).ConfigureAwait(false);
 
             if (item is null)
             {
@@ -64,41 +72,51 @@ namespace Revathryn.Engine
 
             try
             {
-                await ProcessItemAsync(item, cancellationToken).ConfigureAwait(false);
+                ProcessingResult result = await ProcessItemAsync(item, cancellationToken).ConfigureAwait(false);
+
+                if (result.Succeeded)
+                {
+                    await _reviewQueue.MarkCompletedAsync(item.Id, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await HandleFailureAsync(item, result.Error, cancellationToken).ConfigureAwait(false);
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                await _reviewQueue.ReleaseForRetryAsync(item.Id, item.Priority, DateTime.UtcNow, Strings.ReviewCancelled, CancellationToken.None).ConfigureAwait(false);
                 throw;
             }
             catch (Exception exception)
             {
-                await RecordOperationalFailureAsync(item, exception.Message, cancellationToken).ConfigureAwait(false);
+                await HandleFailureAsync(item, exception.Message, cancellationToken).ConfigureAwait(false);
             }
 
             return true;
         }
 
-        private async Task ProcessItemAsync(QueueItem item, CancellationToken cancellationToken)
+        private async Task<ProcessingResult> ProcessItemAsync(QueueItem item, CancellationToken cancellationToken)
         {
             Repository repository = await _repositoryRepository.GetByIdAsync(item.RepositoryId, cancellationToken).ConfigureAwait(false);
 
             if (repository is null)
             {
-                return;
+                return ProcessingResult.Failed(string.Format(Strings.RepositoryNotFound, item.RepositoryId));
             }
 
             RepoFile file = await _fileRepository.GetByIdAsync(item.RepoFileId, cancellationToken).ConfigureAwait(false);
 
             if (file is null)
             {
-                return;
+                return ProcessingResult.Failed(string.Format(Strings.RepoFileNotFound, item.RepoFileId));
             }
 
             ReviewType reviewType = await _reviewTypeRepository.GetByIdAsync(item.ReviewTypeId, cancellationToken).ConfigureAwait(false);
 
             if (reviewType is null || !reviewType.Enabled)
             {
-                return;
+                return ProcessingResult.Failed(Strings.ReviewTypeNotAvailable);
             }
 
             string fileContent = await File.ReadAllTextAsync(ResolveAbsolutePath(repository.LocalPath, file.RelativePath), cancellationToken).ConfigureAwait(false);
@@ -122,32 +140,58 @@ namespace Revathryn.Engine
 
                 if (!response.Success)
                 {
-                    await RecordOperationalFailureAsync(item, response.Error, cancellationToken).ConfigureAwait(false);
-                    return;
+                    return ProcessingResult.Failed(response.Error);
                 }
 
                 if (response.ContextRequests is null || response.ContextRequests.Count == 0)
                 {
                     if (response.Results is null)
                     {
-                        await RecordOperationalFailureAsync(item, Strings.AIEngineResponseIncomplete, cancellationToken).ConfigureAwait(false);
-                        return;
+                        return ProcessingResult.Failed(Strings.AIEngineResponseIncomplete);
                     }
 
                     await PersistOutcomeAsync(item, file, reviewType, response, cancellationToken).ConfigureAwait(false);
-                    return;
+                    return ProcessingResult.Success();
                 }
 
                 contextIterations++;
 
                 if (contextIterations > maxContextRequests)
                 {
-                    await RecordOperationalFailureAsync(item, Strings.ContextRequestLimitExceeded, cancellationToken).ConfigureAwait(false);
-                    return;
+                    return ProcessingResult.Failed(Strings.ContextRequestLimitExceeded);
                 }
 
                 await AppendContextAsync(repository, file, request, response.ContextRequests, cancellationToken).ConfigureAwait(false);
             }
+        }
+
+        private async Task HandleFailureAsync(QueueItem item, string error, CancellationToken cancellationToken)
+        {
+            string message = string.IsNullOrWhiteSpace(error) ? Strings.UnknownReviewError : error;
+            RetryPolicyOptions reviewPolicy = _resilienceOptions.GetRetryPolicy(RetryOperationType.ExternalService);
+            int maxAttempts = item.MaxAttempts > 0 ? item.MaxAttempts : reviewPolicy.MaxAttempts;
+
+            if (item.AttemptCount >= maxAttempts)
+            {
+                await RecordOperationalFailureAsync(item, message, cancellationToken).ConfigureAwait(false);
+                await _reviewQueue.RemoveAsync(item.Id, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            IRetryPolicy retryPolicy = _retryPolicyProvider.GetPolicy(RetryOperationType.ExternalService);
+            TimeSpan delay = retryPolicy.GetRetryDelay(item.AttemptCount);
+            DateTime nextAttemptUtc = DateTime.UtcNow.Add(delay);
+            int priority = DecayPriority(item.Priority);
+
+            await _reviewQueue.ReleaseForRetryAsync(item.Id, priority, nextAttemptUtc, message, cancellationToken).ConfigureAwait(false);
+        }
+
+        private int DecayPriority(int priority)
+        {
+            int factor = Math.Max(Consts.MinimumPriorityDecayFactor, _resilienceOptions.QueuePriorityDecayFactor);
+            int decayed = priority / factor;
+
+            return Math.Max(_resilienceOptions.QueueMinimumPriority, decayed);
         }
 
         private async Task PersistOutcomeAsync(
@@ -222,18 +266,31 @@ namespace Revathryn.Engine
         {
             AISettings settings = await _aiSettingsRepository.GetAsync(cancellationToken).ConfigureAwait(false);
             string masterPrompt = settings?.MasterPrompt ?? string.Empty;
+            string taskPrompt = reviewType.Prompt ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(masterPrompt))
+            StringBuilder prompt = new();
+
+            AppendPromptSection(prompt, masterPrompt);
+            AppendPromptSection(prompt, taskPrompt);
+            AppendPromptSection(prompt, DefaultReviewContext.ReviewInstructions);
+
+            return prompt.ToString();
+        }
+
+        private static void AppendPromptSection(StringBuilder prompt, string section)
+        {
+            if (string.IsNullOrWhiteSpace(section))
             {
-                return reviewType.Prompt ?? string.Empty;
+                return;
             }
 
-            if (string.IsNullOrWhiteSpace(reviewType.Prompt))
+            if (prompt.Length > 0)
             {
-                return masterPrompt;
+                prompt.AppendLine();
+                prompt.AppendLine();
             }
 
-            return string.Concat(masterPrompt, Environment.NewLine, Environment.NewLine, reviewType.Prompt);
+            prompt.Append(section);
         }
 
         private async Task AppendContextAsync(
@@ -329,6 +386,23 @@ namespace Revathryn.Engine
         {
             string osRelativePath = relativePath.Replace(Consts.CharForwardSlash, Path.DirectorySeparatorChar);
             return Path.GetFullPath(Path.Combine(repositoryLocalPath, osRelativePath));
+        }
+
+        private sealed class ProcessingResult
+        {
+            public bool Succeeded { get; init; }
+
+            public string Error { get; init; } = string.Empty;
+
+            public static ProcessingResult Success()
+            {
+                return new ProcessingResult { Succeeded = true };
+            }
+
+            public static ProcessingResult Failed(string error)
+            {
+                return new ProcessingResult { Succeeded = false, Error = error ?? string.Empty };
+            }
         }
     }
 }

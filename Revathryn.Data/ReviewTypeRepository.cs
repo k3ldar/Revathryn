@@ -9,7 +9,7 @@ namespace Revathryn.Data
     public sealed class ReviewTypeRepository : SqliteRepositoryBase, IReviewTypeRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, Name, Description, FileExtensions, Prompt, DefaultPriority, ReviewDefinitionVersion, Enabled, CreatedDate, LastModifiedDate";
+            "Id, RepositoryId, Key, Name, Description, FileExtensions, Prompt, DefaultPriority, ReviewDefinitionVersion, Enabled, CreatedDate, LastModifiedDate";
 
         /// <summary>Initialises a new repository.</summary>
         public ReviewTypeRepository(SqliteConnectionFactory connectionFactory)
@@ -76,8 +76,8 @@ namespace Revathryn.Data
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO ReviewTypes (RepositoryId, Name, Description, FileExtensions, Prompt, DefaultPriority, ReviewDefinitionVersion, Enabled, CreatedDate, LastModifiedDate)
-                VALUES (@RepositoryId, @Name, @Description, @FileExtensions, @Prompt, @DefaultPriority, @ReviewDefinitionVersion, @Enabled, @CreatedDate, @LastModifiedDate);
+                INSERT INTO ReviewTypes (RepositoryId, Key, Name, Description, FileExtensions, Prompt, DefaultPriority, ReviewDefinitionVersion, Enabled, CreatedDate, LastModifiedDate)
+                VALUES (@RepositoryId, @Key, @Name, @Description, @FileExtensions, @Prompt, @DefaultPriority, @ReviewDefinitionVersion, @Enabled, @CreatedDate, @LastModifiedDate);
                 SELECT last_insert_rowid();
                 """;
             AddParameters(command, reviewType);
@@ -94,6 +94,7 @@ namespace Revathryn.Data
             command.CommandText = """
                 UPDATE ReviewTypes
                 SET RepositoryId = @RepositoryId,
+                    Key = @Key,
                     Name = @Name,
                     Description = @Description,
                     FileExtensions = @FileExtensions,
@@ -125,6 +126,7 @@ namespace Revathryn.Data
         private static void AddParameters(SqliteCommand command, ReviewType reviewType)
         {
             command.Parameters.AddWithValue("@RepositoryId", reviewType.RepositoryId);
+            command.Parameters.AddWithValue("@Key", reviewType.Key);
             command.Parameters.AddWithValue("@Name", reviewType.Name);
             command.Parameters.AddWithValue("@Description", reviewType.Description);
             command.Parameters.AddWithValue("@FileExtensions", reviewType.FileExtensions);
@@ -142,15 +144,16 @@ namespace Revathryn.Data
             {
                 Id = reader.GetInt64(0),
                 RepositoryId = reader.GetInt64(1),
-                Name = reader.GetString(2),
-                Description = reader.GetString(3),
-                FileExtensions = reader.GetString(4),
-                Prompt = reader.GetString(5),
-                DefaultPriority = reader.GetInt32(6),
-                ReviewDefinitionVersion = reader.GetString(7),
-                Enabled = reader.GetBoolean(8),
-                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(9)),
-                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(10))
+                Key = reader.GetString(2),
+                Name = reader.GetString(3),
+                Description = reader.GetString(4),
+                FileExtensions = reader.GetString(5),
+                Prompt = reader.GetString(6),
+                DefaultPriority = reader.GetInt32(7),
+                ReviewDefinitionVersion = reader.GetString(8),
+                Enabled = reader.GetBoolean(9),
+                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(10)),
+                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(11))
             };
         }
     }

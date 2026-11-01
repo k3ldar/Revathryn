@@ -9,8 +9,18 @@ namespace Revathryn.Contracts.Persistence
         /// <returns>True when the item was inserted; false when a duplicate was ignored.</returns>
         Task<bool> EnqueueAsync(QueueItem item, CancellationToken cancellationToken = default);
 
-        /// <summary>Removes and returns the highest priority pending item, or null when empty.</summary>
-        Task<QueueItem> DequeueAsync(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Reclaims stale leases and claims the highest priority eligible pending item.
+        /// The returned item is leased until <paramref name="leasedUntilUtc"/> and has its attempt count incremented.
+        /// </summary>
+        /// <returns>The claimed item, or null when no eligible item exists.</returns>
+        Task<QueueItem> ClaimNextAsync(DateTime leasedUntilUtc, CancellationToken cancellationToken = default);
+
+        /// <summary>Returns the claimed item to the pending state for a later retry.</summary>
+        Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default);
+
+        /// <summary>Removes the item because it completed successfully.</summary>
+        Task MarkCompletedAsync(long id, CancellationToken cancellationToken = default);
 
         /// <summary>Returns pending items ordered by priority descending, then creation ascending.</summary>
         Task<IReadOnlyList<QueueItem>> GetPendingAsync(CancellationToken cancellationToken = default);
@@ -26,5 +36,8 @@ namespace Revathryn.Contracts.Persistence
 
         /// <summary>Returns the number of pending items.</summary>
         Task<int> CountAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>Returns aggregated queue reliability metrics.</summary>
+        Task<QueueMetrics> GetMetricsAsync(CancellationToken cancellationToken = default);
     }
 }

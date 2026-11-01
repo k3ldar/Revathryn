@@ -119,13 +119,12 @@ namespace Revathryn.Data
             };
         }
 
-        /// <summary>Returns all outstanding, non-operational findings, most recent first.</summary>
+        /// <summary>Returns all outstanding findings, most recent first.</summary>
         public async Task<IReadOnlyList<Finding>> GetOutstandingAsync(CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"SELECT {SelectColumns} FROM Findings WHERE Category != @Category AND Status IN (@StatusNew, @StatusReviewed, @StatusDeferred) ORDER BY CreatedDate DESC;";
-            command.Parameters.AddWithValue("@Category", (int)FindingCategory.OperationalFailure);
+            command.CommandText = $"SELECT {SelectColumns} FROM Findings WHERE Status IN (@StatusNew, @StatusReviewed, @StatusDeferred) ORDER BY CreatedDate DESC;";
             command.Parameters.AddWithValue("@StatusNew", (int)FindingStatus.New);
             command.Parameters.AddWithValue("@StatusReviewed", (int)FindingStatus.Reviewed);
             command.Parameters.AddWithValue("@StatusDeferred", (int)FindingStatus.Deferred);
@@ -138,6 +137,21 @@ namespace Revathryn.Data
             }
 
             return results;
+        }
+
+        /// <summary>Returns the number of outstanding operational failure findings.</summary>
+        public async Task<int> CountOutstandingOperationalFailuresAsync(CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM Findings WHERE Category = @Category AND Status IN (@StatusNew, @StatusReviewed, @StatusDeferred);";
+            command.Parameters.AddWithValue("@Category", (int)FindingCategory.OperationalFailure);
+            command.Parameters.AddWithValue("@StatusNew", (int)FindingStatus.New);
+            command.Parameters.AddWithValue("@StatusReviewed", (int)FindingStatus.Reviewed);
+            command.Parameters.AddWithValue("@StatusDeferred", (int)FindingStatus.Deferred);
+
+            object result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+            return Convert.ToInt32(result);
         }
 
         /// <summary>Inserts the finding, or returns the existing id when an equivalent finding already exists.</summary>

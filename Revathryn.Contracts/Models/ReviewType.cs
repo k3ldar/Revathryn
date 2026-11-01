@@ -9,6 +9,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Owning repository.</summary>
         public long RepositoryId { get; set; }
 
+        /// <summary>Stable identifier used to seed built-in review definitions.</summary>
+        public string Key { get; set; } = String.Empty;
+
         /// <summary>Display name of the review definition.</summary>
         public string Name { get; set; } = String.Empty;
 

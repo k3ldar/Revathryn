@@ -21,5 +21,8 @@ namespace Revathryn.Data
 
         /// <summary>Maps a nullable int to a parameter value.</summary>
         internal static object ToParameter(int? value) => value.HasValue ? value.Value : DBNull.Value;
+
+        /// <summary>Maps a nullable UTC timestamp to a sortable text parameter.</summary>
+        internal static object ToParameter(DateTime? value) => value.HasValue ? ToText(value.Value) : DBNull.Value;
     }
 }

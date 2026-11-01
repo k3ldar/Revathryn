@@ -15,6 +15,7 @@ namespace Revathryn.Engine
         private readonly IQueueRepository _queueRepository;
         private readonly IIssueQueryService _issueQueryService;
         private readonly IHealthService _healthService;
+        private readonly IFindingRepository _findingRepository;
         private readonly UptimeModel _uptimeModel;
 
         /// <summary>Initialises a new dashboard query service.</summary>
@@ -24,6 +25,7 @@ namespace Revathryn.Engine
             IQueueRepository queueRepository,
             IIssueQueryService issueQueryService,
             IHealthService healthService,
+            IFindingRepository findingRepository,
             UptimeModel uptimeModel)
         {
             _repositoryRepository = repositoryRepository;
@@ -31,6 +33,7 @@ namespace Revathryn.Engine
             _queueRepository = queueRepository;
             _issueQueryService = issueQueryService;
             _healthService = healthService;
+            _findingRepository = findingRepository;
             _uptimeModel = uptimeModel;
         }
 
@@ -75,7 +78,8 @@ namespace Revathryn.Engine
             IReadOnlyList<RecentScanItem> recentScans = BuildRecentScans(scans, repositoriesById);
             IssueSummary issueSummary = await _issueQueryService.GetSummaryAsync(cancellationToken).ConfigureAwait(false);
             HealthReport healthReport = await _healthService.GetReadinessAsync(cancellationToken).ConfigureAwait(false);
-            int queuedAnalysisCount = await _queueRepository.CountAsync(cancellationToken).ConfigureAwait(false);
+            QueueMetrics queueMetrics = await _queueRepository.GetMetricsAsync(cancellationToken).ConfigureAwait(false);
+            int failedAnalysisCount = await _findingRepository.CountOutstandingOperationalFailuresAsync(cancellationToken).ConfigureAwait(false);
 
             return new DashboardSnapshot
             {
@@ -83,7 +87,9 @@ namespace Revathryn.Engine
                 ConfiguredRepositoryCount = repositories.Count,
                 DiscoveredRepositoryCount = discoveredCount,
                 LastRepositoryScanUtc = lastRepositoryScanUtc,
-                QueuedAnalysisCount = queuedAnalysisCount,
+                QueuedAnalysisCount = queueMetrics.PendingCount,
+                QueueMetrics = queueMetrics,
+                FailedAnalysisCount = failedAnalysisCount,
                 IssueSummary = issueSummary,
                 HealthReport = healthReport,
                 StartTimeUtc = _uptimeModel.StartTime,

@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 
+using Revathryn.Contracts;
 using Revathryn.Contracts.Infrastructure;
 
 namespace Revathryn.Data
@@ -48,24 +49,32 @@ namespace Revathryn.Data
 
             command.ExecuteNonQuery();
 
+            ApplyColumnMigrations(connection);
+
             foreach (string indexStatement in SqliteDatabaseSchema.CreateIndexes)
             {
                 command.CommandText = indexStatement;
                 command.ExecuteNonQuery();
             }
-
-            ApplyColumnMigrations(connection);
         }
 
         private static void ApplyColumnMigrations(SqliteConnection connection)
         {
             EnsureColumn(connection, "ReviewTypes", "ReviewDefinitionVersion", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "ReviewTypes", "Key", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "RepoFileAnalysis", "ReviewDefinitionVersion", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "Repositories", "ScanOptions", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "Repositories", "LastSuccessfulScanDate", "TEXT NULL");
             EnsureColumn(connection, "RepoFiles", "IsRemoved", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(connection, "RepoFiles", "ProjectPath", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "RepositoryScans", "RenamedFiles", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(connection, "Queue", "AttemptCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(connection, "Queue", "MaxAttempts", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(connection, "Queue", "NextAttemptUtc", "TEXT NULL");
+            EnsureColumn(connection, "Queue", "LastError", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "Queue", "LeasedUntilUtc", "TEXT NULL");
+            EnsureColumn(connection, "Queue", "Status", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(connection, "AIEngines", "MaxTokens", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxTokens);
         }
 
         private static void EnsureColumn(SqliteConnection connection, string table, string column, string definition)

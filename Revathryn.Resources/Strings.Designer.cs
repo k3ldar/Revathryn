@@ -312,6 +312,15 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to The AI engine rejected the request as unauthorized. Configure a valid API key for this engine..
+        /// </summary>
+        public static string AIEngineAuthenticationFailed {
+            get {
+                return ResourceManager.GetString("AIEngineAuthenticationFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to The review worker cycle failed..
         /// </summary>
         public static string ReviewWorkerCycleFailed {
@@ -1662,6 +1671,24 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Max completion tokens.
+        /// </summary>
+        public static string MaxTokensLabel {
+            get {
+                return ResourceManager.GetString("MaxTokensLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Max completion tokens must be at least 1..
+        /// </summary>
+        public static string MaxTokensRangeMessage {
+            get {
+                return ResourceManager.GetString("MaxTokensRangeMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Default engine.
         /// </summary>
         public static string IsDefaultLabel {
@@ -1750,7 +1777,89 @@ namespace Revathryn.Resources {
                 return ResourceManager.GetString("ApplicationStartLabel", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Failed analyses.
+        /// </summary>
+        public static string FailedAnalysesLabel {
+            get {
+                return ResourceManager.GetString("FailedAnalysesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} failed and {1} retrying analysis item(s) require attention..
+        /// </summary>
+        public static string HealthReviewProcessingDegraded {
+            get {
+                return ResourceManager.GetString("HealthReviewProcessingDegraded", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review processing is operational..
+        /// </summary>
+        public static string HealthReviewProcessingHealthy {
+            get {
+                return ResourceManager.GetString("HealthReviewProcessingHealthy", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review processing check failed: {0}.
+        /// </summary>
+        public static string HealthReviewProcessingUnavailable {
+            get {
+                return ResourceManager.GetString("HealthReviewProcessingUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Oldest queued.
+        /// </summary>
+        public static string OldestQueuedLabel {
+            get {
+                return ResourceManager.GetString("OldestQueuedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to None.
+        /// </summary>
+        public static string NoQueuedAnalysesLabel {
+            get {
+                return ResourceManager.GetString("NoQueuedAnalysesLabel", resourceCulture);
+            }
+        }
+
+
+        /// <summary>
+        ///   Looks up a localized string similar to Analyses retrying.
+        /// </summary>
+        public static string RetryQueueLabel {
+            get {
+                return ResourceManager.GetString("RetryQueueLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The review was cancelled before it completed..
+        /// </summary>
+        public static string ReviewCancelled {
+            get {
+                return ResourceManager.GetString("ReviewCancelled", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The review type is not available..
+        /// </summary>
+        public static string ReviewTypeNotAvailable {
+            get {
+                return ResourceManager.GetString("ReviewTypeNotAvailable", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>

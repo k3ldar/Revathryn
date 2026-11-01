@@ -67,15 +67,15 @@ namespace Revathryn.Review
 
             string apiKey = await _secretsProvider.GetSecretAsync(engine.SecretKeyName, cancellationToken).ConfigureAwait(false);
 
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                return Failure(string.Format(Strings.AIEngineSecretMissing, engine.Name));
-            }
-
             string requestJson = BuildRequestJson(engine, request);
 
             using HttpRequestMessage httpRequest = new(HttpMethod.Post, BuildEndpoint(engine.Endpoint));
-            httpRequest.Headers.Authorization = new AuthenticationHeaderValue(BearerScheme, apiKey);
+
+            if (!string.IsNullOrWhiteSpace(apiKey))
+            {
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue(BearerScheme, apiKey);
+            }
+
             httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, JsonMediaType);
 
             HttpResponseMessage httpResponse;
@@ -127,7 +127,8 @@ namespace Revathryn.Review
                     new OpenAIMessage { Role = UserRole, Content = BuildUserContent(request) }
                 ],
                 ResponseFormat = new OpenAIResponseFormat { Type = ResponseTypeJsonObject },
-                Temperature = 0
+                Temperature = 0,
+                MaxCompletionTokens = engine.MaxTokens > 0 ? engine.MaxTokens : DefaultAIMaxTokens
             };
 
             return JsonSerializer.Serialize(payload, JsonOptions);
@@ -240,6 +241,11 @@ namespace Revathryn.Review
 
         private static string ExtractApiError(string body, System.Net.HttpStatusCode statusCode)
         {
+            if (statusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+            {
+                return Strings.AIEngineAuthenticationFailed;
+            }
+
             if (string.IsNullOrWhiteSpace(body))
             {
                 return string.Format(Strings.AIEngineHttpError, (int)statusCode);
@@ -294,6 +300,9 @@ namespace Revathryn.Review
 
             [JsonPropertyName("temperature")]
             public double Temperature { get; set; }
+
+            [JsonPropertyName("max_completion_tokens")]
+            public int MaxCompletionTokens { get; set; }
         }
 
         private sealed class OpenAIMessage

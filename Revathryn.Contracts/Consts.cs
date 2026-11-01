@@ -8,6 +8,7 @@
         public const string DatabasePath = "db";
         public const string DefaultDataStore = "Data Source={0}";
         public const string FileTypeCSharp = "cs";
+        public const string CEpExtensions = "c,cpp,h,hpp,cc,cxx,hxx";
         public const string FileTypeJson = "json";
         public const string FileTypeXml = "xml";
         public const string FileTypeConfig = "config";
@@ -154,6 +155,8 @@
         public const int OpenAIRequestTimeoutSeconds = 120;
         public const string OpenAIChatCompletionsSuffix = "/chat/completions";
         public const string OpenAIResponseFormatJsonObject = "json_object";
+        public const int DefaultAIMaxTokens = 4096;
+        public const int MinimumAIMaxTokens = 1;
         public const int ReviewWorkerDelayMilliseconds = 30000;
         public const int ReviewWorkerMaxItemsPerCycle = 100;
         public const int MaximumThreadPoolSize = 500;
@@ -176,6 +179,12 @@
         public const double DefaultRetryBackoffMultiplier = 2.0;
         public const double DefaultRetryJitterFactor = 0.25;
         public const int ShutdownTimeoutSeconds = 30;
+
+        // Review queue reliability defaults.
+        public const int DefaultQueueLeaseMinutes = 10;
+        public const int DefaultQueuePriorityDecayFactor = 2;
+        public const int DefaultQueueMinimumPriority = 1;
+        public const int MinimumPriorityDecayFactor = 1;
 
         // Reliability component names.
         public const string ReviewProcessorComponent = "ReviewProcessor";
@@ -208,6 +217,7 @@
         public const string BackgroundProcessingCheck = "BackgroundProcessing";
         public const string AnalyserAvailabilityCheck = "AnalyserAvailability";
         public const string LivenessCheck = "Liveness";
+        public const string ReviewProcessingCheck = "ReviewProcessing";
 
         // Issue query defaults.
         public const int DefaultIssuePageSize = 20;

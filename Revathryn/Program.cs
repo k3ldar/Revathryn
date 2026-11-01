@@ -7,7 +7,9 @@ using PluginManager;
 using Revathryn.Contracts;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
+using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Reliability;
+using Revathryn.Contracts.Services;
 using Revathryn.Data;
 using Revathryn.Engine;
 using Revathryn.Internal;
@@ -20,7 +22,7 @@ namespace Revathryn
     [ExcludeFromCodeCoverage(Justification = "Not unit testable.")]
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             ThreadManager.Initialise(new SharedLib.Win.WindowsCpuUsage());
             ThreadManager.MaximumPoolSize = Contracts.Consts.MaximumThreadPoolSize;
@@ -65,7 +67,27 @@ namespace Revathryn
 
                 // Initialise the persistence store before serving requests.
                 IDatabaseInitializer databaseInitializer = app.Services.GetRequiredService<IDatabaseInitializer>();
-                databaseInitializer.Initialize();
+                await databaseInitializer.InitializeAsync();
+
+                // Seed the default master prompt when none has been configured.
+                IAISettingsRepository aiSettingsRepository = app.Services.GetRequiredService<IAISettingsRepository>();
+                AISettings aiSettings = await aiSettingsRepository.GetAsync();
+
+                if (string.IsNullOrWhiteSpace(aiSettings.MasterPrompt))
+                {
+                    aiSettings.MasterPrompt = DefaultReviewContext.DefaultMasterPrompt;
+                    await aiSettingsRepository.UpdateAsync(aiSettings);
+                }
+
+                // Seed built-in review definitions for any repository that is missing them.
+                IReviewTypeSeeder reviewTypeSeeder = app.Services.GetRequiredService<IReviewTypeSeeder>();
+                IRepositoryService repositoryService = app.Services.GetRequiredService<IRepositoryService>();
+                IReadOnlyList<Repository> repositories = await repositoryService.GetAllAsync();
+
+                foreach (Repository repository in repositories)
+                {
+                    await reviewTypeSeeder.SeedAsync(repository.Id);
+                }
 
                 // Configure the HTTP request pipeline.
                 if (!app.Environment.IsDevelopment())
@@ -86,7 +108,7 @@ namespace Revathryn
                     pattern: Contracts.Consts.DefaultRoutePattern)
                     .WithStaticAssets();
 
-                app.Run();
+                await app.RunAsync();
             }
             finally
             {

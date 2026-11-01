@@ -31,6 +31,12 @@
     </div>
 
     <div class="mb-3">
+        <label asp-for="MaxTokens" class="form-label">@Strings.MaxTokensLabel</label>
+        <input asp-for="MaxTokens" class="form-control" type="number" min="1" />
+        <span asp-validation-for="MaxTokens" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
         <label asp-for="Endpoint" class="form-label">@Strings.EndpointLabel</label>
         <input asp-for="Endpoint" class="form-control" />
         <span asp-validation-for="Endpoint" class="text-danger"></span>

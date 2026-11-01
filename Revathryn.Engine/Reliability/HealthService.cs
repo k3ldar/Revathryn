@@ -15,13 +15,15 @@ namespace Revathryn.Engine.Reliability
         private readonly IDatabaseContext _databaseContext;
         private readonly IQueueRepository _queueRepository;
         private readonly IAIEngineRepository _aiEngineRepository;
+        private readonly IFindingRepository _findingRepository;
 
         /// <summary>Initialises a new health service.</summary>
-        public HealthService(IDatabaseContext databaseContext, IQueueRepository queueRepository, IAIEngineRepository aiEngineRepository)
+        public HealthService(IDatabaseContext databaseContext, IQueueRepository queueRepository, IAIEngineRepository aiEngineRepository, IFindingRepository findingRepository)
         {
             _databaseContext = databaseContext;
             _queueRepository = queueRepository;
             _aiEngineRepository = aiEngineRepository;
+            _findingRepository = findingRepository;
         }
 
         /// <summary>Evaluates readiness: whether the application can perform work.</summary>
@@ -31,7 +33,8 @@ namespace Revathryn.Engine.Reliability
             [
                 await CheckDatabaseConnectivityAsync(cancellationToken).ConfigureAwait(false),
                 await CheckBackgroundProcessingAsync(cancellationToken).ConfigureAwait(false),
-                await CheckAnalyserAvailabilityAsync(cancellationToken).ConfigureAwait(false)
+                await CheckAnalyserAvailabilityAsync(cancellationToken).ConfigureAwait(false),
+                await CheckReviewProcessingAsync(cancellationToken).ConfigureAwait(false)
             ];
 
             return new HealthReport
@@ -94,6 +97,26 @@ namespace Revathryn.Engine.Reliability
             catch (Exception ex)
             {
                 return CreateCheck(AnalyserAvailabilityCheck, HealthStatus.Unavailable, null, string.Format(Strings.HealthAnalyserAvailabilityUnavailable, ex.Message));
+            }
+        }
+
+        private async Task<HealthCheckResult> CheckReviewProcessingAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                QueueMetrics metrics = await _queueRepository.GetMetricsAsync(cancellationToken).ConfigureAwait(false);
+                int operationalFailureCount = await _findingRepository.CountOutstandingOperationalFailuresAsync(cancellationToken).ConfigureAwait(false);
+
+                if (operationalFailureCount > 0 || metrics.RetryCount > 0)
+                {
+                    return CreateCheck(ReviewProcessingCheck, HealthStatus.Degraded, null, string.Format(Strings.HealthReviewProcessingDegraded, operationalFailureCount, metrics.RetryCount));
+                }
+
+                return CreateCheck(ReviewProcessingCheck, HealthStatus.Healthy, DateTime.UtcNow, Strings.HealthReviewProcessingHealthy);
+            }
+            catch (Exception ex)
+            {
+                return CreateCheck(ReviewProcessingCheck, HealthStatus.Unavailable, null, string.Format(Strings.HealthReviewProcessingUnavailable, ex.Message));
             }
         }
 

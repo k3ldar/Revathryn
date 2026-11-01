@@ -43,6 +43,8 @@ else
 
                         <div class="text-muted small">@engine.Provider · @engine.Model</div>
 
+                        <div class="text-muted small">@Strings.MaxTokensLabel: @engine.MaxTokens</div>
+
                         @if (!string.IsNullOrWhiteSpace(engine.Endpoint))
                         {
                             <div class="text-muted small text-truncate" title="@engine.Endpoint">@engine.Endpoint</div>

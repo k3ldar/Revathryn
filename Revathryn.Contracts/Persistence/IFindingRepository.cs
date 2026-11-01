@@ -17,8 +17,11 @@ namespace Revathryn.Contracts.Persistence
         /// <summary>Returns a filtered, sorted and paged set of findings.</summary>
         Task<FindingQueryResult> QueryAsync(FindingQuery query, CancellationToken cancellationToken = default);
 
-        /// <summary>Returns all outstanding, non-operational findings, most recent first.</summary>
+        /// <summary>Returns all outstanding findings, most recent first.</summary>
         Task<IReadOnlyList<Finding>> GetOutstandingAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>Returns the number of outstanding operational failure findings.</summary>
+        Task<int> CountOutstandingOperationalFailuresAsync(CancellationToken cancellationToken = default);
 
         /// <summary>Inserts the finding and returns its assigned id.</summary>
         Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default);

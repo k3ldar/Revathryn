@@ -155,6 +155,7 @@ namespace Revathryn.Controllers
                 .Where(summary => !assignedFileIds.Contains(summary.File.Id))];
 
             int findingsCount = findings.Count(finding => finding.Category != FindingCategory.OperationalFailure);
+            int operationalFailuresCount = findings.Count(finding => finding.Category == FindingCategory.OperationalFailure);
 
             return new RepositoryDetailsViewModel
             {
@@ -163,6 +164,7 @@ namespace Revathryn.Controllers
                 FilesRequiringReview = coverage.FilesRequiringReview,
                 OutstandingReviews = coverage.OutstandingReviews,
                 FindingsCount = findingsCount,
+                OperationalFailuresCount = operationalFailuresCount,
                 ReviewStatus = ResolveStatus(files.Count, coverage.OutstandingReviews, findingsCount),
                 Modules = modules,
                 UnassignedFiles = unassignedFiles

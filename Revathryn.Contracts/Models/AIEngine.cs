@@ -20,6 +20,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Model identifier to use, e.g. "gpt-4o".</summary>
         public string Model { get; set; } = string.Empty;
 
+        /// <summary>Maximum tokens the model may generate in a single response.</summary>
+        public int MaxTokens { get; set; } = Consts.DefaultAIMaxTokens;
+
         /// <summary>Reference into the secrets provider where the API key is stored.</summary>
         public string SecretKeyName { get; set; } = string.Empty;
 

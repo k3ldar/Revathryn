@@ -35,6 +35,15 @@
                 <dl class="row small mb-2">
                     <dt class="col-8">@Strings.QueuedAnalysesLabel</dt>
                     <dd class="col-4 text-end">@Model.QueuedAnalysisCount</dd>
+
+                    <dt class="col-8">@Strings.RetryQueueLabel</dt>
+                    <dd class="col-4 text-end">@Model.QueueMetrics.RetryCount</dd>
+
+                    <dt class="col-8">@Strings.FailedAnalysesLabel</dt>
+                    <dd class="col-4 text-end">@Model.FailedAnalysisCount</dd>
+
+                    <dt class="col-8">@Strings.OldestQueuedLabel</dt>
+                    <dd class="col-4 text-end">@(Model.QueueMetrics.OldestPendingUtc.HasValue ? FormatUtc(Model.QueueMetrics.OldestPendingUtc.Value) : Strings.NoQueuedAnalysesLabel)</dd>
                 </dl>
                 <p class="text-muted small mb-0">@Strings.AnalysisOutcomesRepresentedByIssues</p>
             </div>

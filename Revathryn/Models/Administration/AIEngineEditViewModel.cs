@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
+using Revathryn.Contracts;
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
 
@@ -25,6 +26,10 @@ namespace Revathryn.Models.Administration
         [Required(ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.ModelRequiredMessage))]
         public string Model { get; set; } = string.Empty;
 
+        /// <summary>Maximum tokens the model may generate in a single response.</summary>
+        [Range(Consts.MinimumAIMaxTokens, int.MaxValue, ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.MaxTokensRangeMessage))]
+        public int MaxTokens { get; set; } = Consts.DefaultAIMaxTokens;
+
         /// <summary>Reference into the secrets provider where the API key is stored.</summary>
         public string SecretKeyName { get; set; } = string.Empty;
 
@@ -44,6 +49,7 @@ namespace Revathryn.Models.Administration
                 Provider = engine.Provider,
                 Endpoint = engine.Endpoint,
                 Model = engine.Model,
+                MaxTokens = engine.MaxTokens,
                 SecretKeyName = engine.SecretKeyName,
                 Enabled = engine.Enabled,
                 IsDefault = engine.IsDefault
@@ -60,6 +66,7 @@ namespace Revathryn.Models.Administration
                 Provider = Provider,
                 Endpoint = Endpoint?.Trim() ?? string.Empty,
                 Model = Model?.Trim() ?? string.Empty,
+                MaxTokens = MaxTokens,
                 SecretKeyName = SecretKeyName?.Trim() ?? string.Empty,
                 Enabled = Enabled,
                 IsDefault = IsDefault

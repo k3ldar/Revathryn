@@ -182,6 +182,9 @@
 			<data name="AIEngineSecretMissing" xml:space="preserve">
 			  <value>The API key for AI engine '{0}' is not configured.</value>
 			</data>
+			<data name="AIEngineAuthenticationFailed" xml:space="preserve">
+			  <value>The AI engine rejected the request as unauthorized. Configure a valid API key for this engine.</value>
+			</data>
 			<data name="AIEngineResponseIncomplete" xml:space="preserve">
 			  <value>The AI engine returned an incomplete response.</value>
 			</data>
@@ -641,6 +644,12 @@
 			<data name="SecretKeyNameLabel" xml:space="preserve">
 			  <value>Secret key name</value>
 			</data>
+			<data name="MaxTokensLabel" xml:space="preserve">
+			  <value>Max completion tokens</value>
+			</data>
+			<data name="MaxTokensRangeMessage" xml:space="preserve">
+			  <value>Max completion tokens must be at least 1.</value>
+			</data>
 			<data name="IsDefaultLabel" xml:space="preserve">
 			  <value>Default engine</value>
 			</data>
@@ -670,5 +679,32 @@
 			</data>
 			<data name="ApplicationStartLabel" xml:space="preserve">
 			  <value>Application start</value>
+			</data>
+			<data name="FailedAnalysesLabel" xml:space="preserve">
+			  <value>Failed analyses</value>
+			</data>
+			<data name="HealthReviewProcessingDegraded" xml:space="preserve">
+			  <value>{0} failed and {1} retrying analysis item(s) require attention.</value>
+			</data>
+			<data name="HealthReviewProcessingHealthy" xml:space="preserve">
+			  <value>Review processing is operational.</value>
+			</data>
+			<data name="HealthReviewProcessingUnavailable" xml:space="preserve">
+			  <value>Review processing check failed: {0}</value>
+			</data>
+			<data name="OldestQueuedLabel" xml:space="preserve">
+			  <value>Oldest queued</value>
+			</data>
+			<data name="NoQueuedAnalysesLabel" xml:space="preserve">
+			  <value>None</value>
+			</data>
+			<data name="RetryQueueLabel" xml:space="preserve">
+			  <value>Analyses retrying</value>
+			</data>
+			<data name="ReviewCancelled" xml:space="preserve">
+			  <value>The review was cancelled before it completed.</value>
+			</data>
+			<data name="ReviewTypeNotAvailable" xml:space="preserve">
+			  <value>The review type is not available.</value>
 			</data>
 		  </root>

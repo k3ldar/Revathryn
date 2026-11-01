@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
+using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 
@@ -65,7 +66,7 @@ namespace Revathryn.Engine.Tests
             await queue.EnqueueAsync(CreateQueueItem(1, 1, 1, 5), TestContext.CancellationToken);
             await queue.EnqueueAsync(CreateQueueItem(1, 2, 1, 50), TestContext.CancellationToken);
 
-            QueueItem dequeued = await queue.DequeueAsync(TestContext.CancellationToken);
+            QueueItem dequeued = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
 
             Assert.AreEqual(2, dequeued.RepoFileId);
             Assert.AreEqual(50, dequeued.Priority);
@@ -117,14 +118,15 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
-        public async Task RepositoryService_RegisterCopiesDefaultReviewTypes()
+        public async Task RepositoryService_RegisterSeedsDefaultReviewTypes()
         {
             string root = CreateTempDirectory();
             try
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, reviewTypes);
+                ReviewTypeSeeder seeder = new(reviewTypes);
+                RepositoryService service = new(repositories, seeder);
 
                 Repository registered = await service.RegisterAsync(new Repository
                 {
@@ -133,12 +135,43 @@ namespace Revathryn.Engine.Tests
                 }, TestContext.CancellationToken);
 
                 Assert.AreNotEqual(0, registered.Id);
-                Assert.HasCount(2, reviewTypes.Added);
+                Assert.HasCount(27, reviewTypes.Added);
+                Assert.IsTrue(reviewTypes.Added.All(t => !string.IsNullOrEmpty(t.Key)));
+                Assert.IsTrue(reviewTypes.Added.All(t => t.Enabled));
             }
             finally
             {
                 Directory.Delete(root, true);
             }
+        }
+
+        [TestMethod]
+        public async Task ReviewTypeSeeder_SeedsOnlyMissingDefinitions()
+        {
+            FakeReviewTypeRepository reviewTypes = new();
+            reviewTypes.Add(new ReviewType { RepositoryId = 1, Key = "security", Name = "Security" });
+
+            ReviewTypeSeeder seeder = new(reviewTypes);
+
+            int inserted = await seeder.SeedAsync(1, TestContext.CancellationToken);
+
+            Assert.AreEqual(26, inserted);
+            Assert.DoesNotContain(t => t.Key == "security", reviewTypes.Added);
+            Assert.HasCount(27, await reviewTypes.GetByRepositoryAsync(1, TestContext.CancellationToken));
+        }
+
+        [TestMethod]
+        public async Task ReviewTypeSeeder_IsIdempotent()
+        {
+            FakeReviewTypeRepository reviewTypes = new();
+            ReviewTypeSeeder seeder = new(reviewTypes);
+
+            int firstSeed = await seeder.SeedAsync(1, TestContext.CancellationToken);
+            int secondSeed = await seeder.SeedAsync(1, TestContext.CancellationToken);
+
+            Assert.AreEqual(27, firstSeed);
+            Assert.AreEqual(0, secondSeed);
+            Assert.HasCount(27, await reviewTypes.GetByRepositoryAsync(1, TestContext.CancellationToken));
         }
 
         private static string CreateTempDirectory()
@@ -493,20 +526,48 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult(true);
             }
 
-            public Task<QueueItem> DequeueAsync(CancellationToken cancellationToken = default)
+            public Task<QueueItem> ClaimNextAsync(DateTime leasedUntilUtc, CancellationToken cancellationToken = default)
             {
-                QueueItem item = _items.OrderByDescending(i => i.Priority).ThenBy(i => i.CreatedDate).FirstOrDefault();
+                QueueItem item = _items
+                    .Where(i => i.Status == QueueItemStatus.Pending && (i.NextAttemptUtc is null || i.NextAttemptUtc <= DateTime.UtcNow))
+                    .OrderByDescending(i => i.Priority)
+                    .ThenBy(i => i.CreatedDate)
+                    .FirstOrDefault();
+
                 if (item is not null)
                 {
-                    _items.Remove(item);
+                    item.Status = QueueItemStatus.InFlight;
+                    item.LeasedUntilUtc = leasedUntilUtc;
+                    item.AttemptCount++;
                 }
 
                 return Task.FromResult(item);
             }
 
+            public Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
+            {
+                QueueItem item = _items.FirstOrDefault(i => i.Id == id);
+                if (item is not null)
+                {
+                    item.Status = QueueItemStatus.Pending;
+                    item.Priority = priority;
+                    item.NextAttemptUtc = nextAttemptUtc;
+                    item.LastError = lastError ?? string.Empty;
+                    item.LeasedUntilUtc = null;
+                }
+
+                return Task.CompletedTask;
+            }
+
+            public Task MarkCompletedAsync(long id, CancellationToken cancellationToken = default)
+            {
+                _items.RemoveAll(i => i.Id == id);
+                return Task.CompletedTask;
+            }
+
             public Task<IReadOnlyList<QueueItem>> GetPendingAsync(CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<QueueItem>>([.. _items.OrderByDescending(i => i.Priority).ThenBy(i => i.CreatedDate)]);
+                return Task.FromResult<IReadOnlyList<QueueItem>>([.. _items.Where(i => i.Status == QueueItemStatus.Pending).OrderByDescending(i => i.Priority).ThenBy(i => i.CreatedDate)]);
             }
 
             public Task<IReadOnlyList<QueueItem>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
@@ -528,7 +589,20 @@ namespace Revathryn.Engine.Tests
 
             public Task<int> CountAsync(CancellationToken cancellationToken = default)
             {
-                return Task.FromResult(_items.Count);
+                return Task.FromResult(_items.Count(i => i.Status == QueueItemStatus.Pending));
+            }
+
+            public Task<QueueMetrics> GetMetricsAsync(CancellationToken cancellationToken = default)
+            {
+                List<QueueItem> pending = [.. _items.Where(i => i.Status == QueueItemStatus.Pending)];
+                QueueMetrics metrics = new()
+                {
+                    PendingCount = pending.Count,
+                    RetryCount = pending.Count(i => i.AttemptCount > 0),
+                    OldestPendingUtc = pending.Count == 0 ? (DateTime?)null : pending.Min(i => i.CreatedDate)
+                };
+
+                return Task.FromResult(metrics);
             }
         }
 

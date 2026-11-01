@@ -36,6 +36,7 @@ namespace Revathryn.Engine
             services.AddSingleton<IReviewScheduler, ReviewScheduler>();
             services.AddSingleton<IReviewProcessor, ReviewProcessor>();
             services.AddSingleton<IRepositoryService, RepositoryService>();
+            services.AddSingleton<IReviewTypeSeeder, ReviewTypeSeeder>();
             services.AddSingleton<IRepositoryFileService, RepositoryFileService>();
             services.AddSingleton<IRepositoryProcessor, RepositoryProcessor>();
             services.AddSingleton<IHealthService, HealthService>();

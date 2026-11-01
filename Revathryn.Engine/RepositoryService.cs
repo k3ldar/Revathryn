@@ -3,24 +3,22 @@ using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Services;
 using Revathryn.Resources;
 
-using static Revathryn.Contracts.Consts;
-
 namespace Revathryn.Engine
 {
     /// <summary>Application-level repository management operations.</summary>
     public sealed class RepositoryService : IRepositoryService
     {
         private readonly IRepositoryRepository _repositoryRepository;
-        private readonly IReviewTypeRepository _reviewTypeRepository;
+        private readonly IReviewTypeSeeder _reviewTypeSeeder;
 
         /// <summary>Initialises a new service.</summary>
-        public RepositoryService(IRepositoryRepository repositoryRepository, IReviewTypeRepository reviewTypeRepository)
+        public RepositoryService(IRepositoryRepository repositoryRepository, IReviewTypeSeeder reviewTypeSeeder)
         {
             _repositoryRepository = repositoryRepository;
-            _reviewTypeRepository = reviewTypeRepository;
+            _reviewTypeSeeder = reviewTypeSeeder;
         }
 
-        /// <summary>Registers a local repository and copies default review definitions into it.</summary>
+        /// <summary>Registers a local repository and seeds its built-in review definitions.</summary>
         public async Task<Repository> RegisterAsync(Repository repository, CancellationToken cancellationToken = default)
         {
             ValidateLocalPath(repository.LocalPath);
@@ -37,10 +35,7 @@ namespace Revathryn.Engine
             long id = await _repositoryRepository.AddAsync(repository, cancellationToken).ConfigureAwait(false);
             repository.Id = id;
 
-            foreach (ReviewType defaultType in CreateDefaultReviewTypes(id))
-            {
-                await _reviewTypeRepository.AddAsync(defaultType, cancellationToken).ConfigureAwait(false);
-            }
+            await _reviewTypeSeeder.SeedAsync(id, cancellationToken).ConfigureAwait(false);
 
             return repository;
         }
@@ -128,42 +123,6 @@ namespace Revathryn.Engine
         private static string NormalisePath(string localPath)
         {
             return Path.TrimEndingDirectorySeparator(Path.GetFullPath(localPath));
-        }
-
-        private static IReadOnlyList<ReviewType> CreateDefaultReviewTypes(long repositoryId)
-        {
-            DateTime now = DateTime.UtcNow;
-
-            ReviewType cSharpReview = new()
-            {
-                RepositoryId = repositoryId,
-                Name = Strings.DefaultCSharpReviewName,
-                Description = Strings.DefaultCSharpReviewDescription,
-                FileExtensions = FileTypeCSharp,
-                Prompt = Strings.DefaultCSharpReviewPrompt,
-                DefaultPriority = DefaultCSharpReviewPriority,
-                Enabled = true,
-                CreatedDate = now,
-                LastModifiedDate = now
-            };
-
-            ReviewType generalReview = new()
-            {
-                RepositoryId = repositoryId,
-                Name = Strings.DefaultGeneralReviewName,
-                Description = Strings.DefaultGeneralReviewDescription,
-                FileExtensions = string.Empty,
-                Prompt = Strings.DefaultGeneralReviewPrompt,
-                DefaultPriority = DefaultGeneralReviewPriority,
-                Enabled = true,
-                CreatedDate = now,
-                LastModifiedDate = now
-            };
-
-            cSharpReview.ReviewDefinitionVersion = ReviewDefinitionVersionCalculator.Compute(cSharpReview);
-            generalReview.ReviewDefinitionVersion = ReviewDefinitionVersionCalculator.Compute(generalReview);
-
-            return [cSharpReview, generalReview];
         }
     }
 }

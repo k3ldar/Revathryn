@@ -116,7 +116,7 @@ namespace Revathryn.Data.Tests
         }
 
         [TestMethod]
-        public async Task QueueRepository_DequeuesHighestPriorityFirst()
+        public async Task QueueRepository_ClaimsHighestPriorityFirst()
         {
             using TestDatabase database = new();
             RepositoryRepository repositories = new(database.Factory);
@@ -132,11 +132,147 @@ namespace Revathryn.Data.Tests
             await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileA, reviewTypeId, 1), TestContext.CancellationToken);
             await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileB, reviewTypeId, 50), TestContext.CancellationToken);
 
-            QueueItem dequeued = await queue.DequeueAsync(TestContext.CancellationToken);
+            QueueItem claimed = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
 
-            Assert.AreEqual(fileB, dequeued.RepoFileId);
-            Assert.AreEqual(50, dequeued.Priority);
+            Assert.AreEqual(fileB, claimed.RepoFileId);
+            Assert.AreEqual(50, claimed.Priority);
+            Assert.AreEqual(QueueItemStatus.InFlight, claimed.Status);
+            Assert.AreEqual(1, claimed.AttemptCount);
             Assert.AreEqual(1, await queue.CountAsync(TestContext.CancellationToken));
+        }
+
+        [TestMethod]
+        public async Task QueueRepository_ReleaseForRetry_ReturnsItemToPendingWithBackoff()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            QueueRepository queue = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileId, reviewTypeId, 10), TestContext.CancellationToken);
+
+            QueueItem claimed = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
+            DateTime nextAttemptUtc = DateTime.UtcNow.AddMinutes(2);
+
+            await queue.ReleaseForRetryAsync(claimed.Id, 5, nextAttemptUtc, "failure", TestContext.CancellationToken);
+
+            Assert.AreEqual(1, await queue.CountAsync(TestContext.CancellationToken));
+            IReadOnlyList<QueueItem> pending = await queue.GetPendingAsync(TestContext.CancellationToken);
+            Assert.HasCount(1, pending);
+            Assert.AreEqual(QueueItemStatus.Pending, pending[0].Status);
+            Assert.AreEqual(5, pending[0].Priority);
+            Assert.AreEqual("failure", pending[0].LastError);
+            Assert.IsTrue(pending[0].NextAttemptUtc.HasValue);
+            Assert.IsTrue(pending[0].NextAttemptUtc.Value >= nextAttemptUtc.AddSeconds(-5));
+        }
+
+        [TestMethod]
+        public async Task QueueRepository_ClaimNext_SkipsItemsBeforeNextAttempt()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            QueueRepository queue = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileId, reviewTypeId, 10), TestContext.CancellationToken);
+
+            QueueItem claimed = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
+            await queue.ReleaseForRetryAsync(claimed.Id, 5, DateTime.UtcNow.AddMinutes(5), "failure", TestContext.CancellationToken);
+
+            QueueItem notEligible = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(10), TestContext.CancellationToken);
+            Assert.IsNull(notEligible);
+
+            await queue.ReleaseForRetryAsync(claimed.Id, 5, DateTime.UtcNow.AddSeconds(-1), "failure", TestContext.CancellationToken);
+            QueueItem eligible = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(10), TestContext.CancellationToken);
+            Assert.IsNotNull(eligible);
+            Assert.AreEqual(claimed.Id, eligible.Id);
+            Assert.AreEqual(2, eligible.AttemptCount);
+        }
+
+        [TestMethod]
+        public async Task QueueRepository_ClaimNext_ReclaimsStaleLease()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            QueueRepository queue = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileId, reviewTypeId, 10), TestContext.CancellationToken);
+
+            QueueItem firstClaim = await queue.ClaimNextAsync(DateTime.UtcNow.AddSeconds(-1), TestContext.CancellationToken);
+            QueueItem reclaimed = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
+
+            Assert.IsNotNull(reclaimed);
+            Assert.AreEqual(firstClaim.Id, reclaimed.Id);
+            Assert.AreEqual(2, reclaimed.AttemptCount);
+        }
+
+        [TestMethod]
+        public async Task QueueRepository_RemoveAsync_RemovesItemFromQueue()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            QueueRepository queue = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileId, reviewTypeId, 10), TestContext.CancellationToken);
+
+            QueueItem claimed = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
+            await queue.RemoveAsync(claimed.Id, TestContext.CancellationToken);
+
+            Assert.AreEqual(0, await queue.CountAsync(TestContext.CancellationToken));
+            QueueMetrics metrics = await queue.GetMetricsAsync(TestContext.CancellationToken);
+            Assert.AreEqual(0, metrics.PendingCount);
+            Assert.AreEqual(0, metrics.RetryCount);
+        }
+
+        [TestMethod]
+        public async Task QueueRepository_GetMetrics_CountsPendingAndRetry()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            QueueRepository queue = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileA = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long fileB = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/B.cs"), TestContext.CancellationToken);
+            long fileC = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/C.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileA, reviewTypeId, 10), TestContext.CancellationToken);
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileB, reviewTypeId, 20), TestContext.CancellationToken);
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileC, reviewTypeId, 30), TestContext.CancellationToken);
+
+            QueueItem retried = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
+            await queue.ReleaseForRetryAsync(retried.Id, retried.Priority, DateTime.UtcNow.AddSeconds(-1), "transient", TestContext.CancellationToken);
+
+            QueueMetrics metrics = await queue.GetMetricsAsync(TestContext.CancellationToken);
+
+            Assert.AreEqual(3, metrics.PendingCount);
+            Assert.AreEqual(1, metrics.RetryCount);
+            Assert.IsTrue(metrics.OldestPendingUtc.HasValue);
         }
 
         [TestMethod]

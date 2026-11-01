@@ -41,7 +41,13 @@ namespace Revathryn.Engine.Reliability
                 return RetryDecision.Stop(category);
             }
 
-            return RetryDecision.Retry(ComputeDelay(attempt), category);
+            return RetryDecision.Retry(GetRetryDelay(attempt), category);
+        }
+
+        /// <summary>Computes the backoff delay for the supplied one-based attempt number.</summary>
+        public TimeSpan GetRetryDelay(int attempt)
+        {
+            return ComputeDelay(attempt);
         }
 
         private TimeSpan ComputeDelay(int attempt)

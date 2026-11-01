@@ -1,3 +1,5 @@
+using Revathryn.Contracts;
+
 namespace Revathryn.Data
 {
     /// <summary>DDL statements for the SQLite schema.</summary>
@@ -46,6 +48,7 @@ namespace Revathryn.Data
             CREATE TABLE IF NOT EXISTS ReviewTypes (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 RepositoryId INTEGER NOT NULL,
+                Key TEXT NOT NULL DEFAULT '',
                 Name TEXT NOT NULL,
                 Description TEXT NOT NULL DEFAULT '',
                 FileExtensions TEXT NOT NULL DEFAULT '',
@@ -100,6 +103,12 @@ namespace Revathryn.Data
                 ReviewTypeId INTEGER NOT NULL,
                 Priority INTEGER NOT NULL DEFAULT 0,
                 CreatedDate TEXT NOT NULL,
+                AttemptCount INTEGER NOT NULL DEFAULT 0,
+                MaxAttempts INTEGER NOT NULL DEFAULT 0,
+                NextAttemptUtc TEXT NULL,
+                LastError TEXT NOT NULL DEFAULT '',
+                LeasedUntilUtc TEXT NULL,
+                Status INTEGER NOT NULL DEFAULT 0,
                 CONSTRAINT UQ_Queue_File_ReviewType UNIQUE (RepoFileId, ReviewTypeId),
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
                 FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE,
@@ -131,7 +140,7 @@ namespace Revathryn.Data
             """;
 
         /// <summary>Creates the AIEngines table.</summary>
-        internal const string CreateAIEngines = """
+        internal static readonly string CreateAIEngines = $"""
             CREATE TABLE IF NOT EXISTS AIEngines (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Name TEXT NOT NULL,
@@ -139,6 +148,7 @@ namespace Revathryn.Data
                 Endpoint TEXT NOT NULL DEFAULT '',
                 Model TEXT NOT NULL DEFAULT '',
                 SecretKeyName TEXT NOT NULL DEFAULT '',
+                MaxTokens INTEGER NOT NULL DEFAULT {Consts.DefaultAIMaxTokens},
                 Enabled INTEGER NOT NULL DEFAULT 1,
                 IsDefault INTEGER NOT NULL DEFAULT 0
             );
@@ -200,12 +210,15 @@ namespace Revathryn.Data
             "CREATE INDEX IF NOT EXISTS IX_RepoFileAnalysis_ReviewTypeId ON RepoFileAnalysis (ReviewTypeId);",
             "CREATE INDEX IF NOT EXISTS IX_Queue_RepositoryId ON Queue (RepositoryId);",
             "CREATE INDEX IF NOT EXISTS IX_Queue_Priority ON Queue (Priority DESC, CreatedDate ASC);",
+            "CREATE INDEX IF NOT EXISTS IX_Queue_Status ON Queue (Status, Priority DESC, CreatedDate ASC);",
+            "CREATE INDEX IF NOT EXISTS IX_Queue_LeasedUntilUtc ON Queue (LeasedUntilUtc);",
             "CREATE INDEX IF NOT EXISTS IX_Findings_RepositoryId ON Findings (RepositoryId);",
             "CREATE INDEX IF NOT EXISTS IX_Findings_RepoFileId ON Findings (RepoFileId);",
             "CREATE INDEX IF NOT EXISTS IX_Findings_ReviewTypeId ON Findings (ReviewTypeId);",
             "CREATE INDEX IF NOT EXISTS IX_Findings_Status ON Findings (Status);",
             "CREATE INDEX IF NOT EXISTS IX_RepoProjects_RepositoryId ON RepoProjects (RepositoryId);",
-            "CREATE INDEX IF NOT EXISTS IX_RepositoryScans_RepositoryId ON RepositoryScans (RepositoryId, StartedUtc DESC);"
+            "CREATE INDEX IF NOT EXISTS IX_RepositoryScans_RepositoryId ON RepositoryScans (RepositoryId, StartedUtc DESC);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_ReviewTypes_Repository_Key ON ReviewTypes (RepositoryId, Key) WHERE Key <> '';"
         ];
     }
 }

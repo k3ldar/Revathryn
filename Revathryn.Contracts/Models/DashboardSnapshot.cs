@@ -20,6 +20,12 @@ namespace Revathryn.Contracts.Models
         /// <summary>Number of analyses currently queued.</summary>
         public int QueuedAnalysisCount { get; set; }
 
+        /// <summary>Reliability metrics for the review queue.</summary>
+        public QueueMetrics QueueMetrics { get; set; } = new();
+
+        /// <summary>Number of analyses that terminally failed and were recorded as operational failure findings.</summary>
+        public int FailedAnalysisCount { get; set; }
+
         /// <summary>Outstanding issue summary.</summary>
         public IssueSummary IssueSummary { get; set; } = new();
 

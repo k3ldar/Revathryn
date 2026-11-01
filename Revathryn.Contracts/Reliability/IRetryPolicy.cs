@@ -5,5 +5,8 @@ namespace Revathryn.Contracts.Reliability
     {
         /// <summary>Evaluates a failure at the supplied one-based attempt number.</summary>
         RetryDecision Evaluate(int attempt, Exception exception);
+
+        /// <summary>Computes the backoff delay for the supplied one-based attempt number.</summary>
+        TimeSpan GetRetryDelay(int attempt);
     }
 }

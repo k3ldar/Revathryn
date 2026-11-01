@@ -1,11 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
 
 using Revathryn.Contracts;
+using Revathryn.Contracts.Enums;
+using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Reliability;
 using Revathryn.Contracts.Services;
 using Revathryn.Engine;
+using Revathryn.Engine.Reliability;
 
 namespace Revathryn.Engine.Tests
 {
@@ -106,6 +109,62 @@ namespace Revathryn.Engine.Tests
             Assert.HasCount(0, snapshot.RecentScans);
         }
 
+        [TestMethod]
+        public async Task GetSnapshotAsync_MapsQueueMetricsToSnapshot()
+        {
+            FakeRepositoryRepository repositories = new();
+            FakeRepositoryScanRepository scans = new();
+            FakeQueueRepository queue = new()
+            {
+                Metrics = new QueueMetrics
+                {
+                    PendingCount = 3,
+                    RetryCount = 1,
+                    OldestPendingUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            };
+            FakeFindingRepository findings = new() { OperationalFailureCount = 2 };
+
+            DashboardQueryService service = new(
+                repositories,
+                scans,
+                queue,
+                new FakeIssueQueryService(),
+                new FakeHealthService(),
+                findings,
+                new UptimeModel());
+
+            DashboardSnapshot snapshot = await service.GetSnapshotAsync(TestContext.CancellationToken);
+
+            Assert.AreEqual(3, snapshot.QueuedAnalysisCount);
+            Assert.IsNotNull(snapshot.QueueMetrics);
+            Assert.AreEqual(3, snapshot.QueueMetrics.PendingCount);
+            Assert.AreEqual(1, snapshot.QueueMetrics.RetryCount);
+            Assert.AreEqual(2, snapshot.FailedAnalysisCount);
+            Assert.AreEqual(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), snapshot.QueueMetrics.OldestPendingUtc.Value);
+        }
+
+        [TestMethod]
+        public async Task HealthService_GetReadinessAsync_DegradedWhenRetriesOrFailedAnalysesExist()
+        {
+            FakeQueueRepository queue = new()
+            {
+                Metrics = new QueueMetrics
+                {
+                    PendingCount = 2,
+                    RetryCount = 1
+                }
+            };
+
+            FakeFindingRepository findings = new() { OperationalFailureCount = 1 };
+            HealthService healthService = new(new FakeDatabaseContext(), queue, new FakeAIEngineRepository(new AIEngine { Enabled = true }), findings);
+
+            HealthReport report = await healthService.GetReadinessAsync(TestContext.CancellationToken);
+
+            HealthCheckResult reviewCheck = report.Checks.Single(check => check.Name == Consts.ReviewProcessingCheck);
+            Assert.AreEqual(HealthStatus.Degraded, reviewCheck.Status);
+        }
+
         private static DashboardQueryService CreateService(
             IRepositoryRepository repositories,
             IRepositoryScanRepository scans)
@@ -116,6 +175,7 @@ namespace Revathryn.Engine.Tests
                 new FakeQueueRepository(),
                 new FakeIssueQueryService(),
                 new FakeHealthService(),
+                new FakeFindingRepository(),
                 new UptimeModel());
         }
 
@@ -181,14 +241,26 @@ namespace Revathryn.Engine.Tests
         {
             public int Count { get; set; }
 
+            public QueueMetrics Metrics { get; set; } = new();
+
             public Task<bool> EnqueueAsync(QueueItem item, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(false);
             }
 
-            public Task<QueueItem> DequeueAsync(CancellationToken cancellationToken = default)
+            public Task<QueueItem> ClaimNextAsync(DateTime leasedUntilUtc, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult<QueueItem>(null);
+            }
+
+            public Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task MarkCompletedAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
             }
 
             public Task<IReadOnlyList<QueueItem>> GetPendingAsync(CancellationToken cancellationToken = default)
@@ -215,6 +287,11 @@ namespace Revathryn.Engine.Tests
             {
                 return Task.FromResult(Count);
             }
+
+            public Task<QueueMetrics> GetMetricsAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Metrics);
+            }
         }
 
         private sealed class FakeIssueQueryService : IIssueQueryService
@@ -232,6 +309,56 @@ namespace Revathryn.Engine.Tests
             }
         }
 
+        private sealed class FakeFindingRepository : IFindingRepository
+        {
+            public int OperationalFailureCount { get; set; }
+
+            public Task<Finding> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<Finding>(null);
+            }
+
+            public Task<IReadOnlyList<Finding>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<Finding>>([]);
+            }
+
+            public Task<Finding> GetByFingerprintAsync(long repositoryId, string fingerprint, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<Finding>(null);
+            }
+
+            public Task<FindingQueryResult> QueryAsync(FindingQuery query, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new FindingQueryResult());
+            }
+
+            public Task<IReadOnlyList<Finding>> GetOutstandingAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<Finding>>([]);
+            }
+
+            public Task<int> CountOutstandingOperationalFailuresAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(OperationalFailureCount);
+            }
+
+            public Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(0L);
+            }
+
+            public Task UpdateAsync(Finding finding, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
         private sealed class FakeHealthService : IHealthService
         {
             public HealthReport Report { get; set; } = new();
@@ -244,6 +371,79 @@ namespace Revathryn.Engine.Tests
             public HealthReport GetLiveness()
             {
                 return Report;
+            }
+        }
+
+        private sealed class FakeDatabaseContext : IDatabaseContext
+        {
+            public ITransactionScope BeginTransaction()
+            {
+                return new FakeTransactionScope();
+            }
+
+            public Task<bool> CanConnectAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(true);
+            }
+        }
+
+        private sealed class FakeTransactionScope : ITransactionScope
+        {
+            public void Commit()
+            {
+            }
+
+            public void Rollback()
+            {
+            }
+
+            public void Dispose()
+            {
+            }
+        }
+
+        private sealed class FakeAIEngineRepository : IAIEngineRepository
+        {
+            private readonly IReadOnlyList<AIEngine> _enabled;
+
+            public FakeAIEngineRepository(params AIEngine[] enabled)
+            {
+                _enabled = enabled;
+            }
+
+            public Task<AIEngine> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<AIEngine>(null);
+            }
+
+            public Task<IReadOnlyList<AIEngine>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(_enabled);
+            }
+
+            public Task<IReadOnlyList<AIEngine>> GetEnabledAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(_enabled);
+            }
+
+            public Task<AIEngine> GetDefaultAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<AIEngine>(null);
+            }
+
+            public Task<long> AddAsync(AIEngine engine, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(0L);
+            }
+
+            public Task UpdateAsync(AIEngine engine, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
             }
         }
     }

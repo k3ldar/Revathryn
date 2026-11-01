@@ -20,6 +20,9 @@ namespace Revathryn.Models.Dashboard
         /// <summary>Number of non-operational findings recorded for the repository.</summary>
         public int FindingsCount { get; set; }
 
+        /// <summary>Number of operational failure findings recorded for the repository.</summary>
+        public int OperationalFailuresCount { get; set; }
+
         /// <summary>Localised review status text.</summary>
         public string ReviewStatus { get; set; } = string.Empty;
 

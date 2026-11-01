@@ -21,10 +21,22 @@ namespace Revathryn.Engine
             return _queueRepository.EnqueueAsync(item, cancellationToken);
         }
 
-        /// <summary>Removes and returns the highest priority pending item, or null when empty.</summary>
-        public Task<QueueItem> DequeueAsync(CancellationToken cancellationToken = default)
+        /// <summary>Claims the highest priority eligible pending item, or null when empty.</summary>
+        public Task<QueueItem> ClaimNextAsync(DateTime leasedUntilUtc, CancellationToken cancellationToken = default)
         {
-            return _queueRepository.DequeueAsync(cancellationToken);
+            return _queueRepository.ClaimNextAsync(leasedUntilUtc, cancellationToken);
+        }
+
+        /// <summary>Returns a claimed item to the pending state for a later retry.</summary>
+        public Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
+        {
+            return _queueRepository.ReleaseForRetryAsync(id, priority, nextAttemptUtc, lastError, cancellationToken);
+        }
+
+        /// <summary>Removes the item because it completed successfully.</summary>
+        public Task MarkCompletedAsync(long id, CancellationToken cancellationToken = default)
+        {
+            return _queueRepository.MarkCompletedAsync(id, cancellationToken);
         }
 
         /// <summary>Returns pending items ordered by priority.</summary>
@@ -37,6 +49,12 @@ namespace Revathryn.Engine
         public Task RemoveAsync(long id, CancellationToken cancellationToken = default)
         {
             return _queueRepository.RemoveAsync(id, cancellationToken);
+        }
+
+        /// <summary>Returns aggregated queue reliability metrics.</summary>
+        public Task<QueueMetrics> GetMetricsAsync(CancellationToken cancellationToken = default)
+        {
+            return _queueRepository.GetMetricsAsync(cancellationToken);
         }
     }
 }

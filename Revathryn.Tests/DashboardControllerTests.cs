@@ -119,6 +119,17 @@ namespace Revathryn.Tests
                 Status = FindingStatus.New
             };
 
+            Finding operationalFailure = new()
+            {
+                Id = 2,
+                RepositoryId = 1,
+                RepoFileId = 10,
+                ReviewTypeId = 100,
+                Severity = FindingSeverity.Critical,
+                Category = FindingCategory.OperationalFailure,
+                Status = FindingStatus.New
+            };
+
             RepositoryProject project = new()
             {
                 Id = 1,
@@ -137,6 +148,7 @@ namespace Revathryn.Tests
 
             FakeFindingRepository findings = new();
             findings.Findings.Add(finding);
+            findings.Findings.Add(operationalFailure);
 
             FakeReviewTypeRepository reviewTypes = new();
             reviewTypes.ReviewTypes.Add(reviewType);
@@ -170,6 +182,7 @@ namespace Revathryn.Tests
             Assert.AreEqual(1, model.FilesRequiringReview);
             Assert.AreEqual(0, model.OutstandingReviews);
             Assert.AreEqual(1, model.FindingsCount);
+            Assert.AreEqual(1, model.OperationalFailuresCount);
             Assert.AreEqual(Strings.RepositoryReviewStatusIssuesFound, model.ReviewStatus);
 
             Assert.HasCount(1, model.Modules);
@@ -500,6 +513,11 @@ namespace Revathryn.Tests
             public Task<IReadOnlyList<Finding>> GetOutstandingAsync(CancellationToken cancellationToken = default)
             {
                 return Task.FromResult<IReadOnlyList<Finding>>([]);
+            }
+
+            public Task<int> CountOutstandingOperationalFailuresAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Findings.Count(finding => finding.Category == FindingCategory.OperationalFailure));
             }
 
             public Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default)
