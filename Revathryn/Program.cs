@@ -52,6 +52,7 @@ namespace Revathryn
                 // Add services to the container.
                 builder.Services.AddSingleton(new UptimeModel());
                 builder.Services.AddControllersWithViews();
+                builder.Services.Configure<IssueViewingOptions>(builder.Configuration.GetSection(Consts.IssueViewingOptionsKey));
                 builder.Services.AddDataServices(settings);
                 builder.Services.AddEngineServices();
                 builder.Services.AddSingleton<IOperationalLogSink, OperationalLoggingSink>();

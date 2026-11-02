@@ -366,6 +366,16 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult(new FindingQueryResult());
             }
 
+            public Task<FindingNavigation> GetNavigationAsync(long findingId, FindingQuery query, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new FindingNavigation());
+            }
+
+            public Task<IReadOnlyList<RepositoryIssueCount>> CountByRepositoryAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryIssueCount>>([]);
+            }
+
             public Task<IReadOnlyList<Finding>> GetOutstandingAsync(CancellationToken cancellationToken = default)
             {
                 return Task.FromResult<IReadOnlyList<Finding>>([]);

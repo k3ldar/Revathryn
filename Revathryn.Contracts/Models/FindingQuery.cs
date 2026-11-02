@@ -11,6 +11,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Restrict results to a single severity, or null for all severities.</summary>
         public FindingSeverity? Severity { get; set; }
 
+        /// <summary>Restrict results to a single review type, or null for all review types.</summary>
+        public long? ReviewTypeId { get; set; }
+
         /// <summary>Restrict results to a single category, or null for all categories.</summary>
         public FindingCategory? Category { get; set; }
 

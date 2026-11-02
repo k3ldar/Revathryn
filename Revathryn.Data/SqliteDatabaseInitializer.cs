@@ -46,7 +46,8 @@ namespace Revathryn.Data
                 SqliteDatabaseSchema.CreateAISettings,
                 SqliteDatabaseSchema.CreateRepoProjects,
                 SqliteDatabaseSchema.CreateRepositoryScans,
-                SqliteDatabaseSchema.CreateReviewUsage);
+                SqliteDatabaseSchema.CreateReviewUsage,
+                SqliteDatabaseSchema.CreateReviewContexts);
 
             command.ExecuteNonQuery();
 
@@ -75,6 +76,7 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Queue", "LastError", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "Queue", "LeasedUntilUtc", "TEXT NULL");
             EnsureColumn(connection, "Queue", "Status", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(connection, "Findings", "ReviewContextId", "INTEGER NULL");
             EnsureColumn(connection, "AIEngines", "MaxTokens", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxTokens);
         }
 

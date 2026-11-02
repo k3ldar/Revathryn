@@ -17,6 +17,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>The review type that produced the finding. Nullable so findings survive definition removal.</summary>
         public long? ReviewTypeId { get; set; }
 
+        /// <summary>Optional reference to the original AI context supplied to the review that produced this finding.</summary>
+        public long? ReviewContextId { get; set; }
+
         /// <summary>Stable fingerprint used for duplicate detection.</summary>
         public string Fingerprint { get; set; } = string.Empty;
 

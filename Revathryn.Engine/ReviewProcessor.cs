@@ -137,6 +137,7 @@ namespace Revathryn.Engine
             int maxContextRequests = repository.MaxContextRequests > 0 ? repository.MaxContextRequests : Consts.DefaultMaxContextRequests;
             int contextIterations = 0;
             List<ReviewUsage> usageRecords = [];
+            List<ReviewContextItem> capturedContextItems = [];
 
             while (true)
             {
@@ -157,7 +158,7 @@ namespace Revathryn.Engine
                         return ProcessingResult.Failed(Strings.AIEngineResponseIncomplete);
                     }
 
-                    await PersistOutcomeAsync(item, file, reviewType, response, usageRecords, cancellationToken).ConfigureAwait(false);
+                    await PersistOutcomeAsync(item, file, reviewType, response, usageRecords, request, capturedContextItems, cancellationToken).ConfigureAwait(false);
                     return ProcessingResult.Success();
                 }
 
@@ -168,7 +169,7 @@ namespace Revathryn.Engine
                     return ProcessingResult.Failed(Strings.ContextRequestLimitExceeded);
                 }
 
-                await AppendContextAsync(repository, file, request, response.ContextRequests, cancellationToken).ConfigureAwait(false);
+                await AppendContextAsync(repository, file, request, response.ContextRequests, capturedContextItems, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -207,6 +208,8 @@ namespace Revathryn.Engine
             ReviewType reviewType,
             ReviewResponse response,
             IReadOnlyList<ReviewUsage> usageRecords,
+            ReviewRequest request,
+            IReadOnlyList<ReviewContextItem> contextItems,
             CancellationToken cancellationToken)
         {
             List<Finding> findings = [];
@@ -242,6 +245,19 @@ namespace Revathryn.Engine
                 ReviewDefinitionVersion = reviewType.ReviewDefinitionVersion,
                 Findings = findings,
                 UsageRecords = usageRecords,
+                Context = new AIReviewContext
+                {
+                    RepositoryId = item.RepositoryId,
+                    RepoFileId = item.RepoFileId,
+                    ReviewTypeId = item.ReviewTypeId,
+                    Sha256 = file.Sha256,
+                    Language = request.Language,
+                    FilePath = file.RelativePath,
+                    ReviewInstructions = request.Prompt,
+                    FileContent = request.FileContent,
+                    ContextItems = contextItems,
+                    CreatedUtc = DateTime.UtcNow
+                },
                 CompletedUtc = DateTime.UtcNow
             };
 
@@ -307,6 +323,7 @@ namespace Revathryn.Engine
             RepoFile file,
             ReviewRequest request,
             IReadOnlyList<string> contextRequests,
+            List<ReviewContextItem> capturedItems,
             CancellationToken cancellationToken)
         {
             string sourcePath = ResolveAbsolutePath(repository.LocalPath, file.RelativePath);
@@ -328,7 +345,14 @@ namespace Revathryn.Engine
 
                 foreach (ContextItem item in contextResponse?.Items ?? [])
                 {
-                    request.AdditionalContext.Add(RenderContextItem(item));
+                    string rendered = RenderContextItem(item);
+                    request.AdditionalContext.Add(rendered);
+                    capturedItems.Add(new ReviewContextItem
+                    {
+                        Title = item.Title ?? string.Empty,
+                        SourcePath = item.SourcePath ?? string.Empty,
+                        Content = rendered
+                    });
                 }
             }
         }

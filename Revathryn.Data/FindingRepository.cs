@@ -10,7 +10,7 @@ namespace Revathryn.Data
     public sealed class FindingRepository : SqliteRepositoryBase, IFindingRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, RepoFileId, ReviewTypeId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate";
+            "Id, RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate";
 
         /// <summary>Initialises a new repository.</summary>
         public FindingRepository(SqliteConnectionFactory connectionFactory)
@@ -119,6 +119,62 @@ namespace Revathryn.Data
             };
         }
 
+        /// <summary>Returns the findings immediately before and after the given finding within the supplied query.</summary>
+        public async Task<FindingNavigation> GetNavigationAsync(long findingId, FindingQuery query, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            string whereClause = BuildWhereClause(query, out List<(string Name, object Value)> parameters);
+            string orderByColumns = BuildOrderByColumns(query);
+
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = $@"
+                WITH ranked AS (
+                    SELECT Id, ROW_NUMBER() OVER (ORDER BY {orderByColumns}) AS RowNum
+                    FROM Findings
+                    {whereClause}
+                )
+                SELECT
+                    (SELECT Id FROM ranked WHERE RowNum = (SELECT RowNum FROM ranked WHERE Id = @FindingId) - 1),
+                    (SELECT Id FROM ranked WHERE RowNum = (SELECT RowNum FROM ranked WHERE Id = @FindingId) + 1);";
+            AddQueryParameters(command, parameters);
+            command.Parameters.AddWithValue("@FindingId", findingId);
+
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                return new FindingNavigation
+                {
+                    PreviousId = reader.IsDBNull(0) ? (long?)null : reader.GetInt64(0),
+                    NextId = reader.IsDBNull(1) ? (long?)null : reader.GetInt64(1)
+                };
+            }
+
+            return new FindingNavigation();
+        }
+
+        /// <summary>Returns total issue counts grouped by repository.</summary>
+        public async Task<IReadOnlyList<RepositoryIssueCount>> CountByRepositoryAsync(CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT RepositoryId, COUNT(*) FROM Findings GROUP BY RepositoryId;";
+
+            List<RepositoryIssueCount> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(new RepositoryIssueCount
+                {
+                    RepositoryId = reader.GetInt64(0),
+                    Count = reader.GetInt32(1)
+                });
+            }
+
+            return results;
+        }
+
         /// <summary>Returns all outstanding findings, most recent first.</summary>
         public async Task<IReadOnlyList<Finding>> GetOutstandingAsync(CancellationToken cancellationToken = default)
         {
@@ -171,8 +227,8 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate);
+                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @ReviewContextId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate);
                 SELECT Id FROM Findings WHERE RepositoryId = @RepositoryId AND Fingerprint = @Fingerprint LIMIT 1;
                 """;
             AddParameters(command, finding);
@@ -191,6 +247,7 @@ namespace Revathryn.Data
                 SET RepositoryId = @RepositoryId,
                     RepoFileId = @RepoFileId,
                     ReviewTypeId = @ReviewTypeId,
+                    ReviewContextId = @ReviewContextId,
                     Fingerprint = @Fingerprint,
                     Severity = @Severity,
                     Title = @Title,
@@ -236,6 +293,12 @@ namespace Revathryn.Data
                 parameters.Add(("@Severity", (int)query.Severity.Value));
             }
 
+            if (query.ReviewTypeId.HasValue)
+            {
+                conditions.Add("ReviewTypeId = @ReviewTypeId");
+                parameters.Add(("@ReviewTypeId", query.ReviewTypeId.Value));
+            }
+
             if (query.Category.HasValue)
             {
                 conditions.Add("Category = @Category");
@@ -264,6 +327,11 @@ namespace Revathryn.Data
 
         private static string BuildOrderByClause(FindingQuery query)
         {
+            return $" ORDER BY {BuildOrderByColumns(query)}";
+        }
+
+        private static string BuildOrderByColumns(FindingQuery query)
+        {
             string column = query.SortField switch
             {
                 FindingSortField.LastModifiedDate => "LastModifiedDate",
@@ -273,7 +341,14 @@ namespace Revathryn.Data
             };
 
             string direction = query.SortDescending ? "DESC" : "ASC";
-            return $" ORDER BY {column} {direction}";
+            string orderBy = $"{column} {direction}";
+
+            if (query.SortField == FindingSortField.Severity)
+            {
+                orderBy += ", CreatedDate DESC";
+            }
+
+            return $"{orderBy}, Id ASC";
         }
 
         private static void AddQueryParameters(SqliteCommand command, List<(string Name, object Value)> parameters)
@@ -289,6 +364,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@RepositoryId", finding.RepositoryId);
             command.Parameters.AddWithValue("@RepoFileId", SqliteValueConverter.ToParameter(finding.RepoFileId));
             command.Parameters.AddWithValue("@ReviewTypeId", SqliteValueConverter.ToParameter(finding.ReviewTypeId));
+            command.Parameters.AddWithValue("@ReviewContextId", SqliteValueConverter.ToParameter(finding.ReviewContextId));
             command.Parameters.AddWithValue("@Fingerprint", finding.Fingerprint);
             command.Parameters.AddWithValue("@Severity", (int)finding.Severity);
             command.Parameters.AddWithValue("@Title", finding.Title);
@@ -308,15 +384,16 @@ namespace Revathryn.Data
                 RepositoryId = reader.GetInt64(1),
                 RepoFileId = reader.IsDBNull(2) ? null : reader.GetInt64(2),
                 ReviewTypeId = reader.IsDBNull(3) ? null : reader.GetInt64(3),
-                Fingerprint = reader.GetString(4),
-                Severity = (FindingSeverity)reader.GetInt32(5),
-                Title = reader.GetString(6),
-                Description = reader.GetString(7),
-                SuggestedFix = reader.GetString(8),
-                Status = (FindingStatus)reader.GetInt32(9),
-                Category = (FindingCategory)reader.GetInt32(10),
-                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(11)),
-                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(12))
+                ReviewContextId = reader.IsDBNull(4) ? null : reader.GetInt64(4),
+                Fingerprint = reader.GetString(5),
+                Severity = (FindingSeverity)reader.GetInt32(6),
+                Title = reader.GetString(7),
+                Description = reader.GetString(8),
+                SuggestedFix = reader.GetString(9),
+                Status = (FindingStatus)reader.GetInt32(10),
+                Category = (FindingCategory)reader.GetInt32(11),
+                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(12)),
+                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(13))
             };
         }
     }

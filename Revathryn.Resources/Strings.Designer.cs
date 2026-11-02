@@ -2076,6 +2076,484 @@ namespace Revathryn.Resources {
             }
         }
 
+
+        /// <summary>
+        ///   Looks up a localized string similar to Browse issues.
+        /// </summary>
+        public static string BrowseIssuesTitle {
+            get {
+                return ResourceManager.GetString("BrowseIssuesTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Select a repository to inspect the issues identified during its reviews..
+        /// </summary>
+        public static string BrowseIssuesInstruction {
+            get {
+                return ResourceManager.GetString("BrowseIssuesInstruction", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Issues.
+        /// </summary>
+        public static string IssuesTitle {
+            get {
+                return ResourceManager.GetString("IssuesTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Total issues.
+        /// </summary>
+        public static string TotalIssuesLabel {
+            get {
+                return ResourceManager.GetString("TotalIssuesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No issues have been identified for this repository..
+        /// </summary>
+        public static string NoIssuesForRepository {
+            get {
+                return ResourceManager.GetString("NoIssuesForRepository", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No issues match the current filters..
+        /// </summary>
+        public static string NoMatchingIssues {
+            get {
+                return ResourceManager.GetString("NoMatchingIssues", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Search title or description.
+        /// </summary>
+        public static string SearchIssuesPlaceholder {
+            get {
+                return ResourceManager.GetString("SearchIssuesPlaceholder", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Search.
+        /// </summary>
+        public static string SearchLabel {
+            get {
+                return ResourceManager.GetString("SearchLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to All severities.
+        /// </summary>
+        public static string AllSeveritiesLabel {
+            get {
+                return ResourceManager.GetString("AllSeveritiesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to All review types.
+        /// </summary>
+        public static string AllReviewTypesLabel {
+            get {
+                return ResourceManager.GetString("AllReviewTypesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Sort.
+        /// </summary>
+        public static string SortLabel {
+            get {
+                return ResourceManager.GetString("SortLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Descending.
+        /// </summary>
+        public static string SortDescending {
+            get {
+                return ResourceManager.GetString("SortDescending", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Order.
+        /// </summary>
+        public static string OrderLabel {
+            get {
+                return ResourceManager.GetString("OrderLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Ascending.
+        /// </summary>
+        public static string SortAscending {
+            get {
+                return ResourceManager.GetString("SortAscending", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Items per page.
+        /// </summary>
+        public static string PageSizeLabel {
+            get {
+                return ResourceManager.GetString("PageSizeLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Page.
+        /// </summary>
+        public static string PageLabel {
+            get {
+                return ResourceManager.GetString("PageLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to of.
+        /// </summary>
+        public static string OfLabel {
+            get {
+                return ResourceManager.GetString("OfLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Previous.
+        /// </summary>
+        public static string PreviousButton {
+            get {
+                return ResourceManager.GetString("PreviousButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Next.
+        /// </summary>
+        public static string NextButton {
+            get {
+                return ResourceManager.GetString("NextButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Apply.
+        /// </summary>
+        public static string ApplyFiltersButton {
+            get {
+                return ResourceManager.GetString("ApplyFiltersButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Reset.
+        /// </summary>
+        public static string ClearFiltersButton {
+            get {
+                return ResourceManager.GetString("ClearFiltersButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Back to issues.
+        /// </summary>
+        public static string BackToIssuesButton {
+            get {
+                return ResourceManager.GetString("BackToIssuesButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Previous issue.
+        /// </summary>
+        public static string PreviousIssueButton {
+            get {
+                return ResourceManager.GetString("PreviousIssueButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Next issue.
+        /// </summary>
+        public static string NextIssueButton {
+            get {
+                return ResourceManager.GetString("NextIssueButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Issue details.
+        /// </summary>
+        public static string IssueDetailsTitle {
+            get {
+                return ResourceManager.GetString("IssueDetailsTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Identifier.
+        /// </summary>
+        public static string IdentifierLabel {
+            get {
+                return ResourceManager.GetString("IdentifierLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Title.
+        /// </summary>
+        public static string TitleLabel {
+            get {
+                return ResourceManager.GetString("TitleLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Created.
+        /// </summary>
+        public static string CreatedLabel {
+            get {
+                return ResourceManager.GetString("CreatedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to File.
+        /// </summary>
+        public static string FileLabel {
+            get {
+                return ResourceManager.GetString("FileLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Language.
+        /// </summary>
+        public static string LanguageLabel {
+            get {
+                return ResourceManager.GetString("LanguageLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Location.
+        /// </summary>
+        public static string RepositoryLocationLabel {
+            get {
+                return ResourceManager.GetString("RepositoryLocationLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Code issue.
+        /// </summary>
+        public static string CategoryCodeIssue {
+            get {
+                return ResourceManager.GetString("CategoryCodeIssue", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Operational failure.
+        /// </summary>
+        public static string CategoryOperationalFailure {
+            get {
+                return ResourceManager.GetString("CategoryOperationalFailure", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Information.
+        /// </summary>
+        public static string CategoryInformation {
+            get {
+                return ResourceManager.GetString("CategoryInformation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to New.
+        /// </summary>
+        public static string StatusNew {
+            get {
+                return ResourceManager.GetString("StatusNew", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Reviewed.
+        /// </summary>
+        public static string StatusReviewed {
+            get {
+                return ResourceManager.GetString("StatusReviewed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to False positive.
+        /// </summary>
+        public static string StatusFalsePositive {
+            get {
+                return ResourceManager.GetString("StatusFalsePositive", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Resolved.
+        /// </summary>
+        public static string StatusResolved {
+            get {
+                return ResourceManager.GetString("StatusResolved", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Deferred.
+        /// </summary>
+        public static string StatusDeferred {
+            get {
+                return ResourceManager.GetString("StatusDeferred", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to AI review context.
+        /// </summary>
+        public static string AIReviewContextTitle {
+            get {
+                return ResourceManager.GetString("AIReviewContextTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Information supplied to the AI during the original review..
+        /// </summary>
+        public static string AIReviewContextDescription {
+            get {
+                return ResourceManager.GetString("AIReviewContextDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review instructions.
+        /// </summary>
+        public static string ReviewInstructionsLabel {
+            get {
+                return ResourceManager.GetString("ReviewInstructionsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Source file.
+        /// </summary>
+        public static string SourceFileLabel {
+            get {
+                return ResourceManager.GetString("SourceFileLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Additional context.
+        /// </summary>
+        public static string AdditionalContextLabel {
+            get {
+                return ResourceManager.GetString("AdditionalContextLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} files.
+        /// </summary>
+        public static string FilesSuppliedLabel {
+            get {
+                return ResourceManager.GetString("FilesSuppliedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} items.
+        /// </summary>
+        public static string ContextItemsSuppliedLabel {
+            get {
+                return ResourceManager.GetString("ContextItemsSuppliedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Expand.
+        /// </summary>
+        public static string ExpandLabel {
+            get {
+                return ResourceManager.GetString("ExpandLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Collapse.
+        /// </summary>
+        public static string CollapseLabel {
+            get {
+                return ResourceManager.GetString("CollapseLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Copy.
+        /// </summary>
+        public static string CopyLabel {
+            get {
+                return ResourceManager.GetString("CopyLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Copied.
+        /// </summary>
+        public static string CopiedLabel {
+            get {
+                return ResourceManager.GetString("CopiedLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The original AI context was not retained for this issue..
+        /// </summary>
+        public static string ContextNotRetainedMessage {
+            get {
+                return ResourceManager.GetString("ContextNotRetainedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No additional context items were supplied..
+        /// </summary>
+        public static string NoContextItemsLabel {
+            get {
+                return ResourceManager.GetString("NoContextItemsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Not available.
+        /// </summary>
+        public static string NotAvailableLabel {
+            get {
+                return ResourceManager.GetString("NotAvailableLabel", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>

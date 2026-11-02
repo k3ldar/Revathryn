@@ -27,6 +27,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Per-invocation usage records accumulated while processing the queue item.</summary>
         public IReadOnlyList<ReviewUsage> UsageRecords { get; set; } = [];
 
+        /// <summary>Original context supplied to the AI for this review, or null when not retained.</summary>
+        public AIReviewContext Context { get; set; }
+
         /// <summary>UTC timestamp of the completed review.</summary>
         public DateTime CompletedUtc { get; set; } = DateTime.UtcNow;
     }

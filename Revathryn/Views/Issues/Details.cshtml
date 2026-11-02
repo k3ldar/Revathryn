@@ -1,0 +1,378 @@
+@using System.Collections.Generic
+@using Revathryn.Contracts.Enums
+@using Revathryn.Resources
+@model Revathryn.Models.Issues.IssueDetailViewModel
+@{
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model.Finding.Title) ? $"{Strings.IssueDetailsTitle} {Model.Finding.Id}" : Model.Finding.Title;
+
+    string displayTitle = string.IsNullOrWhiteSpace(Model.Finding.Title) ? Model.Finding.Id.ToString() : Model.Finding.Title;
+    string locationPath = !string.IsNullOrWhiteSpace(Model.FileRelativePath) ? Model.FileRelativePath : Model.Context?.FilePath ?? string.Empty;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <a asp-action="List" asp-all-route-data="@ListStateRoute()" class="btn btn-outline-secondary">@Strings.BackToIssuesButton</a>
+
+        @if (Model.PreviousFindingId.HasValue)
+        {
+            <a asp-action="Details" asp-all-route-data="@IssueDetailsRoute(Model.PreviousFindingId.Value)" class="btn btn-outline-secondary">@Strings.PreviousIssueButton</a>
+        }
+        else
+        {
+            <span class="btn btn-outline-secondary disabled">@Strings.PreviousIssueButton</span>
+        }
+
+        @if (Model.NextFindingId.HasValue)
+        {
+            <a asp-action="Details" asp-all-route-data="@IssueDetailsRoute(Model.NextFindingId.Value)" class="btn btn-outline-secondary">@Strings.NextIssueButton</a>
+        }
+        else
+        {
+            <span class="btn btn-outline-secondary disabled">@Strings.NextIssueButton</span>
+        }
+    </div>
+</div>
+
+<h1 class="mb-3">@displayTitle</h1>
+
+<div class="card mb-4">
+    <div class="card-header">@Strings.IssueDetailsTitle</div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">@Strings.IdentifierLabel</dt>
+            <dd class="col-sm-9">@Model.Finding.Id</dd>
+
+            <dt class="col-sm-3">@Strings.RepositoryLabel</dt>
+            <dd class="col-sm-9">@Model.Repository.Name</dd>
+
+            <dt class="col-sm-3">@Strings.ReviewTypeLabel</dt>
+            <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.ReviewTypeName) ? Strings.NotAvailableLabel : Model.ReviewTypeName)</dd>
+
+            <dt class="col-sm-3">@Strings.PriorityLabel</dt>
+            <dd class="col-sm-9">
+                <span class="badge @SeverityBadgeClass(Model.Finding.Severity)">@SeverityLabel(Model.Finding.Severity)</span>
+            </dd>
+
+            <dt class="col-sm-3">@Strings.CategoryLabel</dt>
+            <dd class="col-sm-9">
+                <span class="badge @CategoryBadgeClass(Model.Finding.Category)">@CategoryLabel(Model.Finding.Category)</span>
+            </dd>
+
+            <dt class="col-sm-3">@Strings.StatusLabel</dt>
+            <dd class="col-sm-9">
+                <span class="badge @StatusBadgeClass(Model.Finding.Status)">@StatusLabel(Model.Finding.Status)</span>
+            </dd>
+
+            <dt class="col-sm-3">@Strings.CreatedLabel</dt>
+            <dd class="col-sm-9">@Model.Finding.CreatedDate.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+
+            <dt class="col-sm-3">@Strings.LastModifiedLabel</dt>
+            <dd class="col-sm-9">@Model.Finding.LastModifiedDate.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">@Strings.RepositoryLocationLabel</div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">@Strings.FileLabel</dt>
+            <dd class="col-sm-9">
+                @if (string.IsNullOrWhiteSpace(locationPath))
+                {
+                    <span class="text-muted">@Strings.NotAvailableLabel</span>
+                }
+                else
+                {
+                    <span class="text-break">@locationPath</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">@Strings.LanguageLabel</dt>
+            <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.Context?.Language) ? Strings.NotAvailableLabel : Model.Context.Language)</dd>
+
+            <dt class="col-sm-3">@Strings.FingerprintLabel</dt>
+            <dd class="col-sm-9 text-break">@(string.IsNullOrWhiteSpace(Model.Context?.Sha256) ? Strings.NotAvailableLabel : Model.Context.Sha256)</dd>
+
+            <dt class="col-sm-3">@Strings.RepositoryLabel</dt>
+            <dd class="col-sm-9 text-break">@Model.Repository.LocalPath</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">@Strings.FindingsLabel</div>
+    <div class="card-body">
+        @if (string.IsNullOrWhiteSpace(Model.Finding.Description))
+        {
+            <p class="text-muted mb-0">@Strings.NotAvailableLabel</p>
+        }
+        else
+        {
+            <h2 class="h6">@Strings.DescriptionLabel</h2>
+            <p class="mb-3" style="white-space: pre-wrap;">@Model.Finding.Description</p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Finding.SuggestedFix))
+        {
+            <h2 class="h6">@Strings.SuggestedFixLabel</h2>
+            <p class="mb-0" style="white-space: pre-wrap;">@Model.Finding.SuggestedFix</p>
+        }
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">@Strings.AIReviewContextTitle</div>
+    <div class="card-body">
+        <p class="text-muted">@Strings.AIReviewContextDescription</p>
+
+        @if (Model.Context is null)
+        {
+            <div class="alert alert-secondary mb-0">
+                @Strings.ContextNotRetainedMessage
+            </div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h2 class="h6 mb-0">@Strings.ReviewInstructionsLabel</h2>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#reviewInstructions">@Strings.ExpandLabel</button>
+                </div>
+
+                @if (string.IsNullOrWhiteSpace(Model.Context.ReviewInstructions))
+                {
+                    <p class="text-muted small mb-0">@Strings.NotAvailableLabel</p>
+                }
+                else
+                {
+                    <div class="collapse" id="reviewInstructions">
+                        <div class="d-flex justify-content-end mb-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="#reviewInstructionsContent">@Strings.CopyLabel</button>
+                        </div>
+                        <pre id="reviewInstructionsContent" class="mt-0 mb-0 text-wrap">@Model.Context.ReviewInstructions</pre>
+                    </div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h2 class="h6 mb-0">
+                        @Strings.SourceFileLabel
+                        @if (!string.IsNullOrWhiteSpace(Model.Context.FilePath))
+                        {
+                            <span class="text-muted small fw-normal">· @Model.Context.FilePath</span>
+                        }
+                    </h2>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#sourceFile">@Strings.ExpandLabel</button>
+                </div>
+
+                @if (string.IsNullOrWhiteSpace(Model.Context.FileContent))
+                {
+                    <p class="text-muted small mb-0">@Strings.NotAvailableLabel</p>
+                }
+                else
+                {
+                    <div class="collapse" id="sourceFile">
+                        <div class="d-flex justify-content-end mb-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="#sourceFileContent">@Strings.CopyLabel</button>
+                        </div>
+                        <pre id="sourceFileContent" class="mt-0 mb-0 overflow-auto">@Model.Context.FileContent</pre>
+                    </div>
+                }
+            </div>
+
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h2 class="h6 mb-0">
+                        @Strings.AdditionalContextLabel
+                        <span class="text-muted small fw-normal">· @string.Format(Strings.ContextItemsSuppliedLabel, Model.Context.ContextItems.Count)</span>
+                    </h2>
+                </div>
+
+                @if (Model.Context.ContextItems.Count == 0)
+                {
+                    <p class="text-muted small mb-0">@Strings.NoContextItemsLabel</p>
+                }
+                else
+                {
+                    @for (int index = 0; index < Model.Context.ContextItems.Count; index++)
+                    {
+                        Revathryn.Contracts.Models.ReviewContextItem contextItem = Model.Context.ContextItems[index];
+                        string collapseId = $"contextItem{index}";
+                        string contentId = $"contextItemContent{index}";
+
+                        <div class="border rounded p-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-center gap-2">
+                                <div class="text-truncate">
+                                    <span class="fw-semibold">@(string.IsNullOrWhiteSpace(contextItem.Title) ? Strings.NotAvailableLabel : contextItem.Title)</span>
+                                    @if (!string.IsNullOrWhiteSpace(contextItem.SourcePath))
+                                    {
+                                        <span class="text-muted small">· @contextItem.SourcePath</span>
+                                    }
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" data-bs-toggle="collapse" data-bs-target="#@collapseId">@Strings.ExpandLabel</button>
+                            </div>
+
+                            <div class="collapse mt-2" id="@collapseId">
+                                <div class="d-flex justify-content-end mb-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="#@contentId">@Strings.CopyLabel</button>
+                                </div>
+                                <pre id="@contentId" class="mt-0 mb-0 text-wrap">@contextItem.Content</pre>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@functions
+{
+    private Dictionary<string, string> ListStateRoute()
+    {
+        Dictionary<string, string> values = new()
+        {
+            ["id"] = Model.ListState.RepositoryId.ToString(),
+            ["page"] = Model.ListState.Page.ToString(),
+            ["pageSize"] = Model.ListState.PageSize.ToString(),
+            ["search"] = Model.ListState.Search ?? string.Empty,
+            ["sort"] = ((int)Model.ListState.SortField).ToString(),
+            ["descending"] = Model.ListState.SortDescending ? "true" : "false"
+        };
+
+        if (Model.ListState.Severity.HasValue)
+        {
+            values["severity"] = ((int)Model.ListState.Severity.Value).ToString();
+        }
+
+        if (Model.ListState.ReviewTypeId.HasValue)
+        {
+            values["reviewTypeId"] = Model.ListState.ReviewTypeId.Value.ToString();
+        }
+
+        return values;
+    }
+
+    private Dictionary<string, string> IssueDetailsRoute(long findingId)
+    {
+        Dictionary<string, string> values = ListStateRoute();
+        values["id"] = findingId.ToString();
+        values["repositoryId"] = Model.ListState.RepositoryId.ToString();
+        return values;
+    }
+
+    private static string SeverityLabel(FindingSeverity severity)
+    {
+        return severity switch
+        {
+            FindingSeverity.Info => Strings.SeverityInfo,
+            FindingSeverity.Low => Strings.SeverityLow,
+            FindingSeverity.Medium => Strings.SeverityMedium,
+            FindingSeverity.High => Strings.SeverityHigh,
+            FindingSeverity.Critical => Strings.SeverityCritical,
+            _ => severity.ToString()
+        };
+    }
+
+    private static string SeverityBadgeClass(FindingSeverity severity)
+    {
+        return severity switch
+        {
+            FindingSeverity.Info => "bg-secondary",
+            FindingSeverity.Low => "bg-info text-dark",
+            FindingSeverity.Medium => "bg-warning text-dark",
+            FindingSeverity.High => "bg-danger",
+            FindingSeverity.Critical => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string CategoryLabel(FindingCategory category)
+    {
+        return category switch
+        {
+            FindingCategory.CodeIssue => Strings.CategoryCodeIssue,
+            FindingCategory.OperationalFailure => Strings.CategoryOperationalFailure,
+            FindingCategory.Information => Strings.CategoryInformation,
+            _ => category.ToString()
+        };
+    }
+
+    private static string CategoryBadgeClass(FindingCategory category)
+    {
+        return category switch
+        {
+            FindingCategory.CodeIssue => "bg-primary",
+            FindingCategory.OperationalFailure => "bg-danger",
+            FindingCategory.Information => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string StatusLabel(FindingStatus status)
+    {
+        return status switch
+        {
+            FindingStatus.New => Strings.StatusNew,
+            FindingStatus.Reviewed => Strings.StatusReviewed,
+            FindingStatus.FalsePositive => Strings.StatusFalsePositive,
+            FindingStatus.Resolved => Strings.StatusResolved,
+            FindingStatus.Deferred => Strings.StatusDeferred,
+            _ => status.ToString()
+        };
+    }
+
+    private static string StatusBadgeClass(FindingStatus status)
+    {
+        return status switch
+        {
+            FindingStatus.New => "bg-secondary",
+            FindingStatus.Reviewed => "bg-info text-dark",
+            FindingStatus.FalsePositive => "bg-warning text-dark",
+            FindingStatus.Resolved => "bg-success",
+            FindingStatus.Deferred => "bg-light text-dark border",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+@section Scripts
+{
+    <script>
+        document.querySelectorAll('[data-copy-target]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var selector = button.getAttribute('data-copy-target');
+                var target = selector ? document.querySelector(selector) : null;
+                if (!target) {
+                    return;
+                }
+
+                navigator.clipboard.writeText(target.textContent || '').then(function () {
+                    var original = button.textContent;
+                    button.textContent = '@Strings.CopiedLabel';
+                    window.setTimeout(function () {
+                        button.textContent = original;
+                    }, 1500);
+                });
+            });
+        });
+
+        document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (toggle) {
+            var selector = toggle.getAttribute('data-bs-target');
+            var target = selector ? document.querySelector(selector) : null;
+            if (!target) {
+                return;
+            }
+
+            target.addEventListener('show.bs.collapse', function () {
+                toggle.textContent = '@Strings.CollapseLabel';
+            });
+
+            target.addEventListener('hide.bs.collapse', function () {
+                toggle.textContent = '@Strings.ExpandLabel';
+            });
+        });
+    </script>
+}

@@ -1,0 +1,228 @@
+@using System.Collections.Generic
+@using Revathryn.Contracts.Enums
+@using Revathryn.Resources
+@model Revathryn.Models.Issues.IssueListViewModel
+@{
+    ViewData["Title"] = $"{Model.Repository.Name} - {Strings.IssuesTitle}";
+
+    bool hasFilters = !string.IsNullOrWhiteSpace(Model.Search) || Model.Severity.HasValue || Model.ReviewTypeId.HasValue;
+    bool hasPrevious = Model.PageIndex > 1;
+    bool hasNext = Model.TotalPages > 0 && Model.PageIndex < Model.TotalPages;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <h1 class="mb-1">@Model.Repository.Name</h1>
+        <p class="text-muted mb-0">@Strings.TotalIssuesLabel: @Model.TotalCount</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">@Strings.BackToRepositoriesButton</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="List" asp-route-id="@Model.Repository.Id" class="row g-2 align-items-end">
+            <input type="hidden" name="page" value="1" />
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <label for="search" class="form-label">@Strings.SearchLabel</label>
+                <input id="search" name="search" type="search" class="form-control" value="@Model.Search" placeholder="@Strings.SearchIssuesPlaceholder" />
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-2">
+                <label for="severity" class="form-label">@Strings.PriorityLabel</label>
+                <select id="severity" name="severity" class="form-select">
+                    <option value="">@Strings.AllSeveritiesLabel</option>
+                    <option value="@((int)FindingSeverity.Critical)" selected="@(Model.Severity == FindingSeverity.Critical)">@Strings.SeverityCritical</option>
+                    <option value="@((int)FindingSeverity.High)" selected="@(Model.Severity == FindingSeverity.High)">@Strings.SeverityHigh</option>
+                    <option value="@((int)FindingSeverity.Medium)" selected="@(Model.Severity == FindingSeverity.Medium)">@Strings.SeverityMedium</option>
+                    <option value="@((int)FindingSeverity.Low)" selected="@(Model.Severity == FindingSeverity.Low)">@Strings.SeverityLow</option>
+                    <option value="@((int)FindingSeverity.Info)" selected="@(Model.Severity == FindingSeverity.Info)">@Strings.SeverityInfo</option>
+                </select>
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-2">
+                <label for="reviewTypeId" class="form-label">@Strings.ReviewTypeLabel</label>
+                <select id="reviewTypeId" name="reviewTypeId" class="form-select">
+                    <option value="">@Strings.AllReviewTypesLabel</option>
+                    @foreach (Revathryn.Contracts.Models.ReviewType reviewType in Model.ReviewTypes)
+                    {
+                        <option value="@reviewType.Id" selected="@(Model.ReviewTypeId == reviewType.Id)">@reviewType.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-2">
+                <label for="sort" class="form-label">@Strings.SortLabel</label>
+                <select id="sort" name="sort" class="form-select">
+                    <option value="@((int)FindingSortField.Severity)" selected="@(Model.SortField == FindingSortField.Severity)">@Strings.PriorityLabel</option>
+                    <option value="@((int)FindingSortField.CreatedDate)" selected="@(Model.SortField == FindingSortField.CreatedDate)">@Strings.CreatedLabel</option>
+                    <option value="@((int)FindingSortField.Title)" selected="@(Model.SortField == FindingSortField.Title)">@Strings.TitleLabel</option>
+                </select>
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-2">
+                <label for="descending" class="form-label">@Strings.OrderLabel</label>
+                <select id="descending" name="descending" class="form-select">
+                    <option value="true" selected="@Model.SortDescending">@Strings.SortDescending</option>
+                    <option value="false" selected="@(!Model.SortDescending)">@Strings.SortAscending</option>
+                </select>
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-1">
+                <label for="pageSize" class="form-label">@Strings.PageSizeLabel</label>
+                <select id="pageSize" name="pageSize" class="form-select">
+                    @foreach (int option in Model.PageSizeOptions)
+                    {
+                        <option value="@option" selected="@(Model.PageSize == option)">@option</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-12 col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-primary">@Strings.ApplyFiltersButton</button>
+                <a asp-action="List" asp-route-id="@Model.Repository.Id" class="btn btn-outline-secondary">@Strings.ClearFiltersButton</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="alert alert-secondary">
+        @(hasFilters ? Strings.NoMatchingIssues : Strings.NoIssuesForRepository)
+    </div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (Revathryn.Models.Issues.IssueListItemViewModel item in Model.Items)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <span class="badge @SeverityBadgeClass(item.Finding.Severity)">@SeverityLabel(item.Finding.Severity)</span>
+                            <a asp-action="Details" asp-all-route-data="@DetailsRoute(item.Finding.Id)" class="fw-semibold text-decoration-none">@(string.IsNullOrWhiteSpace(item.Finding.Title) ? item.Finding.Id.ToString() : item.Finding.Title)</a>
+                            <span class="badge bg-secondary">@CategoryLabel(item.Finding.Category)</span>
+                        </div>
+
+                        <div class="text-muted small">
+                            @if (!string.IsNullOrWhiteSpace(item.ReviewTypeName))
+                            {
+                                <span class="me-2">@Strings.ReviewTypeLabel: @item.ReviewTypeName</span>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(item.FileRelativePath))
+                            {
+                                <span class="text-truncate" title="@item.FileRelativePath">@Strings.FileLabel: @item.FileRelativePath</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="text-end text-muted small">
+                        <div>@Strings.CreatedLabel: @item.Finding.CreatedDate.ToString("yyyy-MM-dd HH:mm 'UTC'")</div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <nav class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2" aria-label="@Strings.IssuesTitle">
+        <span class="text-muted">
+            @Strings.PageLabel @Model.PageIndex @Strings.OfLabel @Model.TotalPages
+        </span>
+
+        <div class="btn-group">
+            @if (hasPrevious)
+            {
+                <a asp-action="List" asp-all-route-data="@ListRoute(Model.PageIndex - 1)" class="btn btn-outline-secondary">@Strings.PreviousButton</a>
+            }
+            else
+            {
+                <span class="btn btn-outline-secondary disabled">@Strings.PreviousButton</span>
+            }
+
+            @if (hasNext)
+            {
+                <a asp-action="List" asp-all-route-data="@ListRoute(Model.PageIndex + 1)" class="btn btn-outline-secondary">@Strings.NextButton</a>
+            }
+            else
+            {
+                <span class="btn btn-outline-secondary disabled">@Strings.NextButton</span>
+            }
+        </div>
+    </nav>
+}
+
+@functions
+{
+    private Dictionary<string, string> ListRoute(int page)
+    {
+        Dictionary<string, string> values = new()
+        {
+            ["id"] = Model.Repository.Id.ToString(),
+            ["page"] = page.ToString(),
+            ["pageSize"] = Model.PageSize.ToString(),
+            ["search"] = Model.Search ?? string.Empty,
+            ["sort"] = ((int)Model.SortField).ToString(),
+            ["descending"] = Model.SortDescending ? "true" : "false"
+        };
+
+        if (Model.Severity.HasValue)
+        {
+            values["severity"] = ((int)Model.Severity.Value).ToString();
+        }
+
+        if (Model.ReviewTypeId.HasValue)
+        {
+            values["reviewTypeId"] = Model.ReviewTypeId.Value.ToString();
+        }
+
+        return values;
+    }
+
+    private Dictionary<string, string> DetailsRoute(long findingId)
+    {
+        Dictionary<string, string> values = ListRoute(Model.PageIndex);
+        values["id"] = findingId.ToString();
+        values["repositoryId"] = Model.Repository.Id.ToString();
+        return values;
+    }
+
+    private static string SeverityLabel(FindingSeverity severity)
+    {
+        return severity switch
+        {
+            FindingSeverity.Info => Strings.SeverityInfo,
+            FindingSeverity.Low => Strings.SeverityLow,
+            FindingSeverity.Medium => Strings.SeverityMedium,
+            FindingSeverity.High => Strings.SeverityHigh,
+            FindingSeverity.Critical => Strings.SeverityCritical,
+            _ => severity.ToString()
+        };
+    }
+
+    private static string SeverityBadgeClass(FindingSeverity severity)
+    {
+        return severity switch
+        {
+            FindingSeverity.Info => "bg-secondary",
+            FindingSeverity.Low => "bg-info text-dark",
+            FindingSeverity.Medium => "bg-warning text-dark",
+            FindingSeverity.High => "bg-danger",
+            FindingSeverity.Critical => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string CategoryLabel(FindingCategory category)
+    {
+        return category switch
+        {
+            FindingCategory.CodeIssue => Strings.CategoryCodeIssue,
+            FindingCategory.OperationalFailure => Strings.CategoryOperationalFailure,
+            FindingCategory.Information => Strings.CategoryInformation,
+            _ => category.ToString()
+        };
+    }
+}

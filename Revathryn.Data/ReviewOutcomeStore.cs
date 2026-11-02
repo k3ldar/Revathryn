@@ -25,8 +25,15 @@ namespace Revathryn.Data
             SqliteTransaction transaction = connection.BeginTransaction();
             using SqliteTransactionScope scope = new(connection, transaction);
 
+            long? reviewContextId = null;
+            if (outcome.Context is not null)
+            {
+                reviewContextId = await ReviewContextRepository.AddAsync(connection, transaction, outcome.Context, cancellationToken).ConfigureAwait(false);
+            }
+
             foreach (Finding finding in outcome.Findings ?? [])
             {
+                finding.ReviewContextId ??= reviewContextId;
                 await FindingRepository.AddAsync(connection, transaction, finding, cancellationToken).ConfigureAwait(false);
             }
 

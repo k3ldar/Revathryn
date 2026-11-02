@@ -18,11 +18,11 @@ namespace Revathryn.Data.Tests
 
             using SqliteConnection connection = database.Factory.Open();
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('Repositories', 'RepoFiles', 'ReviewTypes', 'ReviewLinks', 'RepoFileAnalysis', 'Queue', 'Findings', 'AIEngines', 'AISettings', 'RepoProjects', 'RepositoryScans', 'ReviewUsage');";
+            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('Repositories', 'RepoFiles', 'ReviewTypes', 'ReviewLinks', 'RepoFileAnalysis', 'Queue', 'Findings', 'AIEngines', 'AISettings', 'RepoProjects', 'RepositoryScans', 'ReviewUsage', 'ReviewContexts');";
 
             object result = command.ExecuteScalar();
 
-            Assert.AreEqual(12, Convert.ToInt32(result));
+            Assert.AreEqual(13, Convert.ToInt32(result));
         }
 
         [TestMethod]
@@ -839,6 +839,536 @@ namespace Revathryn.Data.Tests
             Assert.IsNull(loaded.LastSuccessfulScanDate);
         }
 
+        [TestMethod]
+        public async Task ReviewContextRepository_PersistsAndReturnsOriginalContext()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            ReviewContextRepository contexts = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/Service.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            AIReviewContext context = new()
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                Sha256 = "abc123",
+                Language = "CSharp",
+                FilePath = "src/Service.cs",
+                ReviewInstructions = "You are a code reviewer. Find issues.",
+                FileContent = "public sealed class Service { }",
+                ContextItems =
+                [
+                    new ReviewContextItem { Title = "Interface", SourcePath = "src/IService.cs", Content = "public interface IService { }" },
+                    new ReviewContextItem { Title = "Project", SourcePath = "src/app.csproj", Content = "<Project />" }
+                ],
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            long contextId = await contexts.AddAsync(context, TestContext.CancellationToken);
+
+            AIReviewContext loaded = await contexts.GetByIdAsync(contextId, TestContext.CancellationToken);
+
+            Assert.IsNotNull(loaded);
+            Assert.AreEqual(contextId, loaded.Id);
+            Assert.AreEqual("You are a code reviewer. Find issues.", loaded.ReviewInstructions);
+            Assert.AreEqual("public sealed class Service { }", loaded.FileContent);
+            Assert.HasCount(2, loaded.ContextItems);
+            Assert.AreEqual("Interface", loaded.ContextItems[0].Title);
+            Assert.AreEqual("src/IService.cs", loaded.ContextItems[0].SourcePath);
+            Assert.AreEqual("public interface IService { }", loaded.ContextItems[0].Content);
+        }
+
+        [TestMethod]
+        public async Task ReviewContextRepository_ReturnsNullWhenMissing()
+        {
+            using TestDatabase database = new();
+            ReviewContextRepository contexts = new(database.Factory);
+
+            AIReviewContext loaded = await contexts.GetByIdAsync(999, TestContext.CancellationToken);
+
+            Assert.IsNull(loaded);
+        }
+
+        [TestMethod]
+        public async Task ReviewContextRepository_EmptyContextItemsRoundTrips()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            ReviewContextRepository contexts = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/Empty.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            long contextId = await contexts.AddAsync(new AIReviewContext
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                Sha256 = "empty",
+                ReviewInstructions = "instructions",
+                FileContent = "content",
+                ContextItems = [],
+                CreatedUtc = DateTime.UtcNow
+            }, TestContext.CancellationToken);
+
+            AIReviewContext loaded = await contexts.GetByIdAsync(contextId, TestContext.CancellationToken);
+
+            Assert.IsNotNull(loaded);
+            Assert.HasCount(0, loaded.ContextItems);
+        }
+
+        [TestMethod]
+        public async Task ReviewContextRepository_LargePayloadPreservedAccurately()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            ReviewContextRepository contexts = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/Large.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            string largeContent = new('x', 200000);
+            string largeInstructions = string.Join(Environment.NewLine, Enumerable.Repeat("Always review the supplied source.", 2000));
+
+            long contextId = await contexts.AddAsync(new AIReviewContext
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                Sha256 = "large",
+                ReviewInstructions = largeInstructions,
+                FileContent = largeContent,
+                ContextItems =
+                [
+                    new ReviewContextItem { Title = "Large", SourcePath = "src/Large.cs", Content = largeContent }
+                ],
+                CreatedUtc = DateTime.UtcNow
+            }, TestContext.CancellationToken);
+
+            AIReviewContext loaded = await contexts.GetByIdAsync(contextId, TestContext.CancellationToken);
+
+            Assert.IsNotNull(loaded);
+            Assert.AreEqual(largeInstructions, loaded.ReviewInstructions);
+            Assert.AreEqual(largeContent, loaded.FileContent);
+            Assert.HasCount(1, loaded.ContextItems);
+            Assert.AreEqual(largeContent, loaded.ContextItems[0].Content);
+        }
+
+        [TestMethod]
+        public async Task ReviewOutcomeStore_LinksFindingsToPersistedContext()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            ReviewContextRepository contexts = new(database.Factory);
+            ReviewOutcomeStore store = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            ReviewOutcome outcome = new()
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                Sha256 = "hash-1",
+                Findings =
+                [
+                    CreateFinding(repositoryId, "fp-1"),
+                    CreateFinding(repositoryId, "fp-2")
+                ],
+                Context = new AIReviewContext
+                {
+                    RepositoryId = repositoryId,
+                    RepoFileId = fileId,
+                    ReviewTypeId = reviewTypeId,
+                    Sha256 = "hash-1",
+                    ReviewInstructions = "original instructions",
+                    FileContent = "original content",
+                    ContextItems =
+                    [
+                        new ReviewContextItem { Title = "Dependency", SourcePath = "src/Helper.cs", Content = "class Helper" }
+                    ],
+                    CreatedUtc = DateTime.UtcNow
+                },
+                CompletedUtc = DateTime.UtcNow
+            };
+
+            await store.PersistAsync(outcome, TestContext.CancellationToken);
+
+            IReadOnlyList<Finding> stored = await findings.GetByRepositoryAsync(repositoryId, TestContext.CancellationToken);
+            Assert.HasCount(2, stored);
+
+            foreach (Finding finding in stored)
+            {
+                Assert.IsTrue(finding.ReviewContextId.HasValue);
+
+                AIReviewContext context = await contexts.GetByIdAsync(finding.ReviewContextId.Value, TestContext.CancellationToken);
+                Assert.IsNotNull(context);
+                Assert.AreEqual("original instructions", context.ReviewInstructions);
+                Assert.HasCount(1, context.ContextItems);
+            }
+        }
+
+        [TestMethod]
+        public async Task ReviewOutcomeStore_WithoutContextLeavesReviewContextIdNull()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            ReviewOutcomeStore store = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            ReviewOutcome outcome = new()
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                Sha256 = "hash-2",
+                Findings = [CreateFinding(repositoryId, "fp-no-context")],
+                Context = null,
+                CompletedUtc = DateTime.UtcNow
+            };
+
+            await store.PersistAsync(outcome, TestContext.CancellationToken);
+
+            IReadOnlyList<Finding> stored = await findings.GetByRepositoryAsync(repositoryId, TestContext.CancellationToken);
+            Assert.HasCount(1, stored);
+            Assert.IsNull(stored[0].ReviewContextId);
+        }
+
+        [TestMethod]
+        public async Task ReviewOutcomeStore_DoesNotAssociateContextAcrossExecutions()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            ReviewContextRepository contexts = new(database.Factory);
+            ReviewOutcomeStore store = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            ReviewOutcome first = new()
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                Sha256 = "hash-a",
+                Findings = [CreateFinding(repositoryId, "fp-a")],
+                Context = new AIReviewContext
+                {
+                    RepositoryId = repositoryId,
+                    RepoFileId = fileId,
+                    ReviewTypeId = reviewTypeId,
+                    Sha256 = "hash-a",
+                    ReviewInstructions = "first instructions",
+                    FileContent = "first content",
+                    CreatedUtc = DateTime.UtcNow
+                },
+                CompletedUtc = DateTime.UtcNow
+            };
+
+            ReviewOutcome second = new()
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = fileId,
+                ReviewTypeId = reviewTypeId,
+                Sha256 = "hash-b",
+                Findings = [CreateFinding(repositoryId, "fp-b")],
+                Context = new AIReviewContext
+                {
+                    RepositoryId = repositoryId,
+                    RepoFileId = fileId,
+                    ReviewTypeId = reviewTypeId,
+                    Sha256 = "hash-b",
+                    ReviewInstructions = "second instructions",
+                    FileContent = "second content",
+                    CreatedUtc = DateTime.UtcNow
+                },
+                CompletedUtc = DateTime.UtcNow
+            };
+
+            await store.PersistAsync(first, TestContext.CancellationToken);
+            await store.PersistAsync(second, TestContext.CancellationToken);
+
+            Finding firstFinding = await findings.GetByFingerprintAsync(repositoryId, "fp-a", TestContext.CancellationToken);
+            Finding secondFinding = await findings.GetByFingerprintAsync(repositoryId, "fp-b", TestContext.CancellationToken);
+
+            Assert.IsNotNull(firstFinding);
+            Assert.IsNotNull(secondFinding);
+            Assert.IsTrue(firstFinding.ReviewContextId.HasValue);
+            Assert.IsTrue(secondFinding.ReviewContextId.HasValue);
+            Assert.AreNotEqual(firstFinding.ReviewContextId.Value, secondFinding.ReviewContextId.Value);
+
+            AIReviewContext firstContext = await contexts.GetByIdAsync(firstFinding.ReviewContextId.Value, TestContext.CancellationToken);
+            AIReviewContext secondContext = await contexts.GetByIdAsync(secondFinding.ReviewContextId.Value, TestContext.CancellationToken);
+
+            Assert.AreEqual("first instructions", firstContext.ReviewInstructions);
+            Assert.AreEqual("second instructions", secondContext.ReviewInstructions);
+        }
+
+        [TestMethod]
+        public async Task FindingRepository_QueryAsync_OrdersByPriorityDescendingByDefault()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            DateTime baseDate = DateTime.UtcNow;
+
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-info", FindingSeverity.Info, "Info issue", "info", baseDate.AddMinutes(5)), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-critical", FindingSeverity.Critical, "Critical issue", "critical", baseDate.AddMinutes(1)), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-high", FindingSeverity.High, "High issue", "high", baseDate.AddMinutes(4)), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-low", FindingSeverity.Low, "Low issue", "low", baseDate.AddMinutes(2)), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-medium", FindingSeverity.Medium, "Medium issue", "medium", baseDate.AddMinutes(3)), TestContext.CancellationToken);
+
+            FindingQueryResult result = await findings.QueryAsync(new FindingQuery
+            {
+                RepositoryId = repositoryId,
+                SortField = FindingSortField.Severity,
+                SortDescending = true,
+                PageIndex = 0,
+                PageSize = 100
+            }, TestContext.CancellationToken);
+
+            Assert.HasCount(5, result.Items);
+            Assert.AreEqual(FindingSeverity.Critical, result.Items[0].Severity);
+            Assert.AreEqual(FindingSeverity.High, result.Items[1].Severity);
+            Assert.AreEqual(FindingSeverity.Medium, result.Items[2].Severity);
+            Assert.AreEqual(FindingSeverity.Low, result.Items[3].Severity);
+            Assert.AreEqual(FindingSeverity.Info, result.Items[4].Severity);
+        }
+
+        [TestMethod]
+        public async Task FindingRepository_QueryAsync_IsolatesRepositories()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long firstRepositoryId = await repositories.AddAsync(CreateRepository("First"), TestContext.CancellationToken);
+            long secondRepositoryId = await repositories.AddAsync(CreateRepository("Second"), TestContext.CancellationToken);
+
+            await findings.AddAsync(CreateFinding(firstRepositoryId, "fp-first"), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(secondRepositoryId, "fp-second"), TestContext.CancellationToken);
+
+            FindingQueryResult result = await findings.QueryAsync(new FindingQuery
+            {
+                RepositoryId = firstRepositoryId,
+                SortField = FindingSortField.CreatedDate,
+                SortDescending = true,
+                PageIndex = 0,
+                PageSize = 100
+            }, TestContext.CancellationToken);
+
+            Assert.AreEqual(1, result.TotalCount);
+            Assert.HasCount(1, result.Items);
+            Assert.AreEqual("fp-first", result.Items[0].Fingerprint);
+        }
+
+        [TestMethod]
+        public async Task FindingRepository_QueryAsync_FiltersBySeverityAndReviewType()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            RepoFileRepository files = new(database.Factory);
+            ReviewTypeRepository reviewTypes = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            long fileId = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
+            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-1", FindingSeverity.High, "Title", "desc", DateTime.UtcNow, fileId, reviewTypeId), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-2", FindingSeverity.Low, "Title", "desc", DateTime.UtcNow, fileId, reviewTypeId), TestContext.CancellationToken);
+
+            FindingQueryResult filtered = await findings.QueryAsync(new FindingQuery
+            {
+                RepositoryId = repositoryId,
+                Severity = FindingSeverity.High,
+                ReviewTypeId = reviewTypeId,
+                SortField = FindingSortField.Severity,
+                SortDescending = true,
+                PageIndex = 0,
+                PageSize = 100
+            }, TestContext.CancellationToken);
+
+            Assert.AreEqual(1, filtered.TotalCount);
+            Assert.HasCount(1, filtered.Items);
+            Assert.AreEqual("fp-1", filtered.Items[0].Fingerprint);
+        }
+
+        [TestMethod]
+        public async Task FindingRepository_QueryAsync_SearchesTitleOrDescription()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-1", FindingSeverity.Medium, "Null reference", "A potential null dereference", DateTime.UtcNow), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(repositoryId, "fp-2", FindingSeverity.Medium, "Unused variable", "Minor cleanup", DateTime.UtcNow), TestContext.CancellationToken);
+
+            FindingQueryResult result = await findings.QueryAsync(new FindingQuery
+            {
+                RepositoryId = repositoryId,
+                SearchText = "null",
+                SortField = FindingSortField.CreatedDate,
+                SortDescending = true,
+                PageIndex = 0,
+                PageSize = 100
+            }, TestContext.CancellationToken);
+
+            Assert.AreEqual(1, result.TotalCount);
+            Assert.HasCount(1, result.Items);
+            Assert.AreEqual("Null reference", result.Items[0].Title);
+        }
+
+        [TestMethod]
+        public async Task FindingRepository_QueryAsync_PaginatesAndCounts()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            DateTime baseDate = DateTime.UtcNow;
+
+            for (int index = 0; index < 5; index++)
+            {
+                await findings.AddAsync(CreateFinding(repositoryId, $"fp-{index}", FindingSeverity.Medium, $"Issue {index}", "desc", baseDate.AddMinutes(index)), TestContext.CancellationToken);
+            }
+
+            FindingQueryResult firstPage = await findings.QueryAsync(new FindingQuery
+            {
+                RepositoryId = repositoryId,
+                SortField = FindingSortField.CreatedDate,
+                SortDescending = true,
+                PageIndex = 0,
+                PageSize = 2
+            }, TestContext.CancellationToken);
+
+            FindingQueryResult lastPage = await findings.QueryAsync(new FindingQuery
+            {
+                RepositoryId = repositoryId,
+                SortField = FindingSortField.CreatedDate,
+                SortDescending = true,
+                PageIndex = 2,
+                PageSize = 2
+            }, TestContext.CancellationToken);
+
+            Assert.AreEqual(5, firstPage.TotalCount);
+            Assert.HasCount(2, firstPage.Items);
+            Assert.AreEqual("fp-4", firstPage.Items[0].Fingerprint);
+            Assert.AreEqual("fp-3", firstPage.Items[1].Fingerprint);
+
+            Assert.AreEqual(5, lastPage.TotalCount);
+            Assert.HasCount(1, lastPage.Items);
+            Assert.AreEqual("fp-0", lastPage.Items[0].Fingerprint);
+        }
+
+        [TestMethod]
+        public async Task FindingRepository_GetNavigationAsync_RespectsOrderingAndFilters()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+            DateTime baseDate = DateTime.UtcNow;
+
+            long firstId = await findings.AddAsync(CreateFinding(repositoryId, "fp-low", FindingSeverity.Low, "Low", "desc", baseDate.AddMinutes(1)), TestContext.CancellationToken);
+            long middleId = await findings.AddAsync(CreateFinding(repositoryId, "fp-medium", FindingSeverity.Medium, "Medium", "desc", baseDate.AddMinutes(2)), TestContext.CancellationToken);
+            long lastId = await findings.AddAsync(CreateFinding(repositoryId, "fp-high", FindingSeverity.High, "High", "desc", baseDate.AddMinutes(3)), TestContext.CancellationToken);
+
+            FindingNavigation navigation = await findings.GetNavigationAsync(middleId, new FindingQuery
+            {
+                RepositoryId = repositoryId,
+                SortField = FindingSortField.Severity,
+                SortDescending = true,
+                PageIndex = 0,
+                PageSize = 100
+            }, TestContext.CancellationToken);
+
+            Assert.AreEqual(lastId, navigation.PreviousId);
+            Assert.AreEqual(firstId, navigation.NextId);
+        }
+
+        [TestMethod]
+        public async Task FindingRepository_CountByRepositoryAsync_GroupsCounts()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long firstRepositoryId = await repositories.AddAsync(CreateRepository("First"), TestContext.CancellationToken);
+            long secondRepositoryId = await repositories.AddAsync(CreateRepository("Second"), TestContext.CancellationToken);
+
+            await findings.AddAsync(CreateFinding(firstRepositoryId, "fp-1"), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(firstRepositoryId, "fp-2"), TestContext.CancellationToken);
+            await findings.AddAsync(CreateFinding(secondRepositoryId, "fp-3"), TestContext.CancellationToken);
+
+            IReadOnlyList<RepositoryIssueCount> counts = await findings.CountByRepositoryAsync(TestContext.CancellationToken);
+
+            Assert.HasCount(2, counts);
+            Assert.AreEqual(2, counts.Single(count => count.RepositoryId == firstRepositoryId).Count);
+            Assert.AreEqual(1, counts.Single(count => count.RepositoryId == secondRepositoryId).Count);
+        }
+
+        private static Finding CreateFinding(
+            long repositoryId,
+            string fingerprint,
+            FindingSeverity severity = FindingSeverity.Medium,
+            string title = "Title",
+            string description = "Description",
+            DateTime? createdDate = null,
+            long? repoFileId = null,
+            long? reviewTypeId = null)
+        {
+            DateTime now = createdDate ?? DateTime.UtcNow;
+
+            return new Finding
+            {
+                RepositoryId = repositoryId,
+                RepoFileId = repoFileId,
+                ReviewTypeId = reviewTypeId,
+                Fingerprint = fingerprint,
+                Severity = severity,
+                Title = title,
+                Description = description,
+                Status = FindingStatus.New,
+                Category = FindingCategory.CodeIssue,
+                CreatedDate = now,
+                LastModifiedDate = now
+            };
+        }
+
         private static Repository CreateRepository(string name)
         {
             DateTime now = DateTime.UtcNow;
@@ -892,24 +1422,6 @@ namespace Revathryn.Data.Tests
                 ReviewTypeId = reviewTypeId,
                 Priority = priority,
                 CreatedDate = DateTime.UtcNow
-            };
-        }
-
-        private static Finding CreateFinding(long repositoryId, string fingerprint)
-        {
-            DateTime now = DateTime.UtcNow;
-
-            return new Finding
-            {
-                RepositoryId = repositoryId,
-                Fingerprint = fingerprint,
-                Severity = FindingSeverity.Medium,
-                Title = "Title",
-                Description = "Description",
-                Status = FindingStatus.New,
-                Category = FindingCategory.CodeIssue,
-                CreatedDate = now,
-                LastModifiedDate = now
             };
         }
 

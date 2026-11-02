@@ -220,6 +220,26 @@ namespace Revathryn.Data
             );
             """;
 
+        /// <summary>Creates the ReviewContexts table.</summary>
+        internal const string CreateReviewContexts = """
+            CREATE TABLE IF NOT EXISTS ReviewContexts (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                RepositoryId INTEGER NOT NULL,
+                RepoFileId INTEGER NOT NULL,
+                ReviewTypeId INTEGER NOT NULL,
+                Sha256 TEXT NOT NULL,
+                Language TEXT NOT NULL DEFAULT '',
+                FilePath TEXT NOT NULL DEFAULT '',
+                ReviewInstructions TEXT NOT NULL DEFAULT '',
+                FileContent TEXT NOT NULL DEFAULT '',
+                ContextItemsJson TEXT NOT NULL DEFAULT '',
+                CreatedUtc TEXT NOT NULL,
+                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
+                FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE,
+                FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE CASCADE
+            );
+            """;
+
         /// <summary>Creates the non-unique query indexes.</summary>
         internal static readonly string[] CreateIndexes =
         [
@@ -242,6 +262,8 @@ namespace Revathryn.Data
             "CREATE INDEX IF NOT EXISTS IX_RepositoryScans_RepositoryId ON RepositoryScans (RepositoryId, StartedUtc DESC);",
             "CREATE INDEX IF NOT EXISTS IX_ReviewUsage_RepositoryId ON ReviewUsage (RepositoryId);",
             "CREATE INDEX IF NOT EXISTS IX_ReviewUsage_OccurredUtc ON ReviewUsage (OccurredUtc DESC);",
+            "CREATE INDEX IF NOT EXISTS IX_ReviewContexts_RepositoryId ON ReviewContexts (RepositoryId);",
+            "CREATE INDEX IF NOT EXISTS IX_ReviewContexts_RepoFileId ON ReviewContexts (RepoFileId);",
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_ReviewTypes_Repository_Key ON ReviewTypes (RepositoryId, Key) WHERE Key <> '';"
         ];
     }

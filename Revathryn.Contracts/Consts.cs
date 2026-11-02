@@ -227,11 +227,20 @@
         public const int DefaultRecentIssueCount = 5;
         public const int DefaultRecentScanCount = 10;
 
+        // Issue browsing page size options.
+        public const int IssuePageSizeSmall = 10;
+        public const int IssuePageSizeMedium = 25;
+        public const int IssuePageSizeLarge = 50;
+        public const int IssuePageSizeXLarge = 100;
+        public const int IssueDefaultPageSize = IssuePageSizeMedium;
+
         // UI and MVC request keys and route values.
         public const string BreadcrumbsViewDataKey = "Breadcrumbs";
         public const string SuccessMessageTempDataKey = "SuccessMessage";
         public const string ErrorMessageTempDataKey = "ErrorMessage";
         public const string DashboardControllerName = "Dashboard";
+        public const string IssuesControllerName = "Issues";
+        public const string IssueViewingOptionsKey = "IssueViewing";
         public const string DashboardDataActionName = "Data";
         public const string DashboardContentViewName = "_DashboardContent";
         public const int DashboardRefreshIntervalMilliseconds = 1000;

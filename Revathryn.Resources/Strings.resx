@@ -779,4 +779,163 @@
 			  <data name="ReviewUsageEmpty" xml:space="preserve">
 				<value>No review usage has been recorded yet.</value>
 			  </data>
+			<data name="BrowseIssuesTitle" xml:space="preserve">
+			  <value>Browse issues</value>
+			</data>
+			<data name="BrowseIssuesInstruction" xml:space="preserve">
+			  <value>Select a repository to inspect the issues identified during its reviews.</value>
+			</data>
+			<data name="IssuesTitle" xml:space="preserve">
+			  <value>Issues</value>
+			</data>
+			<data name="TotalIssuesLabel" xml:space="preserve">
+			  <value>Total issues</value>
+			</data>
+			<data name="NoIssuesForRepository" xml:space="preserve">
+			  <value>No issues have been identified for this repository.</value>
+			</data>
+			<data name="NoMatchingIssues" xml:space="preserve">
+			  <value>No issues match the current filters.</value>
+			</data>
+			<data name="SearchIssuesPlaceholder" xml:space="preserve">
+			  <value>Search title or description</value>
+			</data>
+			<data name="SearchLabel" xml:space="preserve">
+			  <value>Search</value>
+			</data>
+			<data name="AllSeveritiesLabel" xml:space="preserve">
+			  <value>All severities</value>
+			</data>
+			<data name="AllReviewTypesLabel" xml:space="preserve">
+			  <value>All review types</value>
+			</data>
+			<data name="SortLabel" xml:space="preserve">
+			  <value>Sort</value>
+			</data>
+			<data name="SortDescending" xml:space="preserve">
+			  <value>Descending</value>
+			</data>
+			<data name="OrderLabel" xml:space="preserve">
+			  <value>Order</value>
+			</data>
+			<data name="SortAscending" xml:space="preserve">
+			  <value>Ascending</value>
+			</data>
+			<data name="PageSizeLabel" xml:space="preserve">
+			  <value>Items per page</value>
+			</data>
+			<data name="PageLabel" xml:space="preserve">
+			  <value>Page</value>
+			</data>
+			<data name="OfLabel" xml:space="preserve">
+			  <value>of</value>
+			</data>
+			<data name="PreviousButton" xml:space="preserve">
+			  <value>Previous</value>
+			</data>
+			<data name="NextButton" xml:space="preserve">
+			  <value>Next</value>
+			</data>
+			<data name="ApplyFiltersButton" xml:space="preserve">
+			  <value>Apply</value>
+			</data>
+			<data name="ClearFiltersButton" xml:space="preserve">
+			  <value>Reset</value>
+			</data>
+			<data name="BackToIssuesButton" xml:space="preserve">
+			  <value>Back to issues</value>
+			</data>
+			<data name="PreviousIssueButton" xml:space="preserve">
+			  <value>Previous issue</value>
+			</data>
+			<data name="NextIssueButton" xml:space="preserve">
+			  <value>Next issue</value>
+			</data>
+			<data name="IssueDetailsTitle" xml:space="preserve">
+			  <value>Issue details</value>
+			</data>
+			<data name="IdentifierLabel" xml:space="preserve">
+			  <value>Identifier</value>
+			</data>
+			<data name="TitleLabel" xml:space="preserve">
+			  <value>Title</value>
+			</data>
+			<data name="CreatedLabel" xml:space="preserve">
+			  <value>Created</value>
+			</data>
+			<data name="FileLabel" xml:space="preserve">
+			  <value>File</value>
+			</data>
+			<data name="LanguageLabel" xml:space="preserve">
+			  <value>Language</value>
+			</data>
+			<data name="RepositoryLocationLabel" xml:space="preserve">
+			  <value>Location</value>
+			</data>
+			<data name="CategoryCodeIssue" xml:space="preserve">
+			  <value>Code issue</value>
+			</data>
+			<data name="CategoryOperationalFailure" xml:space="preserve">
+			  <value>Operational failure</value>
+			</data>
+			<data name="CategoryInformation" xml:space="preserve">
+			  <value>Information</value>
+			</data>
+			<data name="StatusNew" xml:space="preserve">
+			  <value>New</value>
+			</data>
+			<data name="StatusReviewed" xml:space="preserve">
+			  <value>Reviewed</value>
+			</data>
+			<data name="StatusFalsePositive" xml:space="preserve">
+			  <value>False positive</value>
+			</data>
+			<data name="StatusResolved" xml:space="preserve">
+			  <value>Resolved</value>
+			</data>
+			<data name="StatusDeferred" xml:space="preserve">
+			  <value>Deferred</value>
+			</data>
+			<data name="AIReviewContextTitle" xml:space="preserve">
+			  <value>AI review context</value>
+			</data>
+			<data name="AIReviewContextDescription" xml:space="preserve">
+			  <value>Information supplied to the AI during the original review.</value>
+			</data>
+			<data name="ReviewInstructionsLabel" xml:space="preserve">
+			  <value>Review instructions</value>
+			</data>
+			<data name="SourceFileLabel" xml:space="preserve">
+			  <value>Source file</value>
+			</data>
+			<data name="AdditionalContextLabel" xml:space="preserve">
+			  <value>Additional context</value>
+			</data>
+			<data name="FilesSuppliedLabel" xml:space="preserve">
+			  <value>{0} files</value>
+			</data>
+			<data name="ContextItemsSuppliedLabel" xml:space="preserve">
+			  <value>{0} items</value>
+			</data>
+			<data name="ExpandLabel" xml:space="preserve">
+			  <value>Expand</value>
+			</data>
+			<data name="CollapseLabel" xml:space="preserve">
+			  <value>Collapse</value>
+			</data>
+			<data name="CopyLabel" xml:space="preserve">
+			  <value>Copy</value>
+			</data>
+			<data name="CopiedLabel" xml:space="preserve">
+			  <value>Copied</value>
+			</data>
+			<data name="ContextNotRetainedMessage" xml:space="preserve">
+			  <value>The original AI context was not retained for this issue.</value>
+			</data>
+			<data name="NoContextItemsLabel" xml:space="preserve">
+			  <value>No additional context items were supplied.</value>
+			</data>
+			<data name="NotAvailableLabel" xml:space="preserve">
+			  <value>Not available</value>
+			</data>
 			</root>
