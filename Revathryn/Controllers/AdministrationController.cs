@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Revathryn.Contracts;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
+using Revathryn.Contracts.Services;
 using Revathryn.Models;
 using Revathryn.Models.Administration;
 using Revathryn.Resources;
@@ -15,16 +16,62 @@ namespace Revathryn.Controllers
         private readonly IAISettingsRepository _aiSettingsRepository;
         private readonly IAIEngineRepository _aiEngineRepository;
         private readonly IReviewUsageRepository _reviewUsageRepository;
+        private readonly IReviewEngineConfigurationService _reviewEngineConfiguration;
 
         /// <summary>Initialises a new administration controller.</summary>
         public AdministrationController(
             IAISettingsRepository aiSettingsRepository,
             IAIEngineRepository aiEngineRepository,
-            IReviewUsageRepository reviewUsageRepository)
+            IReviewUsageRepository reviewUsageRepository,
+            IReviewEngineConfigurationService reviewEngineConfiguration)
         {
             _aiSettingsRepository = aiSettingsRepository;
             _aiEngineRepository = aiEngineRepository;
             _reviewUsageRepository = reviewUsageRepository;
+            _reviewEngineConfiguration = reviewEngineConfiguration;
+        }
+
+        /// <summary>Renders the independent review engine configuration, separate from the detection engines.</summary>
+        [HttpGet]
+        public async Task<IActionResult> ReviewEngine(CancellationToken cancellationToken)
+        {
+            ReviewEngineSettings settings = await _reviewEngineConfiguration.GetAsync(cancellationToken);
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.ReviewEngineTitle);
+            return View(ReviewEngineEditViewModel.FromSettings(settings));
+        }
+
+        /// <summary>Validates and saves the review engine configuration.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReviewEngine(ReviewEngineEditViewModel form, CancellationToken cancellationToken)
+        {
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.ReviewEngineTitle);
+            ReviewEngineValidationResult result = await _reviewEngineConfiguration.SaveAsync(form.ToSettings(), cancellationToken);
+
+            if (!result.IsValid)
+            {
+                foreach (string error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error);
+                }
+
+                return View(form);
+            }
+
+            TempData[Consts.SuccessMessageTempDataKey] = Strings.ReviewEngineSaved;
+            return RedirectToAction(nameof(ReviewEngine));
+        }
+
+        /// <summary>Tests connectivity of the submitted review engine configuration without saving it.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TestReviewEngine(ReviewEngineEditViewModel form, CancellationToken cancellationToken)
+        {
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.ReviewEngineTitle);
+            ReviewEngineConnectionResult result = await _reviewEngineConfiguration.TestConnectionAsync(form.ToSettings(), cancellationToken);
+
+            TempData[result.Success ? Consts.SuccessMessageTempDataKey : Consts.ErrorMessageTempDataKey] = result.Message;
+            return View(nameof(ReviewEngine), form);
         }
 
         /// <summary>Renders general platform settings.</summary>

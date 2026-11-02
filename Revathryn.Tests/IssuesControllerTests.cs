@@ -193,7 +193,7 @@ namespace Revathryn.Tests
         {
             IssuesController controller = CreateController();
 
-            IActionResult result = await controller.Details(99, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+            IActionResult result = await controller.Details(99, null, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
 
             Assert.IsInstanceOfType<NotFoundResult>(result);
         }
@@ -238,7 +238,7 @@ namespace Revathryn.Tests
                 contexts: contexts,
                 findings: findings);
 
-            IActionResult result = await controller.Details(42, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+            IActionResult result = await controller.Details(42, null, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
 
             ViewResult viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult);
@@ -268,7 +268,7 @@ namespace Revathryn.Tests
 
             IssuesController controller = CreateController(repositories: repositories, findings: findings);
 
-            IActionResult result = await controller.Details(42, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+            IActionResult result = await controller.Details(42, null, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
 
             ViewResult viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult);
@@ -292,7 +292,7 @@ namespace Revathryn.Tests
 
             IssuesController controller = CreateController(repositories: repositories, findings: findings);
 
-            _ = await controller.Details(42, 1, 3, 50, FindingSeverity.Medium, 7, "null", FindingSortField.Title, false, TestContext.CancellationToken);
+            _ = await controller.Details(42, 1, 3, 50, FindingSeverity.Medium, 7, "null", FindingSortField.Title, false, null, TestContext.CancellationToken);
 
             Assert.IsNotNull(findings.LastQuery);
             Assert.AreEqual(1L, findings.LastQuery.RepositoryId);
@@ -310,13 +310,17 @@ namespace Revathryn.Tests
             FakeRepositoryFileService files = null,
             FakeFindingRepository findings = null,
             FakeReviewTypeRepository reviewTypes = null,
-            FakeReviewContextRepository contexts = null)
+            FakeReviewContextRepository contexts = null,
+            FakeIssueValidationService validations = null,
+            FakeReviewEngineConfigurationService reviewEngine = null)
         {
             FakeRepositoryService repositoryService = repositories ?? new();
             FakeRepositoryFileService fileService = files ?? new();
             FakeFindingRepository findingRepository = findings ?? new();
             FakeReviewTypeRepository reviewTypeRepository = reviewTypes ?? new();
             FakeReviewContextRepository reviewContextRepository = contexts ?? new();
+            FakeIssueValidationService validationService = validations ?? new();
+            FakeReviewEngineConfigurationService reviewEngineConfiguration = reviewEngine ?? new();
 
             ControllerContext context = ControllerTestSupport.CreateControllerContext(out _);
 
@@ -332,6 +336,8 @@ namespace Revathryn.Tests
                 findingRepository,
                 reviewTypeRepository,
                 reviewContextRepository,
+                validationService,
+                reviewEngineConfiguration,
                 Options.Create(options))
             {
                 ControllerContext = context,

@@ -11,7 +11,7 @@ namespace Revathryn.Data
     public sealed class ReviewContextRepository : SqliteRepositoryBase, IReviewContextRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, RepoFileId, ReviewTypeId, Sha256, Language, FilePath, ReviewInstructions, FileContent, ContextItemsJson, CreatedUtc";
+            "Id, RepositoryId, RepoFileId, ReviewTypeId, Sha256, Language, FilePath, ReviewInstructions, FileContent, ContextItemsJson, CreatedUtc, ReviewPrompt, ReviewDefinitionVersion, EngineName, EngineProvider, EngineModel, RequestedContextKeysJson";
 
         /// <summary>Initialises a new repository.</summary>
         public ReviewContextRepository(SqliteConnectionFactory connectionFactory)
@@ -53,8 +53,8 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT INTO ReviewContexts (RepositoryId, RepoFileId, ReviewTypeId, Sha256, Language, FilePath, ReviewInstructions, FileContent, ContextItemsJson, CreatedUtc)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Sha256, @Language, @FilePath, @ReviewInstructions, @FileContent, @ContextItemsJson, @CreatedUtc);
+                INSERT INTO ReviewContexts (RepositoryId, RepoFileId, ReviewTypeId, Sha256, Language, FilePath, ReviewInstructions, FileContent, ContextItemsJson, CreatedUtc, ReviewPrompt, ReviewDefinitionVersion, EngineName, EngineProvider, EngineModel, RequestedContextKeysJson)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Sha256, @Language, @FilePath, @ReviewInstructions, @FileContent, @ContextItemsJson, @CreatedUtc, @ReviewPrompt, @ReviewDefinitionVersion, @EngineName, @EngineProvider, @EngineModel, @RequestedContextKeysJson);
                 SELECT last_insert_rowid();
                 """;
             AddParameters(command, context);
@@ -75,6 +75,34 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@FileContent", context.FileContent);
             command.Parameters.AddWithValue("@ContextItemsJson", SerializeContextItems(context.ContextItems));
             command.Parameters.AddWithValue("@CreatedUtc", SqliteValueConverter.ToText(context.CreatedUtc));
+            command.Parameters.AddWithValue("@ReviewPrompt", context.ReviewPrompt ?? string.Empty);
+            command.Parameters.AddWithValue("@ReviewDefinitionVersion", context.ReviewDefinitionVersion ?? string.Empty);
+            command.Parameters.AddWithValue("@EngineName", context.EngineName ?? string.Empty);
+            command.Parameters.AddWithValue("@EngineProvider", context.EngineProvider ?? string.Empty);
+            command.Parameters.AddWithValue("@EngineModel", context.EngineModel ?? string.Empty);
+            command.Parameters.AddWithValue("@RequestedContextKeysJson", SerializeKeys(context.RequestedContextKeys));
+        }
+
+        private static string SerializeKeys(IReadOnlyList<string> keys)
+        {
+            return keys is null || keys.Count == 0 ? string.Empty : JsonSerializer.Serialize(keys);
+        }
+
+        private static IReadOnlyList<string> DeserializeKeys(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return [];
+            }
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(json) ?? [];
+            }
+            catch (JsonException)
+            {
+                return [];
+            }
         }
 
         private static string SerializeContextItems(IReadOnlyList<ReviewContextItem> items)
@@ -113,7 +141,13 @@ namespace Revathryn.Data
                 ReviewInstructions = reader.GetString(7),
                 FileContent = reader.GetString(8),
                 ContextItems = DeserializeContextItems(reader.GetString(9)),
-                CreatedUtc = SqliteValueConverter.ToDateTime(reader.GetString(10))
+                CreatedUtc = SqliteValueConverter.ToDateTime(reader.GetString(10)),
+                ReviewPrompt = reader.GetString(11),
+                ReviewDefinitionVersion = reader.GetString(12),
+                EngineName = reader.GetString(13),
+                EngineProvider = reader.GetString(14),
+                EngineModel = reader.GetString(15),
+                RequestedContextKeys = DeserializeKeys(reader.GetString(16))
             };
         }
     }

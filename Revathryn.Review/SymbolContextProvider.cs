@@ -67,6 +67,10 @@ namespace Revathryn.Review
             {
                 response.Items = BuildDependencyItems(symbols, maxItems);
             }
+            else if (string.Equals(request.ContextKey, Consts.ContextKeyFiles, StringComparison.OrdinalIgnoreCase))
+            {
+                response.Items = await BuildFileUsageItemsAsync(request.RepositoryName, request.SourcePath, symbols, maxItems, cancellationToken).ConfigureAwait(false);
+            }
 
             return response;
         }
@@ -94,12 +98,7 @@ namespace Revathryn.Review
 
             foreach (CodeSymbol symbol in symbols.Take(maxItems))
             {
-                items.Add(new ContextItem
-                {
-                    Title = ResolveSymbolTitle(symbol),
-                    Content = Truncate(JsonSerializer.Serialize(symbol, JsonOptions)),
-                    SourcePath = symbol.FilePath ?? string.Empty
-                });
+                items.Add(CreateItem(ResolveSymbolTitle(symbol), JsonSerializer.Serialize(symbol, JsonOptions), symbol.FilePath));
             }
 
             return items;
@@ -118,12 +117,10 @@ namespace Revathryn.Review
                     continue;
                 }
 
-                items.Add(new ContextItem
-                {
-                    Title = string.Concat(ResolveSymbolTitle(symbol), Consts.StringSpace, Consts.ContextKeyDependencies),
-                    Content = Truncate(string.Join(Consts.CharComma, dependencies)),
-                    SourcePath = symbol.FilePath ?? string.Empty
-                });
+                items.Add(CreateItem(
+                    string.Concat(ResolveSymbolTitle(symbol), Consts.StringSpace, Consts.ContextKeyDependencies),
+                    string.Join(Consts.CharComma, dependencies),
+                    symbol.FilePath));
 
                 if (items.Count >= maxItems)
                 {
@@ -134,19 +131,260 @@ namespace Revathryn.Review
             return items;
         }
 
+        private async Task<List<ContextItem>> BuildFileUsageItemsAsync(
+            string repositoryName,
+            string sourcePath,
+            List<CodeSymbol> reviewedSymbols,
+            int maxItems,
+            CancellationToken cancellationToken)
+        {
+            HashSet<string> definitions = BuildDefinitionNames(reviewedSymbols);
+
+            if (definitions.Count == 0)
+            {
+                return [];
+            }
+
+            IReadOnlyList<IManifestEntry> entries = _manifestManager.GetEntries(repositoryName);
+
+            if (entries is null || entries.Count == 0)
+            {
+                return [];
+            }
+
+            List<ContextItem> items = [];
+
+            foreach (IManifestEntry entry in entries)
+            {
+                if (entry is null || string.IsNullOrWhiteSpace(entry.OutputFile) || !File.Exists(entry.OutputFile))
+                {
+                    continue;
+                }
+
+                if (PathsReferToSameFile(entry.SourcePath, sourcePath))
+                {
+                    continue;
+                }
+
+                List<CodeSymbol> fileSymbols = await ReadSymbolsAsync(entry.OutputFile, cancellationToken).ConfigureAwait(false);
+
+                if (fileSymbols is null || fileSymbols.Count == 0)
+                {
+                    continue;
+                }
+
+                foreach (CodeSymbol referencingSymbol in fileSymbols)
+                {
+                    List<string> matchedReferences = FindMatchedReferences(referencingSymbol, definitions);
+
+                    if (matchedReferences.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    items.Add(CreateItem(
+                        ResolveSymbolTitle(referencingSymbol),
+                        BuildUsageContent(referencingSymbol, matchedReferences),
+                        entry.SourcePath ?? string.Empty));
+
+                    if (items.Count >= maxItems)
+                    {
+                        return items;
+                    }
+                }
+            }
+
+            return items;
+        }
+
+        private static HashSet<string> BuildDefinitionNames(List<CodeSymbol> symbols)
+        {
+            HashSet<string> names = [with(StringComparer.Ordinal)];
+
+            foreach (CodeSymbol symbol in symbols)
+            {
+                AddDefinitionName(names, symbol.Name);
+                AddDefinitionName(names, symbol.FullyQualifiedName);
+            }
+
+            return names;
+        }
+
+        private static void AddDefinitionName(HashSet<string> names, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            string trimmed = value.Trim();
+            names.Add(trimmed);
+
+            string lastSegment = LastSegment(trimmed);
+
+            if (!string.IsNullOrEmpty(lastSegment))
+            {
+                names.Add(lastSegment);
+            }
+        }
+
+        private static List<string> FindMatchedReferences(CodeSymbol symbol, HashSet<string> definitions)
+        {
+            List<string> matched = [];
+
+            foreach (string dependency in symbol.Dependencies ?? [])
+            {
+                if (MatchesDefinition(dependency, definitions))
+                {
+                    AddDistinct(matched, dependency);
+                }
+            }
+
+            foreach (string baseType in symbol.BaseTypes ?? [])
+            {
+                foreach (string name in ExtractTypeNames(baseType))
+                {
+                    if (MatchesDefinition(name, definitions))
+                    {
+                        AddDistinct(matched, name);
+                    }
+                }
+            }
+
+            foreach (string implementedInterface in symbol.ImplementedInterfaces ?? [])
+            {
+                foreach (string name in ExtractTypeNames(implementedInterface))
+                {
+                    if (MatchesDefinition(name, definitions))
+                    {
+                        AddDistinct(matched, name);
+                    }
+                }
+            }
+
+            return matched;
+        }
+
+        private static bool MatchesDefinition(string reference, HashSet<string> definitions)
+        {
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                return false;
+            }
+
+            string candidate = reference.Trim();
+
+            if (definitions.Contains(candidate))
+            {
+                return true;
+            }
+
+            string lastSegment = LastSegment(candidate);
+            return !string.IsNullOrEmpty(lastSegment) && definitions.Contains(lastSegment);
+        }
+
+        private static string LastSegment(string value)
+        {
+            int index = value.LastIndexOf(Consts.CharFullStop);
+            return index >= 0 ? value[(index + 1)..] : value;
+        }
+
+        private static IEnumerable<string> ExtractTypeNames(string typeExpression)
+        {
+            if (string.IsNullOrWhiteSpace(typeExpression))
+            {
+                yield break;
+            }
+
+            string cleaned = typeExpression
+                .Replace(Consts.StringQuestionMark, string.Empty)
+                .Replace(Consts.StringArrayIdentifier, string.Empty)
+                .Trim();
+
+            int lessThan = cleaned.IndexOf(Consts.CharLessThan);
+
+            if (lessThan < 0)
+            {
+                yield return cleaned;
+                yield break;
+            }
+
+            int greaterThan = cleaned.LastIndexOf(Consts.CharGreaterThan);
+
+            if (lessThan > 0)
+            {
+                yield return cleaned[..lessThan].Trim();
+            }
+
+            if (greaterThan > lessThan)
+            {
+                string inner = cleaned[(lessThan + 1)..greaterThan];
+
+                foreach (string part in inner.Split(Consts.CharComma))
+                {
+                    string trimmedPart = part.Trim().Replace(Consts.StringQuestionMark, string.Empty);
+
+                    if (!string.IsNullOrEmpty(trimmedPart))
+                    {
+                        yield return trimmedPart;
+                    }
+                }
+            }
+        }
+
+        private static string BuildUsageContent(CodeSymbol referencingSymbol, List<string> matchedReferences)
+        {
+            return string.Concat(
+                referencingSymbol.Kind.ToString(),
+                Consts.StringSpace,
+                Consts.ContextLabelReferences,
+                Consts.StringSpace,
+                string.Join(Consts.ListSeparator, matchedReferences));
+        }
+
+        private static bool PathsReferToSameFile(string first, string second)
+        {
+            if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second))
+            {
+                return false;
+            }
+
+            return string.Equals(
+                Path.GetFullPath(first).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.GetFullPath(second).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void AddDistinct(List<string> list, string value)
+        {
+            string cleaned = value?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrEmpty(cleaned) || list.Contains(cleaned, StringComparer.Ordinal))
+            {
+                return;
+            }
+
+            list.Add(cleaned);
+        }
+
         private static string ResolveSymbolTitle(CodeSymbol symbol)
         {
             return string.IsNullOrWhiteSpace(symbol.FullyQualifiedName) ? symbol.Name ?? string.Empty : symbol.FullyQualifiedName;
         }
 
-        private static string Truncate(string content)
+        private static ContextItem CreateItem(string title, string content, string sourcePath)
         {
-            if (content is null || content.Length <= Consts.MaxContextItemContentLength)
-            {
-                return content ?? string.Empty;
-            }
+            string full = content ?? string.Empty;
+            bool truncated = full.Length > Consts.MaxContextItemContentLength;
 
-            return content[..Consts.MaxContextItemContentLength];
+            return new ContextItem
+            {
+                Title = title,
+                Content = truncated ? full[..Consts.MaxContextItemContentLength] : full,
+                SourcePath = sourcePath ?? string.Empty,
+                Truncated = truncated,
+                OriginalLength = truncated ? full.Length : 0
+            };
         }
     }
 }

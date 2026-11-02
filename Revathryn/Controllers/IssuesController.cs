@@ -8,6 +8,7 @@ using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Services;
 using Revathryn.Models;
 using Revathryn.Models.Issues;
+using Revathryn.Models.IssueValidations;
 using Revathryn.Resources;
 
 namespace Revathryn.Controllers
@@ -20,6 +21,8 @@ namespace Revathryn.Controllers
         private readonly IFindingRepository _findingRepository;
         private readonly IReviewTypeRepository _reviewTypeRepository;
         private readonly IReviewContextRepository _reviewContextRepository;
+        private readonly IIssueValidationService _validationService;
+        private readonly IReviewEngineConfigurationService _reviewEngineConfiguration;
         private readonly IssueViewingOptions _options;
 
         /// <summary>Initialises a new issues controller.</summary>
@@ -29,6 +32,8 @@ namespace Revathryn.Controllers
             IFindingRepository findingRepository,
             IReviewTypeRepository reviewTypeRepository,
             IReviewContextRepository reviewContextRepository,
+            IIssueValidationService validationService,
+            IReviewEngineConfigurationService reviewEngineConfiguration,
             IOptions<IssueViewingOptions> options)
         {
             _repositoryService = repositoryService;
@@ -36,6 +41,8 @@ namespace Revathryn.Controllers
             _findingRepository = findingRepository;
             _reviewTypeRepository = reviewTypeRepository;
             _reviewContextRepository = reviewContextRepository;
+            _validationService = validationService;
+            _reviewEngineConfiguration = reviewEngineConfiguration;
             _options = options.Value;
         }
 
@@ -109,16 +116,22 @@ namespace Revathryn.Controllers
             }
 
             List<IssueListItemViewModel> items = [];
+            IReadOnlyDictionary<long, IssueValidation> validations = await _validationService.GetLatestCompletedAsync(
+                [.. result.Items.Select(finding => finding.Id)],
+                cancellationToken);
+
             foreach (Finding finding in result.Items)
             {
                 reviewTypeNames.TryGetValue(finding.ReviewTypeId.GetValueOrDefault(), out string reviewTypeName);
                 filePaths.TryGetValue(finding.RepoFileId.GetValueOrDefault(), out string filePath);
+                validations.TryGetValue(finding.Id, out IssueValidation validation);
 
                 items.Add(new IssueListItemViewModel
                 {
                     Finding = finding,
                     ReviewTypeName = reviewTypeName ?? string.Empty,
-                    FileRelativePath = filePath ?? string.Empty
+                    FileRelativePath = filePath ?? string.Empty,
+                    ValidationVerdict = validation?.Verdict?.ToString()
                 });
             }
 
@@ -160,6 +173,7 @@ namespace Revathryn.Controllers
             string search,
             FindingSortField? sort,
             bool? descending,
+            long? validationId,
             CancellationToken cancellationToken)
         {
             Finding finding = await _findingRepository.GetByIdAsync(id, cancellationToken);
@@ -193,6 +207,7 @@ namespace Revathryn.Controllers
                 ReviewTypeName = reviewTypeName,
                 FileRelativePath = filePath,
                 Context = context,
+                Validation = await BuildValidationPanelAsync(finding, validationId, cancellationToken),
                 PreviousFindingId = navigation.PreviousId,
                 NextFindingId = navigation.NextId,
                 ListState = new IssueListQueryState
@@ -217,6 +232,48 @@ namespace Revathryn.Controllers
             };
 
             return View(model);
+        }
+
+        private async Task<IssueValidationPanelViewModel> BuildValidationPanelAsync(Finding finding, long? validationId, CancellationToken cancellationToken)
+        {
+            IReadOnlyList<IssueValidation> validations = await _validationService.GetByFindingAsync(finding.Id, cancellationToken);
+            long latestId = validations.Count == 0 ? 0 : validations.Max(validation => validation.Id);
+
+            List<IssueValidationDto> history = validations
+                .OrderByDescending(validation => validation.Id)
+                .Select(validation => IssueValidationDto.FromModel(validation, validation.Id == latestId))
+                .ToList();
+
+            IssueValidationDto active = history.FirstOrDefault(item => item.IsActive);
+            IssueValidationDto selected = validationId.HasValue
+                ? history.FirstOrDefault(item => item.Id == validationId.Value)
+                : null;
+
+            selected ??= history.FirstOrDefault(item => !item.IsActive);
+
+            bool canStart = false;
+            string reason = string.Empty;
+
+            if (finding.Category is not FindingCategory.CodeIssue)
+            {
+                reason = Strings.ValidationNotCodeIssue;
+            }
+            else
+            {
+                ReviewEngineAvailability availability = await _reviewEngineConfiguration.GetAvailabilityAsync(cancellationToken);
+                canStart = availability.IsAvailable;
+                reason = availability.Reason;
+            }
+
+            return new IssueValidationPanelViewModel
+            {
+                FindingId = finding.Id,
+                CanStart = canStart && active is null,
+                UnavailableReason = reason,
+                Active = active,
+                Selected = selected,
+                History = history
+            };
         }
 
         private FindingQuery BuildQuery(

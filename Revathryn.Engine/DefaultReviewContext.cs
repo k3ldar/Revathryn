@@ -29,7 +29,7 @@ namespace Revathryn.Engine
             - Include both "results" and "contextRequests" in every response.
             - Set "results" to an empty array when no issues are found.
             - "severity" must be one of: info, low, medium, high, critical.
-            - "contextRequests" is normally empty. When you need additional context before finalising the review, list the context keys you require. The only supported keys are "symbols" (symbol information for the file) and "dependencies" (dependency information). You will be called again with the requested context.
+            - "contextRequests" is normally empty. When you need additional context before finalising the review, list the context keys you require. The only supported keys are "symbols" (symbol information for the file), "dependencies" (dependency information), and "files" (other files that reference the reviewed file, showing how it is used). You will be called again with the requested context.
             - Request only the context necessary to complete the review. Context is read-only; never request command or script execution.
             """;
 #pragma warning restore CC0009

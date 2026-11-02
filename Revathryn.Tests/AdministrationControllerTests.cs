@@ -427,13 +427,13 @@ namespace Revathryn.Tests
             Assert.AreEqual("OpenAI", model.UsageRecords[0].EngineName);
         }
 
-        private static AdministrationController CreateController(IAIEngineRepository engineRepository, FakeReviewUsageRepository usageRepository = null)
+        private static AdministrationController CreateController(IAIEngineRepository engineRepository, FakeReviewUsageRepository usageRepository = null, FakeReviewEngineConfigurationService reviewEngine = null)
         {
             DefaultHttpContext httpContext = new();
 
             ActionContext actionContext = new(httpContext, new RouteData(), new ControllerActionDescriptor());
 
-            AdministrationController controller = new(new FakeAISettingsRepository(), engineRepository, usageRepository ?? new FakeReviewUsageRepository())
+            new(new FakeAISettingsRepository(), engineRepository, usageRepository ?? new FakeReviewUsageRepository(), reviewEngine ?? new FakeReviewEngineConfigurationService())
             {
                 ControllerContext = new ControllerContext(actionContext),
                 Url = new FakeUrlHelper(actionContext),

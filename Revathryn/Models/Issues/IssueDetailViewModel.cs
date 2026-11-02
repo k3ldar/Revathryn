@@ -1,5 +1,6 @@
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
+using Revathryn.Models.IssueValidations;
 
 namespace Revathryn.Models.Issues
 {
@@ -29,9 +30,12 @@ namespace Revathryn.Models.Issues
 
         /// <summary>Listing filters, ordering and paging to preserve when navigating back.</summary>
         public IssueListQueryState ListState { get; set; } = new();
+
+        /// <summary>Independent AI validation section: availability, current result and history.</summary>
+        public IssueValidationPanelViewModel Validation { get; set; }
     }
 
-    /// <summary>State of the issue listing used to preserve navigation context.</summary>
+
     public sealed class IssueListQueryState
     {
         /// <summary>Repository being browsed.</summary>

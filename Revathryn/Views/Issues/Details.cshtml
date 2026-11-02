@@ -35,6 +35,11 @@
 
 <h1 class="mb-3">@displayTitle</h1>
 
+@if (Model.Validation is not null)
+{
+    <partial name="_IssueValidationActions" model="Model.Validation" />
+}
+
 <div class="card mb-4">
     <div class="card-header">@Strings.IssueDetailsTitle</div>
     <div class="card-body">
@@ -120,6 +125,11 @@
         }
     </div>
 </div>
+
+@if (Model.Validation is not null)
+{
+    <partial name="_IssueValidation" model="Model.Validation" />
+}
 
 <div class="card mb-4">
     <div class="card-header">@Strings.AIReviewContextTitle</div>
@@ -340,8 +350,13 @@
 
 @section Scripts
 {
+    @if (Model.Validation is not null)
+    {
+        <partial name="_IssueValidationScripts" />
+    }
+
     <script>
-        document.querySelectorAll('[data-copy-target]').forEach(function (button) {
+        document.querySelectorAll('[data-copy-target]')
             button.addEventListener('click', function () {
                 var selector = button.getAttribute('data-copy-target');
                 var target = selector ? document.querySelector(selector) : null;

@@ -104,6 +104,10 @@ else
                             <span class="badge @SeverityBadgeClass(item.Finding.Severity)">@SeverityLabel(item.Finding.Severity)</span>
                             <a asp-action="Details" asp-all-route-data="@DetailsRoute(item.Finding.Id)" class="fw-semibold text-decoration-none">@(string.IsNullOrWhiteSpace(item.Finding.Title) ? item.Finding.Id.ToString() : item.Finding.Title)</a>
                             <span class="badge bg-secondary">@CategoryLabel(item.Finding.Category)</span>
+                            @if (!string.IsNullOrWhiteSpace(item.ValidationVerdict))
+                            {
+                                <span class="badge border text-dark" title="@item.ValidationVerdict">@Strings.AIReviewedBadge</span>
+                            }
                         </div>
 
                         <div class="text-muted small">

@@ -1,0 +1,88 @@
+@using Revathryn.Contracts
+@using Revathryn.Contracts.Enums
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.ReviewEngineEditViewModel
+@{
+    ViewData["Title"] = Strings.ReviewEngineTitle;
+    string[] reasoningEfforts =
+    [
+        Consts.ReasoningEffortMinimal,
+        Consts.ReasoningEffortLow,
+        Consts.ReasoningEffortMedium,
+        Consts.ReasoningEffortHigh
+    ];
+}
+
+<h1>@Strings.ReviewEngineTitle</h1>
+
+<div class="alert alert-info">
+    @Strings.ReviewEngineSeparationNotice
+    <a asp-action="Engines" class="alert-link">@Strings.AnalyserConfigurationTitle</a>
+</div>
+
+<form asp-action="ReviewEngine" method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Provider" class="form-label">@Strings.ProviderLabel</label>
+        <select asp-for="Provider" asp-items="Html.GetEnumSelectList<AIProvider>()" class="form-select"></select>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Model" class="form-label">@Strings.ModelLabel</label>
+        <input asp-for="Model" class="form-control" />
+        <div class="form-text">@Strings.ReviewEngineModelHelp</div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Endpoint" class="form-label">@Strings.EndpointLabel</label>
+        <input asp-for="Endpoint" class="form-control" />
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-md-4 mb-3">
+            <label asp-for="Temperature" class="form-label">@Strings.TemperatureLabel</label>
+            <input asp-for="Temperature" class="form-control" type="number" step="0.1" min="@Consts.MinimumTemperature" max="@Consts.MaximumTemperature" />
+            <div class="form-text">@Strings.TemperatureHelp</div>
+        </div>
+
+        <div class="col-12 col-md-4 mb-3">
+            <label asp-for="ReasoningEffort" class="form-label">@Strings.ReasoningEffortLabel</label>
+            <select asp-for="ReasoningEffort" class="form-select">
+                <option value="">@Strings.NotSetOption</option>
+                @foreach (string effort in reasoningEfforts)
+                {
+                    <option value="@effort" selected="@(string.Equals(Model.ReasoningEffort, effort, StringComparison.OrdinalIgnoreCase))">@effort</option>
+                }
+            </select>
+            <div class="form-text">@Strings.ReasoningEffortHelp</div>
+        </div>
+
+        <div class="col-12 col-md-4 mb-3">
+            <label asp-for="MaxTokens" class="form-label">@Strings.MaxTokensLabel</label>
+            <input asp-for="MaxTokens" class="form-control" type="number" min="@Consts.MinimumAIMaxTokens" />
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="SecretKeyName" class="form-label">@Strings.SecretKeyNameLabel</label>
+        <input asp-for="SecretKeyName" class="form-control" autocomplete="off" />
+        <div class="form-text">@Strings.ReviewEngineSecretHelp</div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AdditionalOptions" class="form-label">@Strings.AdditionalOptionsLabel</label>
+        <textarea asp-for="AdditionalOptions" class="form-control font-monospace" rows="4"></textarea>
+        <div class="form-text">@Strings.AdditionalOptionsHelp</div>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="Enabled" class="form-check-input" />
+        <label asp-for="Enabled" class="form-check-label">@Strings.EnabledLabel</label>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">@Strings.SaveButton</button>
+        <button type="submit" class="btn btn-outline-secondary" asp-action="TestReviewEngine">@Strings.TestConnectionButton</button>
+    </div>
+</form>

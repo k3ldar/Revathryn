@@ -138,6 +138,7 @@ namespace Revathryn.Engine
             int contextIterations = 0;
             List<ReviewUsage> usageRecords = [];
             List<ReviewContextItem> capturedContextItems = [];
+            List<string> requestedContextKeys = [];
 
             while (true)
             {
@@ -158,7 +159,7 @@ namespace Revathryn.Engine
                         return ProcessingResult.Failed(Strings.AIEngineResponseIncomplete);
                     }
 
-                    await PersistOutcomeAsync(item, file, reviewType, response, usageRecords, request, capturedContextItems, cancellationToken).ConfigureAwait(false);
+                    await PersistOutcomeAsync(item, file, reviewType, response, usageRecords, request, capturedContextItems, requestedContextKeys, cancellationToken).ConfigureAwait(false);
                     return ProcessingResult.Success();
                 }
 
@@ -170,6 +171,14 @@ namespace Revathryn.Engine
                 }
 
                 await AppendContextAsync(repository, file, request, response.ContextRequests, capturedContextItems, cancellationToken).ConfigureAwait(false);
+
+                foreach (string requestedKey in response.ContextRequests.Where(key => !string.IsNullOrWhiteSpace(key)))
+                {
+                    if (!requestedContextKeys.Contains(requestedKey, StringComparer.OrdinalIgnoreCase))
+                    {
+                        requestedContextKeys.Add(requestedKey);
+                    }
+                }
             }
         }
 
@@ -210,6 +219,7 @@ namespace Revathryn.Engine
             IReadOnlyList<ReviewUsage> usageRecords,
             ReviewRequest request,
             IReadOnlyList<ReviewContextItem> contextItems,
+            IReadOnlyList<string> requestedContextKeys,
             CancellationToken cancellationToken)
         {
             List<Finding> findings = [];
@@ -254,6 +264,12 @@ namespace Revathryn.Engine
                     Language = request.Language,
                     FilePath = file.RelativePath,
                     ReviewInstructions = request.Prompt,
+                    ReviewPrompt = reviewType.Prompt ?? string.Empty,
+                    ReviewDefinitionVersion = reviewType.ReviewDefinitionVersion ?? string.Empty,
+                    EngineName = response.EngineName ?? string.Empty,
+                    EngineProvider = response.EngineProvider ?? string.Empty,
+                    EngineModel = response.EngineModel ?? string.Empty,
+                    RequestedContextKeys = [.. requestedContextKeys],
                     FileContent = request.FileContent,
                     ContextItems = contextItems,
                     CreatedUtc = DateTime.UtcNow
@@ -345,24 +361,27 @@ namespace Revathryn.Engine
 
                 foreach (ContextItem item in contextResponse?.Items ?? [])
                 {
-                    string rendered = RenderContextItem(item);
+                    string rendered = RenderContextItem(item, out bool renderTruncated);
                     request.AdditionalContext.Add(rendered);
                     capturedItems.Add(new ReviewContextItem
                     {
                         Title = item.Title ?? string.Empty,
                         SourcePath = item.SourcePath ?? string.Empty,
-                        Content = rendered
+                        Content = rendered,
+                        Truncated = item.Truncated || renderTruncated,
+                        OriginalLength = Math.Max(item.OriginalLength, renderTruncated ? (item.Content ?? string.Empty).Length : 0)
                     });
                 }
             }
         }
 
-        private static string RenderContextItem(ContextItem item)
+        private static string RenderContextItem(ContextItem item, out bool truncated)
         {
             string title = string.IsNullOrWhiteSpace(item.Title) ? string.Empty : item.Title;
             string content = item.Content ?? string.Empty;
+            truncated = content.Length > Consts.MaxContextItemContentLength;
 
-            if (content.Length > Consts.MaxContextItemContentLength)
+            if (truncated)
             {
                 content = content[..Consts.MaxContextItemContentLength];
             }

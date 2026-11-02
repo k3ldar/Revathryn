@@ -47,7 +47,9 @@ namespace Revathryn.Data
                 SqliteDatabaseSchema.CreateRepoProjects,
                 SqliteDatabaseSchema.CreateRepositoryScans,
                 SqliteDatabaseSchema.CreateReviewUsage,
-                SqliteDatabaseSchema.CreateReviewContexts);
+                SqliteDatabaseSchema.CreateReviewContexts,
+                SqliteDatabaseSchema.CreateReviewEngineSettings,
+                SqliteDatabaseSchema.CreateIssueValidations);
 
             command.ExecuteNonQuery();
 
@@ -78,6 +80,12 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Queue", "Status", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(connection, "Findings", "ReviewContextId", "INTEGER NULL");
             EnsureColumn(connection, "AIEngines", "MaxTokens", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxTokens);
+            EnsureColumn(connection, "ReviewContexts", "ReviewPrompt", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "ReviewContexts", "ReviewDefinitionVersion", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "ReviewContexts", "EngineName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "ReviewContexts", "EngineProvider", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "ReviewContexts", "EngineModel", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "ReviewContexts", "RequestedContextKeysJson", "TEXT NOT NULL DEFAULT ''");
         }
 
         private static void EnsureColumn(SqliteConnection connection, string table, string column, string definition)

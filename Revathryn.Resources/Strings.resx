@@ -938,4 +938,313 @@
 			<data name="NotAvailableLabel" xml:space="preserve">
 			  <value>Not available</value>
 			</data>
+			<data name="AICompletionNetworkError" xml:space="preserve">
+			  <value>The review engine could not be reached: {0}</value>
+			</data>
+			<data name="AICompletionTimedOut" xml:space="preserve">
+			  <value>The review engine did not respond within the allowed time.</value>
+			</data>
+			<data name="AdditionalOptionsHelp" xml:space="preserve">
+			  <value>Optional provider-specific request options as a JSON object. Reserved keys such as model, messages and stream cannot be overridden.</value>
+			</data>
+			<data name="AdditionalOptionsLabel" xml:space="preserve">
+			  <value>Additional options (JSON)</value>
+			</data>
+			<data name="AIReviewedBadge" xml:space="preserve">
+			  <value>AI reviewed</value>
+			</data>
+			<data name="ConfigureReviewEngineLink" xml:space="preserve">
+			  <value>Configure the review engine</value>
+			</data>
+			<data name="DetectionEnginesNotice" xml:space="preserve">
+			  <value>These engines perform the original issue detection. Independent validation of issues uses a separate engine configured under</value>
+			</data>
+			<data name="FullReasoningLabel" xml:space="preserve">
+			  <value>Full reasoning</value>
+			</data>
+			<data name="HistoricalValidationNotice" xml:space="preserve">
+			  <value>This is an earlier validation, shown exactly as it was recorded. It is not the latest validation of this issue.</value>
+			</data>
+			<data name="IndependentAssessmentLabel" xml:space="preserve">
+			  <value>Independent assessment</value>
+			</data>
+			<data name="IndependentValidationTitle" xml:space="preserve">
+			  <value>Independent validation</value>
+			</data>
+			<data name="IssueActionsTitle" xml:space="preserve">
+			  <value>Issue actions</value>
+			</data>
+			<data name="IssueValidationWorkerCycleFailed" xml:space="preserve">
+			  <value>The issue validation worker cycle failed.</value>
+			</data>
+			<data name="LatestValidationBadge" xml:space="preserve">
+			  <value>Latest</value>
+			</data>
+			<data name="NotSetOption" xml:space="preserve">
+			  <value>Not set</value>
+			</data>
+			<data name="NoValidationEvidenceMessage" xml:space="preserve">
+			  <value>The review engine did not cite any evidence that could be verified against the supplied context.</value>
+			</data>
+			<data name="NoValidationsYetMessage" xml:space="preserve">
+			  <value>This issue has not been independently reviewed.</value>
+			</data>
+			<data name="OriginalFindingLabel" xml:space="preserve">
+			  <value>Original finding</value>
+			</data>
+			<data name="OriginalSeverityLabel" xml:space="preserve">
+			  <value>Original</value>
+			</data>
+			<data name="ReasoningEffortHelp" xml:space="preserve">
+			  <value>Leave unset if the model does not support reasoning effort.</value>
+			</data>
+			<data name="ReasoningEffortLabel" xml:space="preserve">
+			  <value>Reasoning effort</value>
+			</data>
+			<data name="RecommendedSeverityLabel" xml:space="preserve">
+			  <value>Recommended</value>
+			</data>
+			<data name="ReReviewWithAIButton" xml:space="preserve">
+			  <value>Re-review with AI</value>
+			</data>
+			<data name="ReReviewWithAIDescription" xml:space="preserve">
+			  <value>Submit this issue for independent validation using the configured review engine.</value>
+			</data>
+			<data name="RetryValidationButton" xml:space="preserve">
+			  <value>Retry validation</value>
+			</data>
+			<data name="ReviewEngineAdditionalOptionsInvalid" xml:space="preserve">
+			  <value>Additional options must be a valid JSON object.</value>
+			</data>
+			<data name="ReviewEngineAdditionalOptionsReservedKey" xml:space="preserve">
+			  <value>Additional options cannot override the reserved key '{0}'.</value>
+			</data>
+			<data name="ReviewEngineBadge" xml:space="preserve">
+			  <value>REVIEW ENGINE</value>
+			</data>
+			<data name="ReviewEngineConfigurationInvalid" xml:space="preserve">
+			  <value>The review engine configuration is invalid.</value>
+			</data>
+			<data name="ReviewEngineConnectionFailed" xml:space="preserve">
+			  <value>The review engine connection test failed: {0}</value>
+			</data>
+			<data name="ReviewEngineConnectionSucceeded" xml:space="preserve">
+			  <value>The review engine responded successfully.</value>
+			</data>
+			<data name="ReviewEngineDisabled" xml:space="preserve">
+			  <value>The review engine is disabled.</value>
+			</data>
+			<data name="ReviewEngineEndpointInvalid" xml:space="preserve">
+			  <value>The review engine endpoint must be a valid absolute URL.</value>
+			</data>
+			<data name="ReviewEngineMaxTokensInvalid" xml:space="preserve">
+			  <value>Maximum output tokens must be at least {0}.</value>
+			</data>
+			<data name="ReviewEngineModelHelp" xml:space="preserve">
+			  <value>Choose a model appropriate for independent review. It does not have to match the detection model.</value>
+			</data>
+			<data name="ReviewEngineModelRequired" xml:space="preserve">
+			  <value>A review engine model is required.</value>
+			</data>
+			<data name="ReviewEngineNotConfigured" xml:space="preserve">
+			  <value>The review engine has not been configured.</value>
+			</data>
+			<data name="ReviewEngineProviderInvalid" xml:space="preserve">
+			  <value>The review engine provider is not supported.</value>
+			</data>
+			<data name="ReviewEngineReasoningEffortInvalid" xml:space="preserve">
+			  <value>Reasoning effort must be one of: {0}.</value>
+			</data>
+			<data name="ReviewEngineSaved" xml:space="preserve">
+			  <value>Review engine configuration saved.</value>
+			</data>
+			<data name="ReviewEngineSecretHelp" xml:space="preserve">
+			  <value>Name of the environment variable that holds the API key. The key itself is never displayed or stored here.</value>
+			</data>
+			<data name="ReviewEngineSecretKeyNameRequired" xml:space="preserve">
+			  <value>A secret key name is required for this provider.</value>
+			</data>
+			<data name="ReviewEngineSecretMissing" xml:space="preserve">
+			  <value>The API key for the review engine could not be found. Check the secret key name and the environment.</value>
+			</data>
+			<data name="ReviewEngineSeparationNotice" xml:space="preserve">
+			  <value>This configures the independent review engine used to validate existing issues. It is separate from the detection engines configured under</value>
+			</data>
+			<data name="ReviewEngineTemperatureInvalid" xml:space="preserve">
+			  <value>Temperature must be between {0} and {1}.</value>
+			</data>
+			<data name="ReviewEngineTitle" xml:space="preserve">
+			  <value>Review Engine</value>
+			</data>
+			<data name="ReviewEngineUnavailableAtExecution" xml:space="preserve">
+			  <value>The review engine was unavailable when the validation ran.</value>
+			</data>
+			<data name="SeverityComparisonLabel" xml:space="preserve">
+			  <value>Severity comparison</value>
+			</data>
+			<data name="TemperatureHelp" xml:space="preserve">
+			  <value>Optional. Leave empty if the model does not support temperature.</value>
+			</data>
+			<data name="TemperatureLabel" xml:space="preserve">
+			  <value>Temperature</value>
+			</data>
+			<data name="TestConnectionButton" xml:space="preserve">
+			  <value>Test connection</value>
+			</data>
+			<data name="ValidationAdvisoryNote" xml:space="preserve">
+			  <value>AI validation is a recommendation only. It never changes the issue, its severity or its status.</value>
+			</data>
+			<data name="ValidationAlreadyInProgress" xml:space="preserve">
+			  <value>A validation is already in progress for this issue.</value>
+			</data>
+			<data name="ValidationAttemptsLabel" xml:space="preserve">
+			  <value>Attempts</value>
+			</data>
+			<data name="ValidationCompletedLog" xml:space="preserve">
+			  <value>Issue validation {0} for finding {1} completed with verdict {2}.</value>
+			</data>
+			<data name="ValidationConfidenceFormat" xml:space="preserve">
+			  <value>{0}% confidence</value>
+			</data>
+			<data name="ValidationContextModeCurrentSource" xml:space="preserve">
+			  <value>Validated against current source, not the original detection context</value>
+			</data>
+			<data name="ValidationContextModeOriginalSnapshot" xml:space="preserve">
+			  <value>Validated against the original detection context</value>
+			</data>
+			<data name="ValidationContextModeUnavailable" xml:space="preserve">
+			  <value>No source context was available</value>
+			</data>
+			<data name="ValidationContextNoteDetectionMetadataMissing" xml:space="preserve">
+			  <value>The original detection prompts and model were not recorded for this issue.</value>
+			</data>
+			<data name="ValidationContextNoteFileRemoved" xml:space="preserve">
+			  <value>The source file has been removed since the original detection.</value>
+			</data>
+			<data name="ValidationContextNoteLegacy" xml:space="preserve">
+			  <value>The original detection context was not retained for this issue, so current source was used instead.</value>
+			</data>
+			<data name="ValidationContextNoteNoLineReferences" xml:space="preserve">
+			  <value>The original finding has no line references or recorded evidence.</value>
+			</data>
+			<data name="ValidationContextNoteSourceChanged" xml:space="preserve">
+			  <value>The source file has changed since the original detection.</value>
+			</data>
+			<data name="ValidationContextNoteTruncated" xml:space="preserve">
+			  <value>{0} context item(s) were truncated when supplied to the detection engine.</value>
+			</data>
+			<data name="ValidationContextNoteUnavailable" xml:space="preserve">
+			  <value>No source could be read, so the validation had no source context.</value>
+			</data>
+			<data name="ValidationCouldNotBeQueued" xml:space="preserve">
+			  <value>The validation could not be queued.</value>
+			</data>
+			<data name="ValidationEvidenceDiscarded" xml:space="preserve">
+			  <value>{0} evidence reference(s) were discarded because they did not match the supplied source.</value>
+			</data>
+			<data name="ValidationEvidenceLabel" xml:space="preserve">
+			  <value>Evidence</value>
+			</data>
+			<data name="ValidationFailedLog" xml:space="preserve">
+			  <value>Issue validation {0} for finding {1} failed: {2}</value>
+			</data>
+			<data name="ValidationFailedNote" xml:space="preserve">
+			  <value>The validation did not complete. This is a failed run, not an inconclusive verdict, and the original issue was not changed.</value>
+			</data>
+			<data name="ValidationFailedTitle" xml:space="preserve">
+			  <value>Validation failed</value>
+			</data>
+			<data name="ValidationHistoryTitle" xml:space="preserve">
+			  <value>Validation history</value>
+			</data>
+			<data name="ValidationInProgressMessage" xml:space="preserve">
+			  <value>Independent validation is in progress. This page will refresh when it completes.</value>
+			</data>
+			<data name="ValidationIssueNotFound" xml:space="preserve">
+			  <value>The issue was not found.</value>
+			</data>
+			<data name="ValidationLimitationsLabel" xml:space="preserve">
+			  <value>Limitations and missing context</value>
+			</data>
+			<data name="ValidationLineRangeFormat" xml:space="preserve">
+			  <value>lines {0}-{1}</value>
+			</data>
+			<data name="ValidationNotCodeIssue" xml:space="preserve">
+			  <value>Only code issues can be independently validated.</value>
+			</data>
+			<data name="ValidationNotRetryable" xml:space="preserve">
+			  <value>Only failed validations can be retried.</value>
+			</data>
+			<data name="ValidationQueued" xml:space="preserve">
+			  <value>Validation queued.</value>
+			</data>
+			<data name="ValidationQueuedLog" xml:space="preserve">
+			  <value>Issue validation {0} queued for finding {1}.</value>
+			</data>
+			<data name="ValidationRepositoryNotFound" xml:space="preserve">
+			  <value>The repository for this issue was not found.</value>
+			</data>
+			<data name="ValidationRequestFailedMessage" xml:space="preserve">
+			  <value>The validation request failed. Please try again.</value>
+			</data>
+			<data name="ValidationResponseEmpty" xml:space="preserve">
+			  <value>The review engine returned an empty response.</value>
+			</data>
+			<data name="ValidationResponseInvalidJson" xml:space="preserve">
+			  <value>The review engine response was not valid JSON: {0}</value>
+			</data>
+			<data name="ValidationResponseMissingExplanation" xml:space="preserve">
+			  <value>The review engine response contained neither a summary nor reasoning.</value>
+			</data>
+			<data name="ValidationResponseNotObject" xml:space="preserve">
+			  <value>The review engine response was not a JSON object.</value>
+			</data>
+			<data name="ValidationResponseVerdictInvalid" xml:space="preserve">
+			  <value>The review engine returned an unrecognised verdict: {0}</value>
+			</data>
+			<data name="ValidationRetryLimitExceeded" xml:space="preserve">
+			  <value>The validation exceeded the maximum number of attempts.</value>
+			</data>
+			<data name="ValidationSourceChangedWarning" xml:space="preserve">
+			  <value>The repository has changed since the original detection. The source supplied to the review engine may differ from what the detection engine saw.</value>
+			</data>
+			<data name="ValidationStartedMessage" xml:space="preserve">
+			  <value>Validation started. Results will appear here when it completes.</value>
+			</data>
+			<data name="ValidationStatusFailed" xml:space="preserve">
+			  <value>Failed</value>
+			</data>
+			<data name="ValidationStatusPending" xml:space="preserve">
+			  <value>Queued</value>
+			</data>
+			<data name="ValidationStatusRunning" xml:space="preserve">
+			  <value>Running</value>
+			</data>
+			<data name="ValidationSuggestionsLabel" xml:space="preserve">
+			  <value>Suggested corrections</value>
+			</data>
+			<data name="ValidationVerdictAgreed" xml:space="preserve">
+			  <value>Agreed</value>
+			</data>
+			<data name="ValidationVerdictAgreedDescription" xml:space="preserve">
+			  <value>The original finding is valid.</value>
+			</data>
+			<data name="ValidationVerdictDisagreed" xml:space="preserve">
+			  <value>Disagreed</value>
+			</data>
+			<data name="ValidationVerdictDisagreedDescription" xml:space="preserve">
+			  <value>The original finding is invalid or was incorrectly identified.</value>
+			</data>
+			<data name="ValidationVerdictInconclusive" xml:space="preserve">
+			  <value>Inconclusive</value>
+			</data>
+			<data name="ValidationVerdictInconclusiveDescription" xml:space="preserve">
+			  <value>There was insufficient evidence to reach a reliable conclusion.</value>
+			</data>
+			<data name="ValidationVerdictPartiallyAgreed" xml:space="preserve">
+			  <value>Partially agreed</value>
+			</data>
+			<data name="ValidationVerdictPartiallyAgreedDescription" xml:space="preserve">
+			  <value>The finding is valid in principle but needs correction.</value>
+			</data>
 			</root>

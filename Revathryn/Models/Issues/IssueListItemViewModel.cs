@@ -13,5 +13,8 @@ namespace Revathryn.Models.Issues
 
         /// <summary>Repository-relative path of the associated file, when available.</summary>
         public string FileRelativePath { get; set; } = string.Empty;
+
+        /// <summary>Verdict of the latest completed independent validation, or null when never validated.</summary>
+        public string ValidationVerdict { get; set; }
     }
 }

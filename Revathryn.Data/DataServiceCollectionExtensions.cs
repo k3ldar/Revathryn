@@ -40,6 +40,8 @@ namespace Revathryn.Data
             services.AddTransient<IAIEngineRepository, AIEngineRepository>();
             services.AddTransient<IReviewUsageRepository, ReviewUsageRepository>();
             services.AddTransient<IAISettingsRepository, AISettingsRepository>();
+            services.AddTransient<IReviewEngineSettingsRepository, ReviewEngineSettingsRepository>();
+            services.AddTransient<IIssueValidationRepository, IssueValidationRepository>();
             services.AddTransient<IBackupService, BackupService>();
 
             return services;

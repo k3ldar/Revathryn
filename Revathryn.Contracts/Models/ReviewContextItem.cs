@@ -11,5 +11,11 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>The rendered content that was supplied to the AI.</summary>
         public string Content { get; set; } = string.Empty;
+
+        /// <summary>True when the content was truncated before it was supplied to the AI.</summary>
+        public bool Truncated { get; set; }
+
+        /// <summary>Length of the content before truncation. 0 when not recorded.</summary>
+        public int OriginalLength { get; set; }
     }
 }

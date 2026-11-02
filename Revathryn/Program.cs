@@ -58,6 +58,7 @@ namespace Revathryn
                 builder.Services.AddSingleton<IOperationalLogSink, OperationalLoggingSink>();
                 builder.Services.AddReviewServices(settings);
                 builder.Services.AddHostedService<ReviewWorkerService>();
+                builder.Services.AddHostedService<IssueValidationWorkerService>();
 
                 //builder.Host.UseWindowsService();
                 //builder.Host.UseSystemd();

@@ -29,5 +29,11 @@ namespace Revathryn.Contracts
         /// <param name="repositoryName">Name of the repository that owns the file.</param>
         /// <param name="filePath">Absolute path of the source file.</param>
         IManifestEntry GetEntry(string repositoryName, string filePath);
+
+        /// <summary>
+        /// Returns all stored entries for the repository named <paramref name="repositoryName"/>.
+        /// </summary>
+        /// <param name="repositoryName">Name of the repository whose entries are returned.</param>
+        IReadOnlyList<IManifestEntry> GetEntries(string repositoryName);
     }
 }

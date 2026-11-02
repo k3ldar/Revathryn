@@ -240,6 +240,68 @@ namespace Revathryn.Data
             );
             """;
 
+        /// <summary>Creates the ReviewEngineSettings singleton table holding the independent review engine configuration.</summary>
+        internal const string CreateReviewEngineSettings = """
+            CREATE TABLE IF NOT EXISTS ReviewEngineSettings (
+                Id INTEGER PRIMARY KEY CHECK (Id = 1),
+                Provider INTEGER NOT NULL DEFAULT 0,
+                Endpoint TEXT NOT NULL DEFAULT '',
+                Model TEXT NOT NULL DEFAULT '',
+                Temperature REAL NULL,
+                ReasoningEffort TEXT NOT NULL DEFAULT '',
+                MaxTokens INTEGER NOT NULL DEFAULT 0,
+                SecretKeyName TEXT NOT NULL DEFAULT '',
+                Enabled INTEGER NOT NULL DEFAULT 0,
+                AdditionalOptions TEXT NOT NULL DEFAULT '',
+                LastModifiedUtc TEXT NOT NULL
+            );
+            """;
+
+        /// <summary>Creates the IssueValidations table. Each row is an immutable historical validation of a finding.</summary>
+        internal const string CreateIssueValidations = """
+            CREATE TABLE IF NOT EXISTS IssueValidations (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                FindingId INTEGER NOT NULL,
+                RepositoryId INTEGER NOT NULL,
+                Status INTEGER NOT NULL DEFAULT 0,
+                RetryOfValidationId INTEGER NULL,
+                AttemptCount INTEGER NOT NULL DEFAULT 0,
+                CreatedUtc TEXT NOT NULL,
+                StartedUtc TEXT NULL,
+                CompletedUtc TEXT NULL,
+                NextAttemptUtc TEXT NULL,
+                LeasedUntilUtc TEXT NULL,
+                Provider INTEGER NOT NULL DEFAULT 0,
+                Model TEXT NOT NULL DEFAULT '',
+                EngineConfigSnapshotJson TEXT NOT NULL DEFAULT '',
+                PromptVersion TEXT NOT NULL DEFAULT '',
+                SystemPrompt TEXT NOT NULL DEFAULT '',
+                UserPrompt TEXT NOT NULL DEFAULT '',
+                ContextReferenceJson TEXT NOT NULL DEFAULT '',
+                OriginalSeverity INTEGER NOT NULL DEFAULT 0,
+                OriginalTitle TEXT NOT NULL DEFAULT '',
+                OriginalDescription TEXT NOT NULL DEFAULT '',
+                OriginalSuggestedFix TEXT NOT NULL DEFAULT '',
+                Verdict INTEGER NULL,
+                Confidence REAL NULL,
+                Summary TEXT NOT NULL DEFAULT '',
+                Reasoning TEXT NOT NULL DEFAULT '',
+                RecommendedSeverity INTEGER NULL,
+                SeverityReasoning TEXT NOT NULL DEFAULT '',
+                EvidenceJson TEXT NOT NULL DEFAULT '',
+                SuggestionsJson TEXT NOT NULL DEFAULT '',
+                LimitationsJson TEXT NOT NULL DEFAULT '',
+                RawResponse TEXT NOT NULL DEFAULT '',
+                ErrorMessage TEXT NOT NULL DEFAULT '',
+                FailureClassification INTEGER NULL,
+                PromptTokens INTEGER NOT NULL DEFAULT 0,
+                CompletionTokens INTEGER NOT NULL DEFAULT 0,
+                TotalTokens INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (FindingId) REFERENCES Findings (Id) ON DELETE CASCADE,
+                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE
+            );
+            """;
+
         /// <summary>Creates the non-unique query indexes.</summary>
         internal static readonly string[] CreateIndexes =
         [
@@ -264,6 +326,9 @@ namespace Revathryn.Data
             "CREATE INDEX IF NOT EXISTS IX_ReviewUsage_OccurredUtc ON ReviewUsage (OccurredUtc DESC);",
             "CREATE INDEX IF NOT EXISTS IX_ReviewContexts_RepositoryId ON ReviewContexts (RepositoryId);",
             "CREATE INDEX IF NOT EXISTS IX_ReviewContexts_RepoFileId ON ReviewContexts (RepoFileId);",
+            "CREATE INDEX IF NOT EXISTS IX_IssueValidations_FindingId ON IssueValidations (FindingId, CreatedUtc DESC);",
+            "CREATE INDEX IF NOT EXISTS IX_IssueValidations_Status ON IssueValidations (Status, NextAttemptUtc);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_IssueValidations_ActiveFinding ON IssueValidations (FindingId) WHERE Status IN (0, 1);",
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_ReviewTypes_Repository_Key ON ReviewTypes (RepositoryId, Key) WHERE Key <> '';"
         ];
     }

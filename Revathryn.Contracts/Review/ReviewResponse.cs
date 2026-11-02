@@ -17,6 +17,9 @@ namespace Revathryn.Contracts.Review
         /// <summary>Display name of the engine that served the review.</summary>
         public string EngineName { get; set; } = string.Empty;
 
+        /// <summary>Provider of the engine that served the review.</summary>
+        public string EngineProvider { get; set; } = string.Empty;
+
         /// <summary>Model identifier used by the engine.</summary>
         public string EngineModel { get; set; } = string.Empty;
 

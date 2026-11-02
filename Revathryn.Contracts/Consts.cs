@@ -150,6 +150,8 @@
         public const int MaxContextItemContentLength = 4000;
         public const string ContextKeySymbols = "symbols";
         public const string ContextKeyDependencies = "dependencies";
+        public const string ContextKeyFiles = "files";
+        public const string ContextLabelReferences = "references";
         public const string FindingFingerprintSeparator = ":";
         public const string OperationalFailureFingerprintSuffix = "operational";
         public const int OpenAIRequestTimeoutSeconds = 120;
@@ -248,5 +250,69 @@
         public const string DashboardErrorRoute = "/Dashboard/Error";
         public const string DefaultRouteName = "default";
         public const string DefaultRoutePattern = "{controller=Dashboard}/{action=Index}/{id?}";
+
+        // Text separators and path markers used by issue validation.
+        public const string ListSeparator = ", ";
+        public const string SpaceSeparator = " ";
+        public const string UnderscoreText = "_";
+        public const string HyphenText = "-";
+        public const char PercentSign = '%';
+        public const char Backslash = '\\';
+        public const string CurrentDirectoryPrefix = "./";
+        public const string CodeFence = "```";
+
+        // Issue validation components and operations.
+        public const string IssueValidationServiceComponent = "IssueValidationService";
+        public const string IssueValidationProcessorComponent = "IssueValidationProcessor";
+        public const string IssueValidationWorkerServiceComponent = "IssueValidationWorkerService";
+        public const string OpenAICompletionClientComponent = "OpenAICompletionClient";
+        public const string QueueValidationOperation = "QueueValidation";
+        public const string ProcessValidationOperation = "ProcessValidation";
+        public const string CompleteOperation = "Complete";
+
+        // Issue validation worker timing.
+        public const int IssueValidationPollIntervalSeconds = 5;
+        public const int IssueValidationDrainLimit = 20;
+        public const int IssueValidationStatusPollMilliseconds = 3000;
+
+        // Review engine defaults and limits.
+        public const string DefaultReviewEngineEndpoint = "https://api.openai.com/v1";
+        public const int DefaultReviewEngineMaxTokens = 8192;
+        public const double MinimumTemperature = 0.0;
+        public const double MaximumTemperature = 2.0;
+        public const int ConnectionTestMaxTokens = 256;
+        public const string ConnectionTestSystemPrompt = "You are a connectivity check. Reply with the single word OK.";
+        public const string ConnectionTestUserPrompt = "Reply with OK.";
+        public const string ReasoningEffortMinimal = "minimal";
+        public const string ReasoningEffortLow = "low";
+        public const string ReasoningEffortMedium = "medium";
+        public const string ReasoningEffortHigh = "high";
+
+        // Chat completion request keys.
+        public const string RequestKeyModel = "model";
+        public const string RequestKeyMessages = "messages";
+        public const string RequestKeyResponseFormat = "response_format";
+        public const string RequestKeyMaxCompletionTokens = "max_completion_tokens";
+        public const string RequestKeyTemperature = "temperature";
+        public const string RequestKeyReasoningEffort = "reasoning_effort";
+        public const string RequestKeyStream = "stream";
+        public const string ResponseFormatKeyType = "type";
+        public const string MessageKeyRole = "role";
+        public const string MessageKeyContent = "content";
+
+        // Validation response keys.
+        public const string ValidationKeyVerdict = "verdict";
+        public const string ValidationKeyConfidence = "confidence";
+        public const string ValidationKeySummary = "summary";
+        public const string ValidationKeyReasoning = "reasoning";
+        public const string ValidationKeySeverity = "severity";
+        public const string ValidationKeyRecommended = "recommended";
+        public const string ValidationKeyEvidence = "evidence";
+        public const string ValidationKeyFile = "file";
+        public const string ValidationKeyLineStart = "lineStart";
+        public const string ValidationKeyLineEnd = "lineEnd";
+        public const string ValidationKeyExplanation = "explanation";
+        public const string ValidationKeySuggestions = "suggestions";
+        public const string ValidationKeyLimitations = "limitations";
     }
 }

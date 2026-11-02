@@ -1,0 +1,316 @@
+@using Revathryn.Contracts.Enums
+@using Revathryn.Resources
+@model Revathryn.Models.IssueValidations.IssueValidationPanelViewModel
+@{
+    Revathryn.Models.IssueValidations.IssueValidationDto selected = Model.Selected;
+    string timestampFormat = "yyyy-MM-dd HH:mm 'UTC'";
+}
+
+<div class="card mb-4" id="issueValidationResults">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span>@Strings.IndependentValidationTitle</span>
+        <span class="badge bg-dark">@Strings.ReviewEngineBadge</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">@Strings.ValidationAdvisoryNote</p>
+
+        @if (selected is null)
+        {
+            <p class="text-muted mb-0">@(Model.Active is null ? Strings.NoValidationsYetMessage : Strings.ValidationInProgressMessage)</p>
+        }
+        else if (selected.CanRetry)
+        {
+            <div class="alert alert-danger">
+                <h2 class="h6">@Strings.ValidationFailedTitle</h2>
+                <p class="mb-2">@Strings.ValidationFailedNote</p>
+                <p class="mb-2 text-break">@(string.IsNullOrWhiteSpace(selected.ErrorMessage) ? Strings.NotAvailableLabel : selected.ErrorMessage)</p>
+                <p class="small mb-0">@selected.Provider · @(string.IsNullOrWhiteSpace(selected.Model) ? Strings.NotAvailableLabel : selected.Model) · @selected.CreatedUtc.ToString(timestampFormat) · @Strings.ValidationAttemptsLabel: @selected.AttemptCount</p>
+            </div>
+
+            @if (Model.CanStart)
+            {
+                <button type="button" class="btn btn-outline-danger" id="retryValidationButton" data-retry-url="@Url.Content($"~/api/issues/{Model.FindingId}/validations/{selected.Id}/retry")">@Strings.RetryValidationButton</button>
+            }
+        }
+        else
+        {
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="badge fs-6 @VerdictBadgeClass(selected.Verdict)">@VerdictLabel(selected.Verdict)</span>
+                @if (selected.Confidence.HasValue)
+                {
+                    <span class="fw-semibold">@string.Format(Strings.ValidationConfidenceFormat, Math.Round(selected.Confidence.Value * 100))</span>
+                }
+                @if (selected.IsLatest)
+                {
+                    <span class="badge bg-primary">@Strings.LatestValidationBadge</span>
+                }
+            </div>
+            <div class="text-muted small mb-3">
+                @((selected.CompletedUtc ?? selected.CreatedUtc).ToString(timestampFormat))
+            </div>
+
+            @if (!selected.IsLatest)
+            {
+                <div class="alert alert-secondary">@Strings.HistoricalValidationNotice</div>
+            }
+
+            @if (selected.SourceChangedSinceDetection || selected.ContextMode != nameof(IssueValidationContextMode.OriginalSnapshot) || selected.ContextNotes.Count > 0)
+            {
+                <div class="alert alert-warning">
+                    <h2 class="h6">@ContextModeLabel(selected.ContextMode)</h2>
+                    @if (selected.SourceChangedSinceDetection)
+                    {
+                        <p class="mb-1">@Strings.ValidationSourceChangedWarning</p>
+                    }
+                    @if (selected.ContextNotes.Count > 0)
+                    {
+                        <ul class="mb-0">
+                            @foreach (string note in selected.ContextNotes)
+                            {
+                                <li>@note</li>
+                            }
+                        </ul>
+                    }
+                </div>
+            }
+
+            <div class="row g-3 mb-3">
+                <div class="col-12 col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h2 class="h6 text-muted">@Strings.OriginalFindingLabel</h2>
+                        <p class="fw-semibold mb-1">@(string.IsNullOrWhiteSpace(selected.OriginalTitle) ? Strings.NotAvailableLabel : selected.OriginalTitle)</p>
+                        <p class="mb-2"><span class="badge @SeverityBadgeClass(selected.OriginalSeverity)">@SeverityText(selected.OriginalSeverity)</span></p>
+                        @if (!string.IsNullOrWhiteSpace(selected.OriginalDescription))
+                        {
+                            <p class="small mb-0" style="white-space: pre-wrap;">@selected.OriginalDescription</p>
+                        }
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h2 class="h6 text-muted">@Strings.IndependentAssessmentLabel</h2>
+                        <p class="fw-semibold mb-2" style="white-space: pre-wrap;">@(string.IsNullOrWhiteSpace(selected.Summary) ? VerdictDescription(selected.Verdict) : selected.Summary)</p>
+                        <h3 class="h6 text-muted">@Strings.SeverityComparisonLabel</h3>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div>
+                                <div class="small text-muted">@Strings.OriginalSeverityLabel</div>
+                                <span class="badge @SeverityBadgeClass(selected.OriginalSeverity)">@SeverityText(selected.OriginalSeverity)</span>
+                            </div>
+                            <div>
+                                <div class="small text-muted">@Strings.RecommendedSeverityLabel</div>
+                                @if (string.IsNullOrWhiteSpace(selected.RecommendedSeverity))
+                                {
+                                    <span class="text-muted">@Strings.NotAvailableLabel</span>
+                                }
+                                else
+                                {
+                                    <span class="badge @SeverityBadgeClass(selected.RecommendedSeverity)">@SeverityText(selected.RecommendedSeverity)</span>
+                                }
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(selected.SeverityReasoning))
+                        {
+                            <p class="small mt-2 mb-0" style="white-space: pre-wrap;">@selected.SeverityReasoning</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h2 class="h6 mb-0">@Strings.FullReasoningLabel</h2>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#validationReasoning">@Strings.ExpandLabel</button>
+                </div>
+                <div class="collapse" id="validationReasoning">
+                    <p class="mt-2 mb-0" style="white-space: pre-wrap;">@(string.IsNullOrWhiteSpace(selected.Reasoning) ? Strings.NotAvailableLabel : selected.Reasoning)</p>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <h2 class="h6">@Strings.ValidationEvidenceLabel</h2>
+                @if (selected.Evidence.Count == 0)
+                {
+                    <p class="text-muted small mb-0">@Strings.NoValidationEvidenceMessage</p>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @foreach (Revathryn.Contracts.Models.IssueValidationEvidence evidence in selected.Evidence)
+                        {
+                            <div class="list-group-item">
+                                <div class="fw-semibold text-break">@evidence.File, @string.Format(Strings.ValidationLineRangeFormat, evidence.LineStart, evidence.LineEnd)</div>
+                                @if (!string.IsNullOrWhiteSpace(evidence.Explanation))
+                                {
+                                    <div class="small" style="white-space: pre-wrap;">@evidence.Explanation</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (selected.Suggestions.Count > 0)
+            {
+                <div class="mb-3">
+                    <h2 class="h6">@Strings.ValidationSuggestionsLabel</h2>
+                    <ul class="mb-0">
+                        @foreach (string suggestion in selected.Suggestions)
+                        {
+                            <li>@suggestion</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (selected.Limitations.Count > 0)
+            {
+                <div class="mb-3">
+                    <h2 class="h6">@Strings.ValidationLimitationsLabel</h2>
+                    <ul class="mb-0">
+                        @foreach (string limitation in selected.Limitations)
+                        {
+                            <li>@limitation</li>
+                        }
+                    </ul>
+                </div>
+            }
+        }
+
+        @if (Model.History.Count > 0)
+        {
+            <hr />
+            <h2 class="h6">@Strings.ValidationHistoryTitle</h2>
+            <div class="list-group">
+                @foreach (Revathryn.Models.IssueValidations.IssueValidationDto item in Model.History)
+                {
+                    <a asp-action="Details" asp-controller="Issues" asp-all-route-data="@HistoryRoute(item.Id)" asp-fragment="issueValidationResults"
+                       class="list-group-item list-group-item-action d-flex flex-wrap justify-content-between align-items-center gap-2 @(item.Id == selected?.Id ? "active" : string.Empty)">
+                        <span>
+                            @item.CreatedUtc.ToString(timestampFormat) · @item.Provider · @(string.IsNullOrWhiteSpace(item.Model) ? Strings.NotAvailableLabel : item.Model)
+                        </span>
+                        <span class="d-flex gap-2 align-items-center">
+                            @if (item.IsLatest)
+                            {
+                                <span class="badge bg-primary">@Strings.LatestValidationBadge</span>
+                            }
+                            <span class="badge @HistoryBadgeClass(item)">@HistoryLabel(item)</span>
+                        </span>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@functions
+{
+    private Dictionary<string, string> HistoryRoute(long validationId)
+    {
+        Dictionary<string, string> values = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues> pair in ViewContext.HttpContext.Request.Query)
+        {
+            values[pair.Key] = pair.Value.ToString();
+        }
+
+        values["id"] = Model.FindingId.ToString();
+        values["validationId"] = validationId.ToString();
+        return values;
+    }
+
+    private static string VerdictLabel(string verdict)
+    {
+        return verdict switch
+        {
+            nameof(IssueValidationVerdict.Agreed) => Strings.ValidationVerdictAgreed,
+            nameof(IssueValidationVerdict.Disagreed) => Strings.ValidationVerdictDisagreed,
+            nameof(IssueValidationVerdict.PartiallyAgreed) => Strings.ValidationVerdictPartiallyAgreed,
+            nameof(IssueValidationVerdict.Inconclusive) => Strings.ValidationVerdictInconclusive,
+            _ => Strings.NotAvailableLabel
+        };
+    }
+
+    private static string VerdictDescription(string verdict)
+    {
+        return verdict switch
+        {
+            nameof(IssueValidationVerdict.Agreed) => Strings.ValidationVerdictAgreedDescription,
+            nameof(IssueValidationVerdict.Disagreed) => Strings.ValidationVerdictDisagreedDescription,
+            nameof(IssueValidationVerdict.PartiallyAgreed) => Strings.ValidationVerdictPartiallyAgreedDescription,
+            nameof(IssueValidationVerdict.Inconclusive) => Strings.ValidationVerdictInconclusiveDescription,
+            _ => Strings.NotAvailableLabel
+        };
+    }
+
+    private static string VerdictBadgeClass(string verdict)
+    {
+        return verdict switch
+        {
+            nameof(IssueValidationVerdict.Agreed) => "bg-success",
+            nameof(IssueValidationVerdict.Disagreed) => "bg-danger",
+            nameof(IssueValidationVerdict.PartiallyAgreed) => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string HistoryLabel(Revathryn.Models.IssueValidations.IssueValidationDto item)
+    {
+        return item.Status switch
+        {
+            nameof(IssueValidationStatus.Failed) => Strings.ValidationStatusFailed,
+            nameof(IssueValidationStatus.Pending) => Strings.ValidationStatusPending,
+            nameof(IssueValidationStatus.Running) => Strings.ValidationStatusRunning,
+            _ => VerdictLabel(item.Verdict)
+        };
+    }
+
+    private static string HistoryBadgeClass(Revathryn.Models.IssueValidations.IssueValidationDto item)
+    {
+        return item.Status switch
+        {
+            nameof(IssueValidationStatus.Failed) => "bg-danger",
+            nameof(IssueValidationStatus.Pending) or nameof(IssueValidationStatus.Running) => "bg-info text-dark",
+            _ => VerdictBadgeClass(item.Verdict)
+        };
+    }
+
+    private static string ContextModeLabel(string mode)
+    {
+        return mode switch
+        {
+            nameof(IssueValidationContextMode.OriginalSnapshot) => Strings.ValidationContextModeOriginalSnapshot,
+            nameof(IssueValidationContextMode.CurrentSource) => Strings.ValidationContextModeCurrentSource,
+            _ => Strings.ValidationContextModeUnavailable
+        };
+    }
+
+    private static string SeverityText(string severity)
+    {
+        return Enum.TryParse(severity, out FindingSeverity parsed)
+            ? parsed switch
+            {
+                FindingSeverity.Info => Strings.SeverityInfo,
+                FindingSeverity.Low => Strings.SeverityLow,
+                FindingSeverity.Medium => Strings.SeverityMedium,
+                FindingSeverity.High => Strings.SeverityHigh,
+                FindingSeverity.Critical => Strings.SeverityCritical,
+                _ => severity
+            }
+            : severity;
+    }
+
+    private static string SeverityBadgeClass(string severity)
+    {
+        return Enum.TryParse(severity, out FindingSeverity parsed)
+            ? parsed switch
+            {
+                FindingSeverity.Info => "bg-secondary",
+                FindingSeverity.Low => "bg-info text-dark",
+                FindingSeverity.Medium => "bg-warning text-dark",
+                FindingSeverity.High => "bg-danger",
+                FindingSeverity.Critical => "bg-dark",
+                _ => "bg-secondary"
+            }
+            : "bg-secondary";
+    }
+}

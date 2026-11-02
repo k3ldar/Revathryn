@@ -9,6 +9,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Revathryn.Engine\Revathryn.Engine.csproj" />
+		<ProjectReference Include="..\Revathryn.Data\Revathryn.Data.csproj" />
 	</ItemGroup>
 
 </Project>

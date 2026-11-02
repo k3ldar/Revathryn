@@ -9,6 +9,12 @@ namespace Revathryn.Contracts.Review
         /// <summary>Text content of the context item.</summary>
         public string Content { get; set; } = string.Empty;
 
+        /// <summary>True when the content was truncated by the provider.</summary>
+        public bool Truncated { get; set; }
+
+        /// <summary>Length of the content before truncation. 0 when not truncated.</summary>
+        public int OriginalLength { get; set; }
+
         /// <summary>Optional source path the context item originated from.</summary>
         public string SourcePath { get; set; } = string.Empty;
     }

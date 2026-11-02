@@ -18,11 +18,11 @@ namespace Revathryn.Data.Tests
 
             using SqliteConnection connection = database.Factory.Open();
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('Repositories', 'RepoFiles', 'ReviewTypes', 'ReviewLinks', 'RepoFileAnalysis', 'Queue', 'Findings', 'AIEngines', 'AISettings', 'RepoProjects', 'RepositoryScans', 'ReviewUsage', 'ReviewContexts');";
+            'ReviewUsage', 'ReviewContexts', 'ReviewEngineSettings', 'IssueValidations');";
 
-            object result = command.ExecuteScalar();
+                        object result = command.ExecuteScalar();
 
-            Assert.AreEqual(13, Convert.ToInt32(result));
+                        Assert.AreEqual(15, Convert.ToInt32(result));
         }
 
         [TestMethod]

@@ -409,6 +409,7 @@ namespace Revathryn.Review
 
             response.EngineId = engine.Id;
             response.EngineName = engine.Name;
+            response.EngineProvider = engine.Provider.ToString();
             response.EngineModel = engine.Model;
         }
 

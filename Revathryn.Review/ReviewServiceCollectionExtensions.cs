@@ -27,6 +27,8 @@ namespace Revathryn.Review
             services.AddSingleton<IAnalysisEngine, CSharpAnalysisEngine>();
             services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(Consts.OpenAIRequestTimeoutSeconds) });
             services.AddSingleton<IAIReviewEngine, OpenAIReviewEngine>();
+            services.AddSingleton<IAICompletionClient, OpenAICompletionClient>();
+            services.AddSingleton<IIssueValidationEngine, AIIssueValidationEngine>();
             services.AddSingleton<IReviewContextProvider, SymbolContextProvider>();
 
             return services;

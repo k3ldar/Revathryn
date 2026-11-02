@@ -2554,6 +2554,212 @@ namespace Revathryn.Resources {
             }
         }
 
+        public static string AICompletionNetworkError { get { return ResourceManager.GetString("AICompletionNetworkError", resourceCulture); } }
+
+        public static string AICompletionTimedOut { get { return ResourceManager.GetString("AICompletionTimedOut", resourceCulture); } }
+
+        public static string AdditionalOptionsHelp { get { return ResourceManager.GetString("AdditionalOptionsHelp", resourceCulture); } }
+
+        public static string AdditionalOptionsLabel { get { return ResourceManager.GetString("AdditionalOptionsLabel", resourceCulture); } }
+
+        public static string AIReviewedBadge { get { return ResourceManager.GetString("AIReviewedBadge", resourceCulture); } }
+
+        public static string ConfigureReviewEngineLink { get { return ResourceManager.GetString("ConfigureReviewEngineLink", resourceCulture); } }
+
+        public static string DetectionEnginesNotice { get { return ResourceManager.GetString("DetectionEnginesNotice", resourceCulture); } }
+
+        public static string FullReasoningLabel { get { return ResourceManager.GetString("FullReasoningLabel", resourceCulture); } }
+
+        public static string HistoricalValidationNotice { get { return ResourceManager.GetString("HistoricalValidationNotice", resourceCulture); } }
+
+        public static string IndependentAssessmentLabel { get { return ResourceManager.GetString("IndependentAssessmentLabel", resourceCulture); } }
+
+        public static string IndependentValidationTitle { get { return ResourceManager.GetString("IndependentValidationTitle", resourceCulture); } }
+
+        public static string IssueActionsTitle { get { return ResourceManager.GetString("IssueActionsTitle", resourceCulture); } }
+
+        public static string IssueValidationWorkerCycleFailed { get { return ResourceManager.GetString("IssueValidationWorkerCycleFailed", resourceCulture); } }
+
+        public static string LatestValidationBadge { get { return ResourceManager.GetString("LatestValidationBadge", resourceCulture); } }
+
+        public static string NotSetOption { get { return ResourceManager.GetString("NotSetOption", resourceCulture); } }
+
+        public static string NoValidationEvidenceMessage { get { return ResourceManager.GetString("NoValidationEvidenceMessage", resourceCulture); } }
+
+        public static string NoValidationsYetMessage { get { return ResourceManager.GetString("NoValidationsYetMessage", resourceCulture); } }
+
+        public static string OriginalFindingLabel { get { return ResourceManager.GetString("OriginalFindingLabel", resourceCulture); } }
+
+        public static string OriginalSeverityLabel { get { return ResourceManager.GetString("OriginalSeverityLabel", resourceCulture); } }
+
+        public static string ReasoningEffortHelp { get { return ResourceManager.GetString("ReasoningEffortHelp", resourceCulture); } }
+
+        public static string ReasoningEffortLabel { get { return ResourceManager.GetString("ReasoningEffortLabel", resourceCulture); } }
+
+        public static string RecommendedSeverityLabel { get { return ResourceManager.GetString("RecommendedSeverityLabel", resourceCulture); } }
+
+        public static string ReReviewWithAIButton { get { return ResourceManager.GetString("ReReviewWithAIButton", resourceCulture); } }
+
+        public static string ReReviewWithAIDescription { get { return ResourceManager.GetString("ReReviewWithAIDescription", resourceCulture); } }
+
+        public static string RetryValidationButton { get { return ResourceManager.GetString("RetryValidationButton", resourceCulture); } }
+
+        public static string ReviewEngineAdditionalOptionsInvalid { get { return ResourceManager.GetString("ReviewEngineAdditionalOptionsInvalid", resourceCulture); } }
+
+        public static string ReviewEngineAdditionalOptionsReservedKey { get { return ResourceManager.GetString("ReviewEngineAdditionalOptionsReservedKey", resourceCulture); } }
+
+        public static string ReviewEngineBadge { get { return ResourceManager.GetString("ReviewEngineBadge", resourceCulture); } }
+
+        public static string ReviewEngineConfigurationInvalid { get { return ResourceManager.GetString("ReviewEngineConfigurationInvalid", resourceCulture); } }
+
+        public static string ReviewEngineConnectionFailed { get { return ResourceManager.GetString("ReviewEngineConnectionFailed", resourceCulture); } }
+
+        public static string ReviewEngineConnectionSucceeded { get { return ResourceManager.GetString("ReviewEngineConnectionSucceeded", resourceCulture); } }
+
+        public static string ReviewEngineDisabled { get { return ResourceManager.GetString("ReviewEngineDisabled", resourceCulture); } }
+
+        public static string ReviewEngineEndpointInvalid { get { return ResourceManager.GetString("ReviewEngineEndpointInvalid", resourceCulture); } }
+
+        public static string ReviewEngineMaxTokensInvalid { get { return ResourceManager.GetString("ReviewEngineMaxTokensInvalid", resourceCulture); } }
+
+        public static string ReviewEngineModelHelp { get { return ResourceManager.GetString("ReviewEngineModelHelp", resourceCulture); } }
+
+        public static string ReviewEngineModelRequired { get { return ResourceManager.GetString("ReviewEngineModelRequired", resourceCulture); } }
+
+        public static string ReviewEngineNotConfigured { get { return ResourceManager.GetString("ReviewEngineNotConfigured", resourceCulture); } }
+
+        public static string ReviewEngineProviderInvalid { get { return ResourceManager.GetString("ReviewEngineProviderInvalid", resourceCulture); } }
+
+        public static string ReviewEngineReasoningEffortInvalid { get { return ResourceManager.GetString("ReviewEngineReasoningEffortInvalid", resourceCulture); } }
+
+        public static string ReviewEngineSaved { get { return ResourceManager.GetString("ReviewEngineSaved", resourceCulture); } }
+
+        public static string ReviewEngineSecretHelp { get { return ResourceManager.GetString("ReviewEngineSecretHelp", resourceCulture); } }
+
+        public static string ReviewEngineSecretKeyNameRequired { get { return ResourceManager.GetString("ReviewEngineSecretKeyNameRequired", resourceCulture); } }
+
+        public static string ReviewEngineSecretMissing { get { return ResourceManager.GetString("ReviewEngineSecretMissing", resourceCulture); } }
+
+        public static string ReviewEngineSeparationNotice { get { return ResourceManager.GetString("ReviewEngineSeparationNotice", resourceCulture); } }
+
+        public static string ReviewEngineTemperatureInvalid { get { return ResourceManager.GetString("ReviewEngineTemperatureInvalid", resourceCulture); } }
+
+        public static string ReviewEngineTitle { get { return ResourceManager.GetString("ReviewEngineTitle", resourceCulture); } }
+
+        public static string ReviewEngineUnavailableAtExecution { get { return ResourceManager.GetString("ReviewEngineUnavailableAtExecution", resourceCulture); } }
+
+        public static string SeverityComparisonLabel { get { return ResourceManager.GetString("SeverityComparisonLabel", resourceCulture); } }
+
+        public static string TemperatureHelp { get { return ResourceManager.GetString("TemperatureHelp", resourceCulture); } }
+
+        public static string TemperatureLabel { get { return ResourceManager.GetString("TemperatureLabel", resourceCulture); } }
+
+        public static string TestConnectionButton { get { return ResourceManager.GetString("TestConnectionButton", resourceCulture); } }
+
+        public static string ValidationAdvisoryNote { get { return ResourceManager.GetString("ValidationAdvisoryNote", resourceCulture); } }
+
+        public static string ValidationAlreadyInProgress { get { return ResourceManager.GetString("ValidationAlreadyInProgress", resourceCulture); } }
+
+        public static string ValidationAttemptsLabel { get { return ResourceManager.GetString("ValidationAttemptsLabel", resourceCulture); } }
+
+        public static string ValidationCompletedLog { get { return ResourceManager.GetString("ValidationCompletedLog", resourceCulture); } }
+
+        public static string ValidationConfidenceFormat { get { return ResourceManager.GetString("ValidationConfidenceFormat", resourceCulture); } }
+
+        public static string ValidationContextModeCurrentSource { get { return ResourceManager.GetString("ValidationContextModeCurrentSource", resourceCulture); } }
+
+        public static string ValidationContextModeOriginalSnapshot { get { return ResourceManager.GetString("ValidationContextModeOriginalSnapshot", resourceCulture); } }
+
+        public static string ValidationContextModeUnavailable { get { return ResourceManager.GetString("ValidationContextModeUnavailable", resourceCulture); } }
+
+        public static string ValidationContextNoteDetectionMetadataMissing { get { return ResourceManager.GetString("ValidationContextNoteDetectionMetadataMissing", resourceCulture); } }
+
+        public static string ValidationContextNoteFileRemoved { get { return ResourceManager.GetString("ValidationContextNoteFileRemoved", resourceCulture); } }
+
+        public static string ValidationContextNoteLegacy { get { return ResourceManager.GetString("ValidationContextNoteLegacy", resourceCulture); } }
+
+        public static string ValidationContextNoteNoLineReferences { get { return ResourceManager.GetString("ValidationContextNoteNoLineReferences", resourceCulture); } }
+
+        public static string ValidationContextNoteSourceChanged { get { return ResourceManager.GetString("ValidationContextNoteSourceChanged", resourceCulture); } }
+
+        public static string ValidationContextNoteTruncated { get { return ResourceManager.GetString("ValidationContextNoteTruncated", resourceCulture); } }
+
+        public static string ValidationContextNoteUnavailable { get { return ResourceManager.GetString("ValidationContextNoteUnavailable", resourceCulture); } }
+
+        public static string ValidationCouldNotBeQueued { get { return ResourceManager.GetString("ValidationCouldNotBeQueued", resourceCulture); } }
+
+        public static string ValidationEvidenceDiscarded { get { return ResourceManager.GetString("ValidationEvidenceDiscarded", resourceCulture); } }
+
+        public static string ValidationEvidenceLabel { get { return ResourceManager.GetString("ValidationEvidenceLabel", resourceCulture); } }
+
+        public static string ValidationFailedLog { get { return ResourceManager.GetString("ValidationFailedLog", resourceCulture); } }
+
+        public static string ValidationFailedNote { get { return ResourceManager.GetString("ValidationFailedNote", resourceCulture); } }
+
+        public static string ValidationFailedTitle { get { return ResourceManager.GetString("ValidationFailedTitle", resourceCulture); } }
+
+        public static string ValidationHistoryTitle { get { return ResourceManager.GetString("ValidationHistoryTitle", resourceCulture); } }
+
+        public static string ValidationInProgressMessage { get { return ResourceManager.GetString("ValidationInProgressMessage", resourceCulture); } }
+
+        public static string ValidationIssueNotFound { get { return ResourceManager.GetString("ValidationIssueNotFound", resourceCulture); } }
+
+        public static string ValidationLimitationsLabel { get { return ResourceManager.GetString("ValidationLimitationsLabel", resourceCulture); } }
+
+        public static string ValidationLineRangeFormat { get { return ResourceManager.GetString("ValidationLineRangeFormat", resourceCulture); } }
+
+        public static string ValidationNotCodeIssue { get { return ResourceManager.GetString("ValidationNotCodeIssue", resourceCulture); } }
+
+        public static string ValidationNotRetryable { get { return ResourceManager.GetString("ValidationNotRetryable", resourceCulture); } }
+
+        public static string ValidationQueued { get { return ResourceManager.GetString("ValidationQueued", resourceCulture); } }
+
+        public static string ValidationQueuedLog { get { return ResourceManager.GetString("ValidationQueuedLog", resourceCulture); } }
+
+        public static string ValidationRepositoryNotFound { get { return ResourceManager.GetString("ValidationRepositoryNotFound", resourceCulture); } }
+
+        public static string ValidationRequestFailedMessage { get { return ResourceManager.GetString("ValidationRequestFailedMessage", resourceCulture); } }
+
+        public static string ValidationResponseEmpty { get { return ResourceManager.GetString("ValidationResponseEmpty", resourceCulture); } }
+
+        public static string ValidationResponseInvalidJson { get { return ResourceManager.GetString("ValidationResponseInvalidJson", resourceCulture); } }
+
+        public static string ValidationResponseMissingExplanation { get { return ResourceManager.GetString("ValidationResponseMissingExplanation", resourceCulture); } }
+
+        public static string ValidationResponseNotObject { get { return ResourceManager.GetString("ValidationResponseNotObject", resourceCulture); } }
+
+        public static string ValidationResponseVerdictInvalid { get { return ResourceManager.GetString("ValidationResponseVerdictInvalid", resourceCulture); } }
+
+        public static string ValidationRetryLimitExceeded { get { return ResourceManager.GetString("ValidationRetryLimitExceeded", resourceCulture); } }
+
+        public static string ValidationSourceChangedWarning { get { return ResourceManager.GetString("ValidationSourceChangedWarning", resourceCulture); } }
+
+        public static string ValidationStartedMessage { get { return ResourceManager.GetString("ValidationStartedMessage", resourceCulture); } }
+
+        public static string ValidationStatusFailed { get { return ResourceManager.GetString("ValidationStatusFailed", resourceCulture); } }
+
+        public static string ValidationStatusPending { get { return ResourceManager.GetString("ValidationStatusPending", resourceCulture); } }
+
+        public static string ValidationStatusRunning { get { return ResourceManager.GetString("ValidationStatusRunning", resourceCulture); } }
+
+        public static string ValidationSuggestionsLabel { get { return ResourceManager.GetString("ValidationSuggestionsLabel", resourceCulture); } }
+
+        public static string ValidationVerdictAgreed { get { return ResourceManager.GetString("ValidationVerdictAgreed", resourceCulture); } }
+
+        public static string ValidationVerdictAgreedDescription { get { return ResourceManager.GetString("ValidationVerdictAgreedDescription", resourceCulture); } }
+
+        public static string ValidationVerdictDisagreed { get { return ResourceManager.GetString("ValidationVerdictDisagreed", resourceCulture); } }
+
+        public static string ValidationVerdictDisagreedDescription { get { return ResourceManager.GetString("ValidationVerdictDisagreedDescription", resourceCulture); } }
+
+        public static string ValidationVerdictInconclusive { get { return ResourceManager.GetString("ValidationVerdictInconclusive", resourceCulture); } }
+
+        public static string ValidationVerdictInconclusiveDescription { get { return ResourceManager.GetString("ValidationVerdictInconclusiveDescription", resourceCulture); } }
+
+        public static string ValidationVerdictPartiallyAgreed { get { return ResourceManager.GetString("ValidationVerdictPartiallyAgreed", resourceCulture); } }
+
+        public static string ValidationVerdictPartiallyAgreedDescription { get { return ResourceManager.GetString("ValidationVerdictPartiallyAgreedDescription", resourceCulture); } }
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>

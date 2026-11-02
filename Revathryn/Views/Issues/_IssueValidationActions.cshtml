@@ -1,0 +1,44 @@
+@using Revathryn.Resources
+@model Revathryn.Models.IssueValidations.IssueValidationPanelViewModel
+@{
+    bool isActive = Model.Active is not null;
+    string startUrl = Url.Content($"~/api/issues/{Model.FindingId}/validations");
+    string reviewEngineUrl = Url.Action("ReviewEngine", "Administration");
+}
+
+<div class="card mb-4" id="issueValidationActions"
+     data-start-url="@startUrl"
+     data-poll-interval="@Revathryn.Contracts.Consts.IssueValidationStatusPollMilliseconds"
+     data-active-id="@(Model.Active?.Id)"
+     data-started-message="@Strings.ValidationStartedMessage"
+     data-request-failed-message="@Strings.ValidationRequestFailedMessage">
+    <div class="card-header">@Strings.IssueActionsTitle</div>
+    <div class="card-body">
+        @Html.AntiForgeryToken()
+
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <button type="button"
+                    class="btn btn-primary"
+                    id="reReviewButton"
+                    disabled="@(!Model.CanStart || isActive)">
+                <span class="spinner-border spinner-border-sm me-1 @(isActive ? string.Empty : "d-none")" id="reReviewSpinner" role="status" aria-hidden="true"></span>
+                @Strings.ReReviewWithAIButton
+            </button>
+            <span class="text-muted">@Strings.ReReviewWithAIDescription</span>
+        </div>
+
+        <div id="validationFeedback" class="mt-3" role="status" aria-live="polite">
+            @if (isActive)
+            {
+                <div class="alert alert-info mb-0">@Strings.ValidationInProgressMessage</div>
+            }
+            else if (!Model.CanStart)
+            {
+                <div class="alert alert-warning mb-0">
+                    @Model.UnavailableReason
+                    <a href="@reviewEngineUrl" class="alert-link">@Strings.ConfigureReviewEngineLink</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

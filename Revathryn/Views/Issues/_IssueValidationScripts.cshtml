@@ -1,0 +1,104 @@
+<script>
+    (function () {
+        var actions = document.getElementById('issueValidationActions');
+        if (!actions) {
+            return;
+        }
+
+        var startUrl = actions.getAttribute('data-start-url');
+        var interval = parseInt(actions.getAttribute('data-poll-interval'), 10);
+        var activeId = actions.getAttribute('data-active-id');
+        var startedMessage = actions.getAttribute('data-started-message');
+        var failedMessage = actions.getAttribute('data-request-failed-message');
+        var tokenInput = actions.querySelector('input[name="__RequestVerificationToken"]');
+        var button = document.getElementById('reReviewButton');
+        var spinner = document.getElementById('reReviewSpinner');
+        var feedback = document.getElementById('validationFeedback');
+        var submitting = false;
+
+        function showFeedback(kind, message) {
+            feedback.innerHTML = '';
+            var alert = document.createElement('div');
+            alert.className = 'alert alert-' + kind + ' mb-0';
+            alert.textContent = message;
+            feedback.appendChild(alert);
+        }
+
+        function setBusy(busy) {
+            if (button) {
+                button.disabled = busy;
+            }
+            if (spinner) {
+                spinner.classList.toggle('d-none', !busy);
+            }
+        }
+
+        function poll(validationId) {
+            window.setTimeout(function () {
+                fetch(startUrl + '/' + validationId, { headers: { 'Accept': 'application/json' } })
+                    .then(function (response) { return response.ok ? response.json() : Promise.reject(); })
+                    .then(function (validation) {
+                        if (validation.status === 'Completed' || validation.status === 'Failed') {
+                            window.location.hash = 'issueValidationResults';
+                            window.location.reload();
+                        } else {
+                            poll(validationId);
+                        }
+                    })
+                    .catch(function () { poll(validationId); });
+            }, interval);
+        }
+
+        function post(url) {
+            if (submitting) {
+                return;
+            }
+
+            submitting = true;
+            setBusy(true);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'RequestVerificationToken': tokenInput ? tokenInput.value : ''
+                }
+            })
+                .then(function (response) {
+                    return response.json().catch(function () { return {}; }).then(function (body) {
+                        return { ok: response.ok, body: body };
+                    });
+                })
+                .then(function (result) {
+                    if (!result.ok) {
+                        submitting = false;
+                        setBusy(false);
+                        showFeedback('danger', result.body.message || failedMessage);
+                        return;
+                    }
+
+                    showFeedback('info', startedMessage);
+                    poll(result.body.id);
+                })
+                .catch(function () {
+                    submitting = false;
+                    setBusy(false);
+                    showFeedback('danger', failedMessage);
+                });
+        }
+
+        if (button) {
+            button.addEventListener('click', function () { post(startUrl); });
+        }
+
+        var retry = document.getElementById('retryValidationButton');
+        if (retry) {
+            retry.addEventListener('click', function () { post(retry.getAttribute('data-retry-url')); });
+        }
+
+        if (activeId) {
+            submitting = true;
+            poll(activeId);
+        }
+    })();
+</script>

@@ -91,6 +91,12 @@ namespace Revathryn.Engine
             return entry;
         }
 
+        public IReadOnlyList<IManifestEntry> GetEntries(string repositoryName)
+        {
+            Manifest manifest = GetManifest(repositoryName);
+            return [.. manifest.Entries.Values];
+        }
+
         private Manifest GetManifest(string repositoryName)
         {
             if (_manifests.TryGetValue(repositoryName, out Manifest manifest))

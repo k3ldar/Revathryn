@@ -43,6 +43,11 @@ namespace Revathryn.Engine
             services.AddSingleton<IIssueQueryService, IssueQueryService>();
             services.AddSingleton<IDashboardQueryService, DashboardQueryService>();
 
+            services.AddSingleton<IReviewEngineConfigurationService, ReviewEngineConfigurationService>();
+            services.AddSingleton<IIssueValidationContextBuilder, IssueValidationContextBuilder>();
+            services.AddSingleton<IIssueValidationService, IssueValidationService>();
+            services.AddSingleton<IIssueValidationProcessor, IssueValidationProcessor>();
+
             return services;
         }
     }

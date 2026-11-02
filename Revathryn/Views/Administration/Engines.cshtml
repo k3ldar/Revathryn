@@ -9,6 +9,11 @@
     <a asp-action="CreateEngine" class="btn btn-primary">@Strings.AddEngineButton</a>
 </div>
 
+<div class="alert alert-secondary">
+    @Strings.DetectionEnginesNotice
+    <a asp-action="ReviewEngine" class="alert-link">@Strings.ReviewEngineTitle</a>
+</div>
+
 @if (Model.Engines.Count == 0)
 {
     <div class="alert alert-secondary">
