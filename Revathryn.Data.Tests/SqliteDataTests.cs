@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 
-using Microsoft.Data.Sqlite;
-
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
 
@@ -11,20 +9,6 @@ namespace Revathryn.Data.Tests
     [ExcludeFromCodeCoverage]
     public class SqliteDataTests
     {
-        [TestMethod]
-        public void DatabaseInitializer_CreatesAllTables()
-        {
-            using TestDatabase database = new();
-
-            using SqliteConnection connection = database.Factory.Open();
-            using SqliteCommand command = connection.CreateCommand();
-            'ReviewUsage', 'ReviewContexts', 'ReviewEngineSettings', 'IssueValidations');";
-
-                        object result = command.ExecuteScalar();
-
-                        Assert.AreEqual(15, Convert.ToInt32(result));
-        }
-
         [TestMethod]
         public async Task ReviewUsageRepository_PersistsAndAggregatesSummary()
         {

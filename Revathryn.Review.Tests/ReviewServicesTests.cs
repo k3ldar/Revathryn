@@ -370,6 +370,87 @@ namespace Revathryn.Review.Tests
             }
         }
 
+        [TestMethod]
+        public async Task SymbolContextProvider_FilesContextKey_ReturnsReferencingFiles()
+        {
+            // Arrange
+            string root = CreateTempDirectory();
+            try
+            {
+                string reviewedPath = Path.Combine(root, "ReviewProcessor.cs");
+                string consumerPath = Path.Combine(root, "ReviewWorkerService.cs");
+                string reviewedOutputFile = Path.Combine(root, "reviewed-symbols.json");
+                string consumerOutputFile = Path.Combine(root, "consumer-symbols.json");
+
+                List<CodeSymbol> reviewedSymbols =
+                [
+                    new CodeSymbol
+                    {
+                        Name = "ReviewProcessor",
+                        FullyQualifiedName = "Demo.ReviewProcessor",
+                        Kind = SymbolKind.Class,
+                        FilePath = reviewedPath
+                    }
+                ];
+
+                List<CodeSymbol> consumerSymbols =
+                [
+                    new CodeSymbol
+                    {
+                        Name = "ReviewWorkerService",
+                        FullyQualifiedName = "Demo.ReviewWorkerService",
+                        Kind = SymbolKind.Class,
+                        FilePath = consumerPath,
+                        Dependencies = ["ReviewProcessor"]
+                    }
+                ];
+
+                File.WriteAllText(reviewedOutputFile, JsonSerializer.Serialize(reviewedSymbols));
+                File.WriteAllText(consumerOutputFile, JsonSerializer.Serialize(consumerSymbols));
+
+                IManifestEntry reviewedEntry = new ManifestEntryStub
+                {
+                    OutputFile = reviewedOutputFile,
+                    SourcePath = reviewedPath
+                };
+
+                IManifestEntry consumerEntry = new ManifestEntryStub
+                {
+                    OutputFile = consumerOutputFile,
+                    SourcePath = consumerPath
+                };
+
+                FakeManifestManager manifestManager = new(reviewedEntry, [reviewedEntry, consumerEntry]);
+
+                SymbolContextProvider provider = new(manifestManager);
+
+                ReviewContextRequest request = new()
+                {
+                    RepositoryId = 1,
+                    RepositoryName = "Demo Repo",
+                    RepoFileId = 1,
+                    Language = "CSharp",
+                    ContextKey = Consts.ContextKeyFiles,
+                    MaxItems = 10,
+                    SourcePath = reviewedPath
+                };
+
+                // Act
+                ReviewContextResponse response = await provider.GetContextAsync(request, TestContext.CancellationToken);
+
+                // Assert
+                Assert.AreEqual(Consts.ContextKeyFiles, response.ContextKey);
+                Assert.HasCount(1, response.Items);
+                Assert.AreEqual("Demo.ReviewWorkerService", response.Items[0].Title);
+                Assert.AreEqual(consumerPath, response.Items[0].SourcePath);
+                Assert.Contains("references", response.Items[0].Content);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
         private static string CreateTempDirectory()
         {
             string path = Path.Combine(Path.GetTempPath(), "revathryn-review-tests", Guid.NewGuid().ToString("N"));
@@ -525,10 +606,17 @@ namespace Revathryn.Review.Tests
         private sealed class FakeManifestManager : IManifestManager
         {
             private readonly IManifestEntry _entry;
+            private readonly IReadOnlyList<IManifestEntry> _entries;
 
             public FakeManifestManager(IManifestEntry entry)
+                : this(entry, [entry])
+            {
+            }
+
+            public FakeManifestManager(IManifestEntry entry, IReadOnlyList<IManifestEntry> entries)
             {
                 _entry = entry;
+                _entries = entries;
             }
 
             public bool RequiresAnalysis(string repositoryName, string filePath, int currentAnalyserVersion)
@@ -543,6 +631,11 @@ namespace Revathryn.Review.Tests
             public IManifestEntry GetEntry(string repositoryName, string filePath)
             {
                 return string.Equals(filePath, _entry.SourcePath, StringComparison.OrdinalIgnoreCase) ? _entry : null;
+            }
+
+            public IReadOnlyList<IManifestEntry> GetEntries(string repositoryName)
+            {
+                return _entries;
             }
         }
 

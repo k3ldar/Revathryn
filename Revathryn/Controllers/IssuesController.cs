@@ -239,10 +239,9 @@ namespace Revathryn.Controllers
             IReadOnlyList<IssueValidation> validations = await _validationService.GetByFindingAsync(finding.Id, cancellationToken);
             long latestId = validations.Count == 0 ? 0 : validations.Max(validation => validation.Id);
 
-            List<IssueValidationDto> history = validations
+            List<IssueValidationDto> history = [.. validations
                 .OrderByDescending(validation => validation.Id)
-                .Select(validation => IssueValidationDto.FromModel(validation, validation.Id == latestId))
-                .ToList();
+                .Select(validation => IssueValidationDto.FromModel(validation, validation.Id == latestId))];
 
             IssueValidationDto active = history.FirstOrDefault(item => item.IsActive);
             IssueValidationDto selected = validationId.HasValue

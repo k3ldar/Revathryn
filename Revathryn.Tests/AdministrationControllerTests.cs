@@ -433,7 +433,7 @@ namespace Revathryn.Tests
 
             ActionContext actionContext = new(httpContext, new RouteData(), new ControllerActionDescriptor());
 
-            new(new FakeAISettingsRepository(), engineRepository, usageRepository ?? new FakeReviewUsageRepository(), reviewEngine ?? new FakeReviewEngineConfigurationService())
+            AdministrationController controller = new(new FakeAISettingsRepository(), engineRepository, usageRepository ?? new FakeReviewUsageRepository(), reviewEngine ?? new FakeReviewEngineConfigurationService())
             {
                 ControllerContext = new ControllerContext(actionContext),
                 Url = new FakeUrlHelper(actionContext),
