@@ -887,6 +887,21 @@
 			<data name="IssueDetailsTitle" xml:space="preserve">
 			  <value>Issue details</value>
 			</data>
+			<data name="ReviewActionsTitle" xml:space="preserve">
+			  <value>Review actions</value>
+			</data>
+			<data name="UpdateSeverityLabel" xml:space="preserve">
+			  <value>Update severity</value>
+			</data>
+			<data name="DeleteFindingConfirmation" xml:space="preserve">
+			  <value>Are you sure you want to delete this finding? This action cannot be undone.</value>
+			</data>
+			<data name="FindingDeletedMessage" xml:space="preserve">
+			  <value>Finding deleted.</value>
+			</data>
+			<data name="SeverityUpdatedMessage" xml:space="preserve">
+			  <value>Severity updated.</value>
+			</data>
 			<data name="IdentifierLabel" xml:space="preserve">
 			  <value>Identifier</value>
 			</data>

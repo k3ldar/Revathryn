@@ -2474,6 +2474,51 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Review actions.
+        /// </summary>
+        public static string ReviewActionsTitle {
+            get {
+                return ResourceManager.GetString("ReviewActionsTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Update severity.
+        /// </summary>
+        public static string UpdateSeverityLabel {
+            get {
+                return ResourceManager.GetString("UpdateSeverityLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to delete this finding? This action cannot be undone..
+        /// </summary>
+        public static string DeleteFindingConfirmation {
+            get {
+                return ResourceManager.GetString("DeleteFindingConfirmation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Finding deleted..
+        /// </summary>
+        public static string FindingDeletedMessage {
+            get {
+                return ResourceManager.GetString("FindingDeletedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Severity updated..
+        /// </summary>
+        public static string SeverityUpdatedMessage {
+            get {
+                return ResourceManager.GetString("SeverityUpdatedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Identifier.
         /// </summary>
         public static string IdentifierLabel {

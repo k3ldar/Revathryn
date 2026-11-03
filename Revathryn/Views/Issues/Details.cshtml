@@ -35,6 +35,35 @@
 
 <h1 class="mb-3">@displayTitle</h1>
 
+<div class="card mb-4">
+    <div class="card-header">@Strings.ReviewActionsTitle</div>
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-auto">
+                <form method="post" asp-action="UpdateSeverity" asp-all-route-data="@PostStateRoute()" class="d-flex flex-wrap gap-2 align-items-end">
+                    <input type="hidden" name="id" value="@Model.Finding.Id" />
+                    <div>
+                        <label for="newSeverity" class="form-label">@Strings.UpdateSeverityLabel</label>
+                        <select id="newSeverity" name="newSeverity" class="form-select">
+                            @foreach (FindingSeverity option in SeverityOptions())
+                            {
+                                <option value="@((int)option)" selected="@(Model.Finding.Severity == option)">@SeverityLabel(option)</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">@Strings.SaveButton</button>
+                </form>
+            </div>
+            <div class="col-12 col-md-auto">
+                <form method="post" asp-action="Delete" asp-all-route-data="@PostStateRoute()" onsubmit="return confirm('@Strings.DeleteFindingConfirmation');">
+                    <input type="hidden" name="id" value="@Model.Finding.Id" />
+                    <button type="submit" class="btn btn-outline-danger">@Strings.DeleteButton</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @if (Model.Validation is not null)
 {
     <partial name="_IssueValidationActions" model="Model.Validation" />
@@ -271,6 +300,43 @@
         values["id"] = findingId.ToString();
         values["repositoryId"] = Model.ListState.RepositoryId.ToString();
         return values;
+    }
+
+    private Dictionary<string, string> PostStateRoute()
+    {
+        Dictionary<string, string> values = new()
+        {
+            ["repositoryId"] = Model.ListState.RepositoryId.ToString(),
+            ["page"] = Model.ListState.Page.ToString(),
+            ["pageSize"] = Model.ListState.PageSize.ToString(),
+            ["search"] = Model.ListState.Search ?? string.Empty,
+            ["sort"] = ((int)Model.ListState.SortField).ToString(),
+            ["descending"] = Model.ListState.SortDescending ? "true" : "false"
+        };
+
+        if (Model.ListState.Severity.HasValue)
+        {
+            values["severity"] = ((int)Model.ListState.Severity.Value).ToString();
+        }
+
+        if (Model.ListState.ReviewTypeId.HasValue)
+        {
+            values["reviewTypeId"] = Model.ListState.ReviewTypeId.Value.ToString();
+        }
+
+        return values;
+    }
+
+    private static FindingSeverity[] SeverityOptions()
+    {
+        return
+        [
+            FindingSeverity.Critical,
+            FindingSeverity.High,
+            FindingSeverity.Medium,
+            FindingSeverity.Low,
+            FindingSeverity.Info
+        ];
     }
 
     private static string SeverityLabel(FindingSeverity severity)

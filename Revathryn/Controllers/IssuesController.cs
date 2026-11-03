@@ -234,6 +234,73 @@ namespace Revathryn.Controllers
             return View(model);
         }
 
+        /// <summary>Updates the severity of a finding and returns to its details.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSeverity(
+            long id,
+            FindingSeverity newSeverity,
+            long? repositoryId,
+            int? page,
+            int? pageSize,
+            FindingSeverity? severity,
+            long? reviewTypeId,
+            string search,
+            FindingSortField? sort,
+            bool? descending,
+            CancellationToken cancellationToken)
+        {
+            Finding finding = await _findingRepository.GetByIdAsync(id, cancellationToken);
+
+            if (finding is null)
+            {
+                return NotFound();
+            }
+
+            finding.Severity = newSeverity;
+            finding.LastModifiedDate = DateTime.UtcNow;
+            await _findingRepository.UpdateAsync(finding, cancellationToken);
+
+            TempData[Consts.SuccessMessageTempDataKey] = Strings.SeverityUpdatedMessage;
+
+            long browseRepositoryId = repositoryId ?? finding.RepositoryId;
+            return RedirectToAction(
+                nameof(Details),
+                BuildDetailsRedirectValues(id, browseRepositoryId, page, pageSize, severity, reviewTypeId, search, sort, descending));
+        }
+
+        /// <summary>Deletes a finding and returns to the issue listing.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(
+            long id,
+            long? repositoryId,
+            int? page,
+            int? pageSize,
+            FindingSeverity? severity,
+            long? reviewTypeId,
+            string search,
+            FindingSortField? sort,
+            bool? descending,
+            CancellationToken cancellationToken)
+        {
+            Finding finding = await _findingRepository.GetByIdAsync(id, cancellationToken);
+
+            if (finding is null)
+            {
+                return NotFound();
+            }
+
+            long browseRepositoryId = repositoryId ?? finding.RepositoryId;
+            await _findingRepository.DeleteAsync(id, cancellationToken);
+
+            TempData[Consts.SuccessMessageTempDataKey] = Strings.FindingDeletedMessage;
+
+            return RedirectToAction(
+                nameof(List),
+                BuildListRedirectValues(browseRepositoryId, page, pageSize, severity, reviewTypeId, search, sort, descending));
+        }
+
         private async Task<IssueValidationPanelViewModel> BuildValidationPanelAsync(Finding finding, long? validationId, CancellationToken cancellationToken)
         {
             IReadOnlyList<IssueValidation> validations = await _validationService.GetByFindingAsync(finding.Id, cancellationToken);
@@ -355,6 +422,54 @@ namespace Revathryn.Controllers
                 search = query.SearchText,
                 sort = (int)query.SortField,
                 descending = query.SortDescending
+            };
+        }
+
+        private object BuildListRedirectValues(
+            long repositoryId,
+            int? page,
+            int? pageSize,
+            FindingSeverity? severity,
+            long? reviewTypeId,
+            string search,
+            FindingSortField? sort,
+            bool? descending)
+        {
+            return new
+            {
+                id = repositoryId,
+                page = Math.Max(page ?? 1, 1),
+                pageSize = ResolvePageSize(pageSize),
+                severity = severity.HasValue ? (int)severity.Value : (int?)null,
+                reviewTypeId = reviewTypeId,
+                search = search ?? string.Empty,
+                sort = (int)(sort ?? FindingSortField.Severity),
+                descending = descending ?? true
+            };
+        }
+
+        private object BuildDetailsRedirectValues(
+            long findingId,
+            long repositoryId,
+            int? page,
+            int? pageSize,
+            FindingSeverity? severity,
+            long? reviewTypeId,
+            string search,
+            FindingSortField? sort,
+            bool? descending)
+        {
+            return new
+            {
+                id = findingId,
+                repositoryId = repositoryId,
+                page = Math.Max(page ?? 1, 1),
+                pageSize = ResolvePageSize(pageSize),
+                severity = severity.HasValue ? (int)severity.Value : (int?)null,
+                reviewTypeId = reviewTypeId,
+                search = search ?? string.Empty,
+                sort = (int)(sort ?? FindingSortField.Severity),
+                descending = descending ?? true
             };
         }
     }

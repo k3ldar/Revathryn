@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Options;
 
 using Revathryn.Contracts;
@@ -305,6 +307,73 @@ namespace Revathryn.Tests
             Assert.IsFalse(findings.LastQuery.SortDescending);
         }
 
+        [TestMethod]
+        public async Task UpdateSeverity_ReturnsNotFoundWhenFindingMissing()
+        {
+            IssuesController controller = CreateController();
+
+            IActionResult result = await controller.UpdateSeverity(99, FindingSeverity.Critical, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task UpdateSeverity_UpdatesFindingAndRedirectsToDetails()
+        {
+            Finding finding = new() { Id = 42, RepositoryId = 1, Severity = FindingSeverity.Low };
+
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            IssuesController controller = CreateController(findings: findings);
+
+            IActionResult result = await controller.UpdateSeverity(42, FindingSeverity.High, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(IssuesController.Details), redirect.ActionName);
+            Assert.AreEqual(42L, redirect.RouteValues["id"]);
+            Assert.AreEqual(1L, redirect.RouteValues["repositoryId"]);
+
+            Assert.IsNotNull(findings.Updated);
+            Assert.AreEqual(FindingSeverity.High, findings.Updated.Severity);
+            Assert.AreNotEqual(default, findings.Updated.LastModifiedDate);
+
+            Assert.AreEqual(Revathryn.Resources.Strings.SeverityUpdatedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public async Task Delete_ReturnsNotFoundWhenFindingMissing()
+        {
+            IssuesController controller = CreateController();
+
+            IActionResult result = await controller.Delete(99, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task Delete_RemovesFindingAndRedirectsToList()
+        {
+            Finding finding = new() { Id = 42, RepositoryId = 1 };
+
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            IssuesController controller = CreateController(findings: findings);
+
+            IActionResult result = await controller.Delete(42, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(IssuesController.List), redirect.ActionName);
+            Assert.AreEqual(1L, redirect.RouteValues["id"]);
+
+            Assert.AreEqual(42L, findings.DeletedId);
+
+            Assert.AreEqual(Revathryn.Resources.Strings.FindingDeletedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
         private static IssuesController CreateController(
             FakeRepositoryService repositories = null,
             FakeRepositoryFileService files = null,
@@ -322,7 +391,7 @@ namespace Revathryn.Tests
             FakeIssueValidationService validationService = validations ?? new();
             FakeReviewEngineConfigurationService reviewEngineConfiguration = reviewEngine ?? new();
 
-            ControllerContext context = ControllerTestSupport.CreateControllerContext(out _);
+            ControllerContext context = ControllerTestSupport.CreateControllerContext(out DefaultHttpContext httpContext);
 
             IssueViewingOptions options = new()
             {
@@ -341,7 +410,8 @@ namespace Revathryn.Tests
                 Options.Create(options))
             {
                 ControllerContext = context,
-                Url = new FakeUrlHelper(context)
+                Url = new FakeUrlHelper(context),
+                TempData = new TempDataDictionary(httpContext, new FakeTempDataProvider())
             };
         }
 
@@ -418,6 +488,10 @@ namespace Revathryn.Tests
 
             public FindingNavigation Navigation { get; set; } = new();
 
+            public Finding Updated { get; private set; }
+
+            public long? DeletedId { get; private set; }
+
             public Task<Finding> GetByIdAsync(long id, CancellationToken cancellationToken = default)
             {
                 Finding match = Findings.FirstOrDefault(finding => finding.Id == id);
@@ -475,12 +549,15 @@ namespace Revathryn.Tests
 
             public Task UpdateAsync(Finding finding, CancellationToken cancellationToken = default)
             {
-                throw new NotSupportedException();
+                Updated = finding;
+                return Task.CompletedTask;
             }
 
             public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
             {
-                throw new NotSupportedException();
+                DeletedId = id;
+                Findings.RemoveAll(finding => finding.Id == id);
+                return Task.CompletedTask;
             }
         }
 
