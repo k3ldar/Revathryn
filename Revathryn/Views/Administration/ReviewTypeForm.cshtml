@@ -1,0 +1,71 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Revathryn.Contracts.Models
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.ReviewTypeEditViewModel
+@{
+    string formAction = Model.Id == 0 ? "CreateReviewType" : "EditReviewType";
+    string title = Model.Id == 0 ? Strings.AddReviewTypeTitle : Strings.EditReviewTypeTitle;
+    ViewData["Title"] = title;
+}
+
+<h1>@title</h1>
+
+<form asp-action="@formAction" method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="RepositoryId" class="form-label">@Strings.RepositoryLabel</label>
+        <select asp-for="RepositoryId" asp-items="@(new SelectList(Model.Repositories, nameof(Repository.Id), nameof(Repository.Name)))" class="form-select">
+            <option value="">@Strings.SelectRepositoryPrompt</option>
+        </select>
+        <span asp-validation-for="RepositoryId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label">@Strings.NameLabel</label>
+        <input asp-for="Name" class="form-control" required />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label">@Strings.DescriptionLabel</label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="FileExtensions" class="form-label">@Strings.FileExtensionsLabel</label>
+        <input asp-for="FileExtensions" class="form-control" />
+        <div class="form-text">@Strings.FileExtensionsHelpText</div>
+        <span asp-validation-for="FileExtensions" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prompt" class="form-label">@Strings.PromptLabel</label>
+        <textarea asp-for="Prompt" class="form-control" rows="6"></textarea>
+        <span asp-validation-for="Prompt" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="DefaultPriority" class="form-label">@Strings.PriorityLabel</label>
+        <input asp-for="DefaultPriority" class="form-control" type="number" />
+        <span asp-validation-for="DefaultPriority" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="Enabled" class="form-check-input" />
+        <label asp-for="Enabled" class="form-check-label">@Strings.EnabledLabel</label>
+    </div>
+
+    <input asp-for="Id" type="hidden" />
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">@Strings.SaveButton</button>
+        <a asp-action="ReviewTypes" class="btn btn-outline-secondary">@Strings.CancelButton</a>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

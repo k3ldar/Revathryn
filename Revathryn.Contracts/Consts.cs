@@ -145,6 +145,8 @@
         public const string AnalysisVersion = "1";
         public const int DefaultCSharpReviewPriority = 100;
         public const int DefaultGeneralReviewPriority = 50;
+        public const int DefaultReviewTypePriority = 1;
+        public const int MinimumRepositoryId = 1;
         public const int DefaultMaxContextRequests = 3;
         public const int MaxContextItemsPerRequest = 10;
         public const int MaxContextItemContentLength = 4000;
@@ -247,6 +249,7 @@
         public const string DashboardContentViewName = "_DashboardContent";
         public const int DashboardRefreshIntervalMilliseconds = 1000;
         public const string EngineFormViewName = "EngineForm";
+        public const string ReviewTypeFormViewName = "ReviewTypeForm";
         public const string DashboardErrorRoute = "/Dashboard/Error";
         public const string DefaultRouteName = "default";
         public const string DefaultRoutePattern = "{controller=Dashboard}/{action=Index}/{id?}";

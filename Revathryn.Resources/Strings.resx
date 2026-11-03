@@ -695,6 +695,39 @@
 			<data name="EngineDeleteConfirmation" xml:space="preserve">
 			  <value>Are you sure you want to delete AI engine '{0}'?</value>
 			</data>
+			<data name="AddReviewTypeButton" xml:space="preserve">
+			  <value>Add review type</value>
+			</data>
+			<data name="AddReviewTypeTitle" xml:space="preserve">
+			  <value>Add review type</value>
+			</data>
+			<data name="EditReviewTypeTitle" xml:space="preserve">
+			  <value>Edit review type</value>
+			</data>
+			<data name="ReviewTypeSavedMessage" xml:space="preserve">
+			  <value>Review type saved successfully.</value>
+			</data>
+			<data name="ReviewTypeDeletedMessage" xml:space="preserve">
+			  <value>Review type deleted.</value>
+			</data>
+			<data name="ReviewTypeDeleteConfirmation" xml:space="preserve">
+			  <value>Are you sure you want to delete review type '{0}'?</value>
+			</data>
+			<data name="PromptLabel" xml:space="preserve">
+			  <value>Prompt</value>
+			</data>
+			<data name="RepositoryRequiredMessage" xml:space="preserve">
+			  <value>A repository is required.</value>
+			</data>
+			<data name="AllRepositoriesLabel" xml:space="preserve">
+			  <value>All repositories</value>
+			</data>
+			<data name="SelectRepositoryPrompt" xml:space="preserve">
+			  <value>Select a repository</value>
+			</data>
+			<data name="FileExtensionsHelpText" xml:space="preserve">
+			  <value>Comma-separated file extensions this review applies to. Leave empty to apply to all files.</value>
+			</data>
 			<data name="SystemHealthHeading" xml:space="preserve">
 			  <value>System health</value>
 			</data>

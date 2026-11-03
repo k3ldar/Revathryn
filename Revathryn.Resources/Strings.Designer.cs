@@ -1824,6 +1824,105 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Add review type.
+        /// </summary>
+        public static string AddReviewTypeButton {
+            get {
+                return ResourceManager.GetString("AddReviewTypeButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Add review type.
+        /// </summary>
+        public static string AddReviewTypeTitle {
+            get {
+                return ResourceManager.GetString("AddReviewTypeTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Edit review type.
+        /// </summary>
+        public static string EditReviewTypeTitle {
+            get {
+                return ResourceManager.GetString("EditReviewTypeTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review type saved successfully..
+        /// </summary>
+        public static string ReviewTypeSavedMessage {
+            get {
+                return ResourceManager.GetString("ReviewTypeSavedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review type deleted..
+        /// </summary>
+        public static string ReviewTypeDeletedMessage {
+            get {
+                return ResourceManager.GetString("ReviewTypeDeletedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to delete review type '{0}'?.
+        /// </summary>
+        public static string ReviewTypeDeleteConfirmation {
+            get {
+                return ResourceManager.GetString("ReviewTypeDeleteConfirmation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Prompt.
+        /// </summary>
+        public static string PromptLabel {
+            get {
+                return ResourceManager.GetString("PromptLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A repository is required..
+        /// </summary>
+        public static string RepositoryRequiredMessage {
+            get {
+                return ResourceManager.GetString("RepositoryRequiredMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to All repositories.
+        /// </summary>
+        public static string AllRepositoriesLabel {
+            get {
+                return ResourceManager.GetString("AllRepositoriesLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Select a repository.
+        /// </summary>
+        public static string SelectRepositoryPrompt {
+            get {
+                return ResourceManager.GetString("SelectRepositoryPrompt", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Comma-separated file extensions this review applies to. Leave empty to apply to all files..
+        /// </summary>
+        public static string FileExtensionsHelpText {
+            get {
+                return ResourceManager.GetString("FileExtensionsHelpText", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to System health.
         /// </summary>
         public static string SystemHealthHeading {
