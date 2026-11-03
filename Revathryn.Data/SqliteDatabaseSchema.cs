@@ -302,6 +302,113 @@ namespace Revathryn.Data
             );
             """;
 
+        /// <summary>Creates the Prompts table holding logical prompt identities.</summary>
+        internal const string CreatePrompts = """
+            CREATE TABLE IF NOT EXISTS Prompts (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                PromptType INTEGER NOT NULL,
+                ReviewTypeId INTEGER NULL,
+                CreatedUtc TEXT NOT NULL,
+                LastModifiedUtc TEXT NOT NULL,
+                FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE CASCADE
+            );
+            """;
+
+        /// <summary>Creates the immutable PromptVersions table.</summary>
+        internal const string CreatePromptVersions = """
+            CREATE TABLE IF NOT EXISTS PromptVersions (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                PromptId INTEGER NOT NULL,
+                VersionNumber INTEGER NOT NULL,
+                PromptText TEXT NOT NULL DEFAULT '',
+                Description TEXT NOT NULL DEFAULT '',
+                Origin INTEGER NOT NULL DEFAULT 0,
+                SourceOptimisationId INTEGER NULL,
+                CreatedUtc TEXT NOT NULL,
+                CreatedBy TEXT NOT NULL DEFAULT '',
+                IsActive INTEGER NOT NULL DEFAULT 0,
+                IsDraft INTEGER NOT NULL DEFAULT 0,
+                ActivatedUtc TEXT NULL,
+                FOREIGN KEY (PromptId) REFERENCES Prompts (Id) ON DELETE CASCADE,
+                FOREIGN KEY (SourceOptimisationId) REFERENCES PromptOptimisations (Id) ON DELETE SET NULL
+            );
+            """;
+
+        /// <summary>Creates the PromptOptimisations table holding disagreement analysis and generated recommendations.</summary>
+        internal const string CreatePromptOptimisations = """
+            CREATE TABLE IF NOT EXISTS PromptOptimisations (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                IssueValidationId INTEGER NULL,
+                FindingId INTEGER NOT NULL,
+                RepositoryId INTEGER NOT NULL,
+                ReviewTypeId INTEGER NULL,
+                Status INTEGER NOT NULL DEFAULT 0,
+                RetryOfOptimisationId INTEGER NULL,
+                AttemptCount INTEGER NOT NULL DEFAULT 0,
+                CreatedUtc TEXT NOT NULL,
+                StartedUtc TEXT NULL,
+                CompletedUtc TEXT NULL,
+                NextAttemptUtc TEXT NULL,
+                LeasedUntilUtc TEXT NULL,
+                Provider INTEGER NOT NULL DEFAULT 0,
+                Model TEXT NOT NULL DEFAULT '',
+                EngineConfigSnapshotJson TEXT NOT NULL DEFAULT '',
+                OriginalSystemPrompt TEXT NOT NULL DEFAULT '',
+                OriginalReviewPrompt TEXT NOT NULL DEFAULT '',
+                OriginalSystemPromptVersionId INTEGER NULL,
+                OriginalReviewPromptVersionId INTEGER NULL,
+                AnalysisJson TEXT NOT NULL DEFAULT '',
+                SystemPromptRecommendationJson TEXT NOT NULL DEFAULT '',
+                ReviewPromptRecommendationJson TEXT NOT NULL DEFAULT '',
+                RawResponse TEXT NOT NULL DEFAULT '',
+                ErrorMessage TEXT NOT NULL DEFAULT '',
+                FailureClassification INTEGER NULL,
+                PromptTokens INTEGER NOT NULL DEFAULT 0,
+                CompletionTokens INTEGER NOT NULL DEFAULT 0,
+                TotalTokens INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (IssueValidationId) REFERENCES IssueValidations (Id) ON DELETE SET NULL,
+                FOREIGN KEY (FindingId) REFERENCES Findings (Id) ON DELETE CASCADE,
+                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
+                FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE SET NULL
+            );
+            """;
+
+        /// <summary>Creates the PromptTestRuns table holding isolated prompt test executions.</summary>
+        internal const string CreatePromptTestRuns = """
+            CREATE TABLE IF NOT EXISTS PromptTestRuns (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                PromptVersionId INTEGER NOT NULL,
+                ReviewTypeId INTEGER NULL,
+                OriginalIssueId INTEGER NULL,
+                DetectionModel TEXT NOT NULL DEFAULT '',
+                ReviewContextId INTEGER NULL,
+                ContextSnapshotJson TEXT NOT NULL DEFAULT '',
+                PromptText TEXT NOT NULL DEFAULT '',
+                OriginalOutputJson TEXT NOT NULL DEFAULT '',
+                TestOutputJson TEXT NOT NULL DEFAULT '',
+                ComparisonJson TEXT NOT NULL DEFAULT '',
+                Status INTEGER NOT NULL DEFAULT 0,
+                AttemptCount INTEGER NOT NULL DEFAULT 0,
+                CreatedUtc TEXT NOT NULL,
+                StartedUtc TEXT NULL,
+                CompletedUtc TEXT NULL,
+                NextAttemptUtc TEXT NULL,
+                LeasedUntilUtc TEXT NULL,
+                Provider INTEGER NOT NULL DEFAULT 0,
+                Model TEXT NOT NULL DEFAULT '',
+                EngineConfigSnapshotJson TEXT NOT NULL DEFAULT '',
+                ErrorMessage TEXT NOT NULL DEFAULT '',
+                FailureClassification INTEGER NULL,
+                PromptTokens INTEGER NOT NULL DEFAULT 0,
+                CompletionTokens INTEGER NOT NULL DEFAULT 0,
+                TotalTokens INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (PromptVersionId) REFERENCES PromptVersions (Id) ON DELETE CASCADE,
+                FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE SET NULL,
+                FOREIGN KEY (OriginalIssueId) REFERENCES Findings (Id) ON DELETE SET NULL,
+                FOREIGN KEY (ReviewContextId) REFERENCES ReviewContexts (Id) ON DELETE SET NULL
+            );
+            """;
+
         /// <summary>Creates the non-unique query indexes.</summary>
         internal static readonly string[] CreateIndexes =
         [
@@ -329,7 +436,19 @@ namespace Revathryn.Data
             "CREATE INDEX IF NOT EXISTS IX_IssueValidations_FindingId ON IssueValidations (FindingId, CreatedUtc DESC);",
             "CREATE INDEX IF NOT EXISTS IX_IssueValidations_Status ON IssueValidations (Status, NextAttemptUtc);",
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_IssueValidations_ActiveFinding ON IssueValidations (FindingId) WHERE Status IN (0, 1);",
-            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_ReviewTypes_Repository_Key ON ReviewTypes (RepositoryId, Key) WHERE Key <> '';"
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_ReviewTypes_Repository_Key ON ReviewTypes (RepositoryId, Key) WHERE Key <> '';",
+            "CREATE INDEX IF NOT EXISTS IX_Prompts_ReviewTypeId ON Prompts (ReviewTypeId);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_Prompts_System ON Prompts (PromptType) WHERE PromptType = 0 AND ReviewTypeId IS NULL;",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_Prompts_ReviewType ON Prompts (ReviewTypeId) WHERE PromptType = 1 AND ReviewTypeId IS NOT NULL;",
+            "CREATE INDEX IF NOT EXISTS IX_PromptVersions_PromptId ON PromptVersions (PromptId);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_PromptVersions_Prompt_Version ON PromptVersions (PromptId, VersionNumber);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_PromptVersions_Active ON PromptVersions (PromptId) WHERE IsActive = 1;",
+            "CREATE INDEX IF NOT EXISTS IX_PromptOptimisations_FindingId ON PromptOptimisations (FindingId, CreatedUtc DESC);",
+            "CREATE INDEX IF NOT EXISTS IX_PromptOptimisations_Status ON PromptOptimisations (Status, NextAttemptUtc);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_PromptOptimisations_ActiveValidation ON PromptOptimisations (IssueValidationId) WHERE Status IN (0, 1) AND IssueValidationId IS NOT NULL;",
+            "CREATE INDEX IF NOT EXISTS IX_PromptTestRuns_PromptVersionId ON PromptTestRuns (PromptVersionId, CreatedUtc DESC);",
+            "CREATE INDEX IF NOT EXISTS IX_PromptTestRuns_Status ON PromptTestRuns (Status, NextAttemptUtc);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_PromptTestRuns_ActiveVersionIssue ON PromptTestRuns (PromptVersionId, OriginalIssueId) WHERE Status IN (0, 1) AND OriginalIssueId IS NOT NULL;"
         ];
     }
 }

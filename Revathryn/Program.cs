@@ -59,6 +59,8 @@ namespace Revathryn
                 builder.Services.AddReviewServices(settings);
                 builder.Services.AddHostedService<ReviewWorkerService>();
                 builder.Services.AddHostedService<IssueValidationWorkerService>();
+                builder.Services.AddHostedService<PromptOptimisationWorkerService>();
+                builder.Services.AddHostedService<PromptTestRunWorkerService>();
 
                 //builder.Host.UseWindowsService();
                 //builder.Host.UseSystemd();
@@ -90,6 +92,10 @@ namespace Revathryn
                 {
                     await reviewTypeSeeder.SeedAsync(repository.Id);
                 }
+
+                // Seed immutable prompt versions from the now-configured master and review prompts.
+                IPromptResolutionService promptResolutionService = app.Services.GetRequiredService<IPromptResolutionService>();
+                await promptResolutionService.SeedFromConfigurationAsync();
 
                 // Configure the HTTP request pipeline.
                 if (!app.Environment.IsDevelopment())

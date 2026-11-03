@@ -27,8 +27,17 @@ namespace Revathryn.Contracts.Models
         /// <summary>The complete instructions supplied to the AI.</summary>
         public string ReviewInstructions { get; set; } = string.Empty;
 
+        /// <summary>The system prompt that formed part of the instructions. Empty for contexts captured before this was recorded.</summary>
+        public string SystemPrompt { get; set; } = string.Empty;
+
         /// <summary>The review-specific prompt that formed part of the instructions. Empty for contexts captured before this was recorded.</summary>
         public string ReviewPrompt { get; set; } = string.Empty;
+
+        /// <summary>Version identity of the system prompt used at detection time. Null when not versioned.</summary>
+        public long? SystemPromptVersionId { get; set; }
+
+        /// <summary>Version identity of the review-specific prompt used at detection time. Null when not versioned.</summary>
+        public long? ReviewPromptVersionId { get; set; }
 
         /// <summary>Version of the review definition at detection time. Empty when not recorded.</summary>
         public string ReviewDefinitionVersion { get; set; } = string.Empty;

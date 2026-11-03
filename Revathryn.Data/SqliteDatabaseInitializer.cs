@@ -49,7 +49,11 @@ namespace Revathryn.Data
                 SqliteDatabaseSchema.CreateReviewUsage,
                 SqliteDatabaseSchema.CreateReviewContexts,
                 SqliteDatabaseSchema.CreateReviewEngineSettings,
-                SqliteDatabaseSchema.CreateIssueValidations);
+                SqliteDatabaseSchema.CreateIssueValidations,
+                SqliteDatabaseSchema.CreatePrompts,
+                SqliteDatabaseSchema.CreatePromptOptimisations,
+                SqliteDatabaseSchema.CreatePromptVersions,
+                SqliteDatabaseSchema.CreatePromptTestRuns);
 
             command.ExecuteNonQuery();
 
@@ -81,11 +85,14 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Findings", "ReviewContextId", "INTEGER NULL");
             EnsureColumn(connection, "AIEngines", "MaxTokens", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxTokens);
             EnsureColumn(connection, "ReviewContexts", "ReviewPrompt", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "ReviewContexts", "SystemPrompt", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "ReviewDefinitionVersion", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "EngineName", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "EngineProvider", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "EngineModel", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "RequestedContextKeysJson", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "ReviewContexts", "SystemPromptVersionId", "INTEGER NULL");
+            EnsureColumn(connection, "ReviewContexts", "ReviewPromptVersionId", "INTEGER NULL");
         }
 
         private static void EnsureColumn(SqliteConnection connection, string table, string column, string definition)

@@ -15,7 +15,7 @@
             <label for="repositoryFilter" class="form-label mb-0">@Strings.RepositoryLabel</label>
         </div>
         <div class="col-auto">
-            <select id="repositoryFilter" name="repositoryId" class="form-select" onchange="document.getElementById('reviewTypeFilterForm').submit()">
+            <select id="repositoryFilter" name="repositoryId" class="form-select" onchange="this.form.submit()">
                 <option value="">@Strings.AllRepositoriesLabel</option>
 
                 @foreach (Revathryn.Contracts.Models.Repository repository in Model.Repositories)

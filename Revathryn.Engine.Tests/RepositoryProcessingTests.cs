@@ -2060,7 +2060,7 @@ namespace Revathryn.Engine.Tests
                 reviewTypes,
                 outcomes ?? new FakeReviewOutcomeStore(),
                 findings ?? new FakeFindingRepository(),
-                new FakeAISettingsRepository(),
+                new FakePromptResolutionService(),
                 engine,
                 new FakeReviewContextProvider(),
                 new FakeRetryPolicyProvider(retryPolicy),
@@ -2172,16 +2172,26 @@ namespace Revathryn.Engine.Tests
             }
         }
 
-        private sealed class FakeAISettingsRepository : IAISettingsRepository
+        private sealed class FakePromptResolutionService : IPromptResolutionService
         {
-            public AISettings Settings { get; set; } = new();
+            public ResolvedPrompts ResolvedPrompts { get; set; } = new();
 
-            public Task<AISettings> GetAsync(CancellationToken cancellationToken = default)
+            public Task<ResolvedPrompts> ResolveForDetectionAsync(long reviewTypeId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult(Settings);
+                return Task.FromResult(ResolvedPrompts);
             }
 
-            public Task UpdateAsync(AISettings settings, CancellationToken cancellationToken = default)
+            public Task<PromptVersion> GetActiveSystemVersionAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<PromptVersion>(null);
+            }
+
+            public Task<PromptVersion> GetActiveReviewVersionAsync(long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<PromptVersion>(null);
+            }
+
+            public Task SeedFromConfigurationAsync(CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;
             }

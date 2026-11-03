@@ -9,6 +9,7 @@ using Revathryn.Contracts.Orchestration;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Reliability;
 using Revathryn.Contracts.Review;
+using Revathryn.Contracts.Services;
 using Revathryn.Resources;
 
 namespace Revathryn.Engine
@@ -26,7 +27,7 @@ namespace Revathryn.Engine
         private readonly IReviewTypeRepository _reviewTypeRepository;
         private readonly IReviewOutcomeStore _reviewOutcomeStore;
         private readonly IFindingRepository _findingRepository;
-        private readonly IAISettingsRepository _aiSettingsRepository;
+        private readonly IPromptResolutionService _promptResolutionService;
         private readonly IAIReviewEngine _aiReviewEngine;
         private readonly IReviewContextProvider _contextProvider;
         private readonly IRetryPolicyProvider _retryPolicyProvider;
@@ -41,7 +42,7 @@ namespace Revathryn.Engine
             IReviewTypeRepository reviewTypeRepository,
             IReviewOutcomeStore reviewOutcomeStore,
             IFindingRepository findingRepository,
-            IAISettingsRepository aiSettingsRepository,
+            IPromptResolutionService promptResolutionService,
             IAIReviewEngine aiReviewEngine,
             IReviewContextProvider contextProvider,
             IRetryPolicyProvider retryPolicyProvider,
@@ -54,7 +55,7 @@ namespace Revathryn.Engine
             _reviewTypeRepository = reviewTypeRepository;
             _reviewOutcomeStore = reviewOutcomeStore;
             _findingRepository = findingRepository;
-            _aiSettingsRepository = aiSettingsRepository;
+            _promptResolutionService = promptResolutionService;
             _aiReviewEngine = aiReviewEngine;
             _contextProvider = contextProvider;
             _retryPolicyProvider = retryPolicyProvider;
@@ -124,6 +125,8 @@ namespace Revathryn.Engine
 
             string fileContent = await File.ReadAllTextAsync(ResolveAbsolutePath(repository.LocalPath, file.RelativePath), cancellationToken).ConfigureAwait(false);
 
+            ResolvedPrompts resolvedPrompts = await _promptResolutionService.ResolveForDetectionAsync(item.ReviewTypeId, cancellationToken).ConfigureAwait(false);
+
             ReviewRequest request = new()
             {
                 RepositoryId = item.RepositoryId,
@@ -131,7 +134,7 @@ namespace Revathryn.Engine
                 ReviewTypeId = item.ReviewTypeId,
                 Language = ResolveLanguage(file),
                 FileContent = fileContent,
-                Prompt = await BuildPromptAsync(reviewType, cancellationToken).ConfigureAwait(false)
+                Prompt = BuildPrompt(resolvedPrompts)
             };
 
             int maxContextRequests = repository.MaxContextRequests > 0 ? repository.MaxContextRequests : Consts.DefaultMaxContextRequests;
@@ -159,7 +162,7 @@ namespace Revathryn.Engine
                         return ProcessingResult.Failed(Strings.AIEngineResponseIncomplete);
                     }
 
-                    await PersistOutcomeAsync(item, file, reviewType, response, usageRecords, request, capturedContextItems, requestedContextKeys, cancellationToken).ConfigureAwait(false);
+                    await PersistOutcomeAsync(item, file, reviewType, response, usageRecords, request, capturedContextItems, requestedContextKeys, resolvedPrompts, cancellationToken).ConfigureAwait(false);
                     return ProcessingResult.Success();
                 }
 
@@ -220,6 +223,7 @@ namespace Revathryn.Engine
             ReviewRequest request,
             IReadOnlyList<ReviewContextItem> contextItems,
             IReadOnlyList<string> requestedContextKeys,
+            ResolvedPrompts resolvedPrompts,
             CancellationToken cancellationToken)
         {
             List<Finding> findings = [];
@@ -264,7 +268,10 @@ namespace Revathryn.Engine
                     Language = request.Language,
                     FilePath = file.RelativePath,
                     ReviewInstructions = request.Prompt,
-                    ReviewPrompt = reviewType.Prompt ?? string.Empty,
+                    SystemPrompt = resolvedPrompts.SystemPrompt ?? string.Empty,
+                    ReviewPrompt = resolvedPrompts.ReviewPrompt ?? string.Empty,
+                    SystemPromptVersionId = resolvedPrompts.SystemPromptVersionId,
+                    ReviewPromptVersionId = resolvedPrompts.ReviewPromptVersionId,
                     ReviewDefinitionVersion = reviewType.ReviewDefinitionVersion ?? string.Empty,
                     EngineName = response.EngineName ?? string.Empty,
                     EngineProvider = response.EngineProvider ?? string.Empty,
@@ -303,16 +310,12 @@ namespace Revathryn.Engine
             await _findingRepository.AddAsync(finding, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<string> BuildPromptAsync(ReviewType reviewType, CancellationToken cancellationToken)
+        private static string BuildPrompt(ResolvedPrompts resolvedPrompts)
         {
-            AISettings settings = await _aiSettingsRepository.GetAsync(cancellationToken).ConfigureAwait(false);
-            string masterPrompt = settings?.MasterPrompt ?? string.Empty;
-            string taskPrompt = reviewType.Prompt ?? string.Empty;
-
             StringBuilder prompt = new();
 
-            AppendPromptSection(prompt, masterPrompt);
-            AppendPromptSection(prompt, taskPrompt);
+            AppendPromptSection(prompt, resolvedPrompts.SystemPrompt);
+            AppendPromptSection(prompt, resolvedPrompts.ReviewPrompt);
             AppendPromptSection(prompt, DefaultReviewContext.ReviewInstructions);
 
             return prompt.ToString();

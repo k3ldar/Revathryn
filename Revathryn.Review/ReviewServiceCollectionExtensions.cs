@@ -29,6 +29,8 @@ namespace Revathryn.Review
             services.AddSingleton<IAIReviewEngine, OpenAIReviewEngine>();
             services.AddSingleton<IAICompletionClient, OpenAICompletionClient>();
             services.AddSingleton<IIssueValidationEngine, AIIssueValidationEngine>();
+            services.AddSingleton<IPromptAnalysisEngine, AIPromptAnalysisEngine>();
+            services.AddSingleton<IPromptProposalEngine, AIPromptProposalEngine>();
             services.AddSingleton<IReviewContextProvider, SymbolContextProvider>();
 
             return services;

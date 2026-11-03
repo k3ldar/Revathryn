@@ -317,5 +317,57 @@
         public const string ValidationKeyExplanation = "explanation";
         public const string ValidationKeySuggestions = "suggestions";
         public const string ValidationKeyLimitations = "limitations";
+
+        // Prompt management.
+        public const string SystemActor = "System";
+        public const string UnknownUser = "Unknown";
+        public const int PromptInitialVersionNumber = 1;
+        public const string PromptSystemDisplayKey = "System";
+
+        // Prompt components and operations.
+        public const string PromptManagementServiceComponent = "PromptManagementService";
+        public const string PromptResolutionServiceComponent = "PromptResolutionService";
+        public const string PromptOptimisationServiceComponent = "PromptOptimisationService";
+        public const string PromptOptimisationProcessorComponent = "PromptOptimisationProcessor";
+        public const string PromptOptimisationWorkerServiceComponent = "PromptOptimisationWorkerService";
+        public const string PromptTestRunServiceComponent = "PromptTestRunService";
+        public const string PromptTestRunProcessorComponent = "PromptTestRunProcessor";
+        public const string PromptTestRunWorkerServiceComponent = "PromptTestRunWorkerService";
+        public const string PromptStatisticsServiceComponent = "PromptStatisticsService";
+        public const string QueueOptimisationOperation = "QueueOptimisation";
+        public const string ProcessOptimisationOperation = "ProcessOptimisation";
+        public const string AnalysePromptOperation = "AnalysePrompt";
+        public const string GeneratePromptProposalOperation = "GeneratePromptProposal";
+        public const string QueueTestRunOperation = "QueueTestRun";
+        public const string ProcessTestRunOperation = "ProcessTestRun";
+        public const string ActivatePromptOperation = "ActivatePrompt";
+        public const string CreatePromptDraftOperation = "CreatePromptDraft";
+        public const string ComputeStatisticsOperation = "ComputeStatistics";
+        public const string PromptSeedSystemIdentityMessage = "Seeded system prompt identity.";
+        public const string PromptSeedReviewIdentityMessage = "Seeded review prompt identity for review type {0}.";
+        public const string PromptSeedSystemVersionMessage = "Seeded initial system prompt version.";
+        public const string PromptSeedReviewVersionMessage = "Seeded initial review prompt version for review type {0}.";
+
+        // Prompt worker timing.
+        public const int PromptOptimisationPollIntervalSeconds = 5;
+        public const int PromptOptimisationDrainLimit = 10;
+        public const int PromptTestRunPollIntervalSeconds = 5;
+        public const int PromptTestRunDrainLimit = 10;
+
+        // Prompt analysis response keys.
+        public const string PromptAnalysisKeyAnalysisSummary = "analysisSummary";
+        public const string PromptAnalysisKeyDisagreementCause = "disagreementCause";
+        public const string PromptAnalysisKeySystemPromptRecommendation = "systemPromptRecommendation";
+        public const string PromptAnalysisKeyReviewPromptRecommendation = "reviewPromptRecommendation";
+        public const string PromptAnalysisKeyAdditionalObservations = "additionalObservations";
+        public const string PromptRecommendationKeyRequired = "required";
+        public const string PromptRecommendationKeyExplanation = "explanation";
+        public const string PromptRecommendationKeyOriginalPrompt = "originalPrompt";
+        public const string PromptRecommendationKeyProposedPrompt = "proposedPrompt";
+        public const string PromptRecommendationKeyChangesSummary = "changesSummary";
+        public const string PromptRecommendationKeyExpectedBenefit = "expectedBenefit";
+        public const string PromptRecommendationKeyPotentialDrawbacks = "potentialDrawbacks";
+        public const string PromptProposalKeySystemPrompt = "systemPrompt";
+        public const string PromptProposalKeyReviewPrompt = "reviewPrompt";
     }
 }

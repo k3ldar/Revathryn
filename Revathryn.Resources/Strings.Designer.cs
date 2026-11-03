@@ -1887,6 +1887,78 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to The review engine returned an empty prompt analysis..
+        /// </summary>
+        public static string PromptAnalysisResponseEmpty {
+            get {
+                return ResourceManager.GetString("PromptAnalysisResponseEmpty", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The prompt analysis response was not valid JSON: {0}.
+        /// </summary>
+        public static string PromptAnalysisResponseInvalidJson {
+            get {
+                return ResourceManager.GetString("PromptAnalysisResponseInvalidJson", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The prompt analysis response contained neither a summary nor disagreement causes..
+        /// </summary>
+        public static string PromptAnalysisResponseMissingSummary {
+            get {
+                return ResourceManager.GetString("PromptAnalysisResponseMissingSummary", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The prompt analysis response was not a JSON object..
+        /// </summary>
+        public static string PromptAnalysisResponseNotObject {
+            get {
+                return ResourceManager.GetString("PromptAnalysisResponseNotObject", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The review engine returned an empty prompt proposal..
+        /// </summary>
+        public static string PromptProposalResponseEmpty {
+            get {
+                return ResourceManager.GetString("PromptProposalResponseEmpty", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The prompt proposal response was not valid JSON: {0}.
+        /// </summary>
+        public static string PromptProposalResponseInvalidJson {
+            get {
+                return ResourceManager.GetString("PromptProposalResponseInvalidJson", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The prompt proposal response did not contain a usable prompt recommendation..
+        /// </summary>
+        public static string PromptProposalResponseMissingRecommendation {
+            get {
+                return ResourceManager.GetString("PromptProposalResponseMissingRecommendation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The prompt proposal response was not a JSON object..
+        /// </summary>
+        public static string PromptProposalResponseNotObject {
+            get {
+                return ResourceManager.GetString("PromptProposalResponseNotObject", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to A repository is required..
         /// </summary>
         public static string RepositoryRequiredMessage {
@@ -2858,6 +2930,78 @@ namespace Revathryn.Resources {
         public static string ValidationVerdictPartiallyAgreed { get { return ResourceManager.GetString("ValidationVerdictPartiallyAgreed", resourceCulture); } }
 
         public static string ValidationVerdictPartiallyAgreedDescription { get { return ResourceManager.GetString("ValidationVerdictPartiallyAgreedDescription", resourceCulture); } }
+
+        public static string PromptOptimisationQueued { get { return ResourceManager.GetString("PromptOptimisationQueued", resourceCulture); } }
+
+        public static string PromptOptimisationQueuedLog { get { return ResourceManager.GetString("PromptOptimisationQueuedLog", resourceCulture); } }
+
+        public static string PromptOptimisationAlreadyInProgress { get { return ResourceManager.GetString("PromptOptimisationAlreadyInProgress", resourceCulture); } }
+
+        public static string PromptOptimisationIssueNotFound { get { return ResourceManager.GetString("PromptOptimisationIssueNotFound", resourceCulture); } }
+
+        public static string PromptOptimisationRepositoryNotFound { get { return ResourceManager.GetString("PromptOptimisationRepositoryNotFound", resourceCulture); } }
+
+        public static string PromptOptimisationValidationMissing { get { return ResourceManager.GetString("PromptOptimisationValidationMissing", resourceCulture); } }
+
+        public static string PromptOptimisationContextMissing { get { return ResourceManager.GetString("PromptOptimisationContextMissing", resourceCulture); } }
+
+        public static string PromptOptimisationNotRetryable { get { return ResourceManager.GetString("PromptOptimisationNotRetryable", resourceCulture); } }
+
+        public static string PromptOptimisationCouldNotBeQueued { get { return ResourceManager.GetString("PromptOptimisationCouldNotBeQueued", resourceCulture); } }
+
+        public static string PromptTestRunQueued { get { return ResourceManager.GetString("PromptTestRunQueued", resourceCulture); } }
+
+        public static string PromptTestRunQueuedLog { get { return ResourceManager.GetString("PromptTestRunQueuedLog", resourceCulture); } }
+
+        public static string PromptTestRunAlreadyInProgress { get { return ResourceManager.GetString("PromptTestRunAlreadyInProgress", resourceCulture); } }
+
+        public static string PromptTestRunPromptVersionMissing { get { return ResourceManager.GetString("PromptTestRunPromptVersionMissing", resourceCulture); } }
+
+        public static string PromptTestRunContextMissing { get { return ResourceManager.GetString("PromptTestRunContextMissing", resourceCulture); } }
+
+        public static string PromptTestRunDetectionUnavailable { get { return ResourceManager.GetString("PromptTestRunDetectionUnavailable", resourceCulture); } }
+
+        public static string PromptTestRunNotRetryable { get { return ResourceManager.GetString("PromptTestRunNotRetryable", resourceCulture); } }
+
+        public static string PromptTestRunCouldNotBeQueued { get { return ResourceManager.GetString("PromptTestRunCouldNotBeQueued", resourceCulture); } }
+
+        public static string PromptOptimisationRetryLimitExceeded { get { return ResourceManager.GetString("PromptOptimisationRetryLimitExceeded", resourceCulture); } }
+
+        public static string PromptOptimisationAnalysedLog { get { return ResourceManager.GetString("PromptOptimisationAnalysedLog", resourceCulture); } }
+
+        public static string PromptOptimisationCompletedLog { get { return ResourceManager.GetString("PromptOptimisationCompletedLog", resourceCulture); } }
+
+        public static string PromptOptimisationNoChangesLog { get { return ResourceManager.GetString("PromptOptimisationNoChangesLog", resourceCulture); } }
+
+        public static string PromptOptimisationFailedLog { get { return ResourceManager.GetString("PromptOptimisationFailedLog", resourceCulture); } }
+
+        public static string PromptTestRunRetryLimitExceeded { get { return ResourceManager.GetString("PromptTestRunRetryLimitExceeded", resourceCulture); } }
+
+        public static string PromptTestRunPromptIdentityMissing { get { return ResourceManager.GetString("PromptTestRunPromptIdentityMissing", resourceCulture); } }
+
+        public static string PromptTestRunReviewTypeMismatch { get { return ResourceManager.GetString("PromptTestRunReviewTypeMismatch", resourceCulture); } }
+
+        public static string PromptTestRunCompletedLog { get { return ResourceManager.GetString("PromptTestRunCompletedLog", resourceCulture); } }
+
+        public static string PromptTestRunFailedLog { get { return ResourceManager.GetString("PromptTestRunFailedLog", resourceCulture); } }
+
+        public static string PromptTestRunPartialPromptSnapshot { get { return ResourceManager.GetString("PromptTestRunPartialPromptSnapshot", resourceCulture); } }
+
+        public static string PromptTestRunModelDifference { get { return ResourceManager.GetString("PromptTestRunModelDifference", resourceCulture); } }
+
+        public static string PromptOptimisationWorkerCycleFailed { get { return ResourceManager.GetString("PromptOptimisationWorkerCycleFailed", resourceCulture); } }
+
+        public static string PromptTestRunWorkerCycleFailed { get { return ResourceManager.GetString("PromptTestRunWorkerCycleFailed", resourceCulture); } }
+
+        public static string PromptVersionActivatedLog { get { return ResourceManager.GetString("PromptVersionActivatedLog", resourceCulture); } }
+
+        public static string PromptDraftCreatedLog { get { return ResourceManager.GetString("PromptDraftCreatedLog", resourceCulture); } }
+
+        public static string PromptDraftUpdatedLog { get { return ResourceManager.GetString("PromptDraftUpdatedLog", resourceCulture); } }
+
+        public static string PromptDraftCommittedLog { get { return ResourceManager.GetString("PromptDraftCommittedLog", resourceCulture); } }
+
+        public static string PromptStatisticsComputedLog { get { return ResourceManager.GetString("PromptStatisticsComputedLog", resourceCulture); } }
 
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.

@@ -1241,6 +1241,30 @@
 			<data name="ValidationSourceChangedWarning" xml:space="preserve">
 			  <value>The repository has changed since the original detection. The source supplied to the review engine may differ from what the detection engine saw.</value>
 			</data>
+			<data name="PromptAnalysisResponseEmpty" xml:space="preserve">
+			  <value>The review engine returned an empty prompt analysis.</value>
+			</data>
+			<data name="PromptAnalysisResponseInvalidJson" xml:space="preserve">
+			  <value>The prompt analysis response was not valid JSON: {0}</value>
+			</data>
+			<data name="PromptAnalysisResponseMissingSummary" xml:space="preserve">
+			  <value>The prompt analysis response contained neither a summary nor disagreement causes.</value>
+			</data>
+			<data name="PromptAnalysisResponseNotObject" xml:space="preserve">
+			  <value>The prompt analysis response was not a JSON object.</value>
+			</data>
+			<data name="PromptProposalResponseEmpty" xml:space="preserve">
+			  <value>The review engine returned an empty prompt proposal.</value>
+			</data>
+			<data name="PromptProposalResponseInvalidJson" xml:space="preserve">
+			  <value>The prompt proposal response was not valid JSON: {0}</value>
+			</data>
+			<data name="PromptProposalResponseMissingRecommendation" xml:space="preserve">
+			  <value>The prompt proposal response did not contain a usable prompt recommendation.</value>
+			</data>
+			<data name="PromptProposalResponseNotObject" xml:space="preserve">
+			  <value>The prompt proposal response was not a JSON object.</value>
+			</data>
 			<data name="ValidationStartedMessage" xml:space="preserve">
 			  <value>Validation started. Results will appear here when it completes.</value>
 			</data>
@@ -1279,5 +1303,113 @@
 			</data>
 			<data name="ValidationVerdictPartiallyAgreedDescription" xml:space="preserve">
 			  <value>The finding is valid in principle but needs correction.</value>
+			</data>
+			<data name="PromptOptimisationQueued" xml:space="preserve">
+			  <value>Prompt optimisation queued.</value>
+			</data>
+			<data name="PromptOptimisationQueuedLog" xml:space="preserve">
+			  <value>Prompt optimisation {0} queued for finding {1}.</value>
+			</data>
+			<data name="PromptOptimisationAlreadyInProgress" xml:space="preserve">
+			  <value>A prompt optimisation is already in progress for this validation.</value>
+			</data>
+			<data name="PromptOptimisationIssueNotFound" xml:space="preserve">
+			  <value>The issue could not be found.</value>
+			</data>
+			<data name="PromptOptimisationRepositoryNotFound" xml:space="preserve">
+			  <value>The repository could not be found.</value>
+			</data>
+			<data name="PromptOptimisationValidationMissing" xml:space="preserve">
+			  <value>A completed independent validation is required before analysing the detection prompt.</value>
+			</data>
+			<data name="PromptOptimisationContextMissing" xml:space="preserve">
+			  <value>The original detection context is not available, so the detection prompt cannot be analysed.</value>
+			</data>
+			<data name="PromptOptimisationNotRetryable" xml:space="preserve">
+			  <value>Only failed prompt optimisations can be retried.</value>
+			</data>
+			<data name="PromptOptimisationCouldNotBeQueued" xml:space="preserve">
+			  <value>The prompt optimisation could not be queued.</value>
+			</data>
+			<data name="PromptTestRunQueued" xml:space="preserve">
+			  <value>Prompt test queued.</value>
+			</data>
+			<data name="PromptTestRunQueuedLog" xml:space="preserve">
+			  <value>Prompt test run {0} queued for prompt version {1}.</value>
+			</data>
+			<data name="PromptTestRunAlreadyInProgress" xml:space="preserve">
+			  <value>A prompt test is already in progress for this prompt version and issue.</value>
+			</data>
+			<data name="PromptTestRunPromptVersionMissing" xml:space="preserve">
+			  <value>The prompt version could not be found.</value>
+			</data>
+			<data name="PromptTestRunContextMissing" xml:space="preserve">
+			  <value>The original detection context is no longer available, so the test cannot be an exact reproduction.</value>
+			</data>
+			<data name="PromptTestRunDetectionUnavailable" xml:space="preserve">
+			  <value>The detection engine is not configured or enabled.</value>
+			</data>
+			<data name="PromptTestRunNotRetryable" xml:space="preserve">
+			  <value>Only failed prompt test runs can be retried.</value>
+			</data>
+			<data name="PromptTestRunCouldNotBeQueued" xml:space="preserve">
+			  <value>The prompt test could not be queued.</value>
+			</data>
+			<data name="PromptOptimisationRetryLimitExceeded" xml:space="preserve">
+			  <value>The prompt optimisation exceeded its retry limit.</value>
+			</data>
+			<data name="PromptOptimisationAnalysedLog" xml:space="preserve">
+			  <value>Prompt optimisation {0} completed disagreement analysis.</value>
+			</data>
+			<data name="PromptOptimisationCompletedLog" xml:space="preserve">
+			  <value>Prompt optimisation {0} completed with generated recommendations.</value>
+			</data>
+			<data name="PromptOptimisationNoChangesLog" xml:space="preserve">
+			  <value>Prompt optimisation {0} completed; the review engine recommended no prompt changes.</value>
+			</data>
+			<data name="PromptOptimisationFailedLog" xml:space="preserve">
+			  <value>Prompt optimisation {0} failed: {1}.</value>
+			</data>
+			<data name="PromptTestRunRetryLimitExceeded" xml:space="preserve">
+			  <value>The prompt test exceeded its retry limit.</value>
+			</data>
+			<data name="PromptTestRunPromptIdentityMissing" xml:space="preserve">
+			  <value>The prompt identity for the tested version could not be found.</value>
+			</data>
+			<data name="PromptTestRunReviewTypeMismatch" xml:space="preserve">
+			  <value>The tested review prompt does not belong to the originating issue's review type.</value>
+			</data>
+			<data name="PromptTestRunCompletedLog" xml:space="preserve">
+			  <value>Prompt test run {0} completed for prompt version {1}.</value>
+			</data>
+			<data name="PromptTestRunFailedLog" xml:space="preserve">
+			  <value>Prompt test run {0} failed: {1}.</value>
+			</data>
+			<data name="PromptTestRunPartialPromptSnapshot" xml:space="preserve">
+			  <value>The original prompt snapshot did not record the system and review-specific prompts separately, so the combined prompt may not be an exact reproduction.</value>
+			</data>
+			<data name="PromptTestRunModelDifference" xml:space="preserve">
+			  <value>The original detection used model {0}; this test used model {1}, so the results are not fully comparable.</value>
+			</data>
+			<data name="PromptOptimisationWorkerCycleFailed" xml:space="preserve">
+			  <value>The prompt optimisation worker cycle failed.</value>
+			</data>
+			<data name="PromptTestRunWorkerCycleFailed" xml:space="preserve">
+			  <value>The prompt test worker cycle failed.</value>
+			</data>
+			<data name="PromptVersionActivatedLog" xml:space="preserve">
+			  <value>Prompt version {0} activated by {1}.</value>
+			</data>
+			<data name="PromptDraftCreatedLog" xml:space="preserve">
+			  <value>Prompt draft version {0} created for prompt {1} by {2}.</value>
+			</data>
+			<data name="PromptDraftUpdatedLog" xml:space="preserve">
+			  <value>Prompt draft version {0} updated.</value>
+			</data>
+			<data name="PromptDraftCommittedLog" xml:space="preserve">
+			  <value>Prompt draft version {0} committed as version {1}.</value>
+			</data>
+			<data name="PromptStatisticsComputedLog" xml:space="preserve">
+			  <value>Prompt statistics computed for the requested filter.</value>
 			</data>
 			</root>
