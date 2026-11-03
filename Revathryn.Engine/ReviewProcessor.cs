@@ -21,6 +21,9 @@ namespace Revathryn.Engine
     /// </summary>
     public sealed class ReviewProcessor : IReviewProcessor
     {
+        private const string ReviewTypePromptLine = "Review Type: ";
+        private const string ReviewPromptLine = "Review Prompt: ";
+
         private readonly IReviewQueue _reviewQueue;
         private readonly IRepositoryRepository _repositoryRepository;
         private readonly IRepoFileRepository _fileRepository;
@@ -134,7 +137,7 @@ namespace Revathryn.Engine
                 ReviewTypeId = item.ReviewTypeId,
                 Language = ResolveLanguage(file),
                 FileContent = fileContent,
-                Prompt = BuildPrompt(resolvedPrompts)
+                Prompt = BuildPrompt(reviewType, resolvedPrompts)
             };
 
             int maxContextRequests = repository.MaxContextRequests > 0 ? repository.MaxContextRequests : Consts.DefaultMaxContextRequests;
@@ -310,12 +313,13 @@ namespace Revathryn.Engine
             await _findingRepository.AddAsync(finding, cancellationToken).ConfigureAwait(false);
         }
 
-        private static string BuildPrompt(ResolvedPrompts resolvedPrompts)
+        private static string BuildPrompt(ReviewType reviewType, ResolvedPrompts resolvedPrompts)
         {
             StringBuilder prompt = new();
 
             AppendPromptSection(prompt, resolvedPrompts.SystemPrompt);
-            AppendPromptSection(prompt, resolvedPrompts.ReviewPrompt);
+            AppendPromptSection(prompt, string.Concat(ReviewTypePromptLine, reviewType.Name));
+            AppendPromptSection(prompt, string.Concat(ReviewPromptLine, resolvedPrompts.ReviewPrompt));
             AppendPromptSection(prompt, DefaultReviewContext.ReviewInstructions);
 
             return prompt.ToString();
