@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using Revathryn.Contracts;
+using Revathryn.Contracts.Analysis;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Persistence;
 
@@ -11,17 +12,20 @@ namespace Revathryn.Data
     {
         /// <summary>Adds the Revathryn persistence layer to the service collection.</summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="configure">Optional callback for customising database options.</param>
+        /// <param name="settings">The Revathryn settings.</param>
         public static IServiceCollection AddDataServices(this IServiceCollection services, RevathrynSettings settings)
         {
             ArgumentNullException.ThrowIfNull(services, nameof(services));
             ArgumentNullException.ThrowIfNull(settings, nameof(settings));
 
             DatabaseOptions options = new(settings);
+            string analysisOutputDirectory = Path.Combine(settings.BaseSettingsPath, Consts.PathAnalysisOutput);
 
             services.AddSingleton(settings);
             services.AddSingleton(options);
             services.AddSingleton<SqliteConnectionFactory>();
+            services.AddSingleton<ISymbolIndexStore>(_ => new SymbolIndexStore(analysisOutputDirectory));
+            services.AddSingleton<ISymbolIndexQuery, SymbolIndexQuery>();
             services.AddSingleton<IDatabaseContext, SqliteDatabaseContext>();
             services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
             services.AddSingleton<ISecretsProvider, EnvironmentSecretsProvider>();

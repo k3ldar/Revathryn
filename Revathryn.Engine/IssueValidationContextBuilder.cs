@@ -369,7 +369,7 @@ namespace Revathryn.Engine
 
         private static string[] SplitLines(string content)
         {
-            return (content ?? string.Empty).Replace(LineEndingCarriageReturn, string.Empty).Split(Consts.NewLine);
+            return (content ?? string.Empty).Replace(LineEndingCarriageReturn, string.Empty).Split(Consts.CharNewLine);
         }
 
         private static int CountLines(string content)

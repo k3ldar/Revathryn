@@ -21,7 +21,10 @@ namespace Revathryn.Contracts.Review
         /// <summary>Review-specific prompt (review type prompt), combined with the master prompt by the caller.</summary>
         public string Prompt { get; set; } = string.Empty;
 
-        /// <summary>Optional additional context supplied to the AI engine.</summary>
-        public List<string> AdditionalContext { get; set; } = [];
+        /// <summary>Context seeded up front, e.g. related symbol usage hints, included in the original review message.</summary>
+        public List<string> InitialContext { get; set; } = [];
+
+        /// <summary>Requested context rounds, each supplied to the AI as a separate follow-up message.</summary>
+        public List<ReviewContextRound> ContextRounds { get; set; } = [];
     }
 }

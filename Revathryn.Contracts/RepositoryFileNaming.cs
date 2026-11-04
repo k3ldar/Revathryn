@@ -2,7 +2,7 @@ using System.Text;
 
 using static Revathryn.Contracts.Consts;
 
-namespace Revathryn.Engine
+namespace Revathryn.Contracts
 {
     /// <summary>Derives filesystem-safe names for per-repository analysis artefacts.</summary>
     public static class RepositoryFileNaming

@@ -458,6 +458,109 @@ namespace Revathryn.Review.Tests
             return path;
         }
 
+        [TestMethod]
+        public async Task SymbolContextProvider_CallersContextKey_ReturnsFilteredReferencingFiles()
+        {
+            // Arrange
+            string root = CreateTempDirectory();
+            try
+            {
+                string reviewedPath = Path.Combine(root, "ReviewProcessor.cs");
+                string consumerPath = Path.Combine(root, "ReviewWorkerService.cs");
+                string otherConsumerPath = Path.Combine(root, "RunnerService.cs");
+                string reviewedOutputFile = Path.Combine(root, "reviewed-symbols.json");
+                string consumerOutputFile = Path.Combine(root, "consumer-symbols.json");
+                string otherConsumerOutputFile = Path.Combine(root, "runner-symbols.json");
+
+                List<CodeSymbol> reviewedSymbols =
+                [
+                    new CodeSymbol
+                    {
+                        Name = "ReviewProcessor",
+                        FullyQualifiedName = "Demo.ReviewProcessor",
+                        Kind = SymbolKind.Class,
+                        FilePath = reviewedPath
+                    }
+                ];
+
+                List<CodeSymbol> consumerSymbols =
+                [
+                    new CodeSymbol
+                    {
+                        Name = "ReviewWorkerService",
+                        FullyQualifiedName = "Demo.ReviewWorkerService",
+                        Kind = SymbolKind.Class,
+                        FilePath = consumerPath,
+                        Dependencies = ["ReviewProcessor"]
+                    }
+                ];
+
+                List<CodeSymbol> otherConsumerSymbols =
+                [
+                    new CodeSymbol
+                    {
+                        Name = "RunnerService",
+                        FullyQualifiedName = "Demo.RunnerService",
+                        Kind = SymbolKind.Class,
+                        FilePath = otherConsumerPath,
+                        Dependencies = ["ReviewProcessor"]
+                    }
+                ];
+
+                File.WriteAllText(reviewedOutputFile, JsonSerializer.Serialize(reviewedSymbols));
+                File.WriteAllText(consumerOutputFile, JsonSerializer.Serialize(consumerSymbols));
+                File.WriteAllText(otherConsumerOutputFile, JsonSerializer.Serialize(otherConsumerSymbols));
+
+                IManifestEntry reviewedEntry = new ManifestEntryStub
+                {
+                    OutputFile = reviewedOutputFile,
+                    SourcePath = reviewedPath
+                };
+
+                IManifestEntry consumerEntry = new ManifestEntryStub
+                {
+                    OutputFile = consumerOutputFile,
+                    SourcePath = consumerPath
+                };
+
+                IManifestEntry otherConsumerEntry = new ManifestEntryStub
+                {
+                    OutputFile = otherConsumerOutputFile,
+                    SourcePath = otherConsumerPath
+                };
+
+                FakeManifestManager manifestManager = new(reviewedEntry, [reviewedEntry, consumerEntry, otherConsumerEntry]);
+
+                SymbolContextProvider provider = new(manifestManager);
+
+                ReviewContextRequest request = new()
+                {
+                    RepositoryId = 1,
+                    RepositoryName = "Demo Repo",
+                    RepoFileId = 1,
+                    Language = "CSharp",
+                    ContextKey = Consts.ContextKeyCallers,
+                    Query = "ReviewWorkerService.cs",
+                    MaxItems = 10,
+                    SourcePath = reviewedPath
+                };
+
+                // Act
+                ReviewContextResponse response = await provider.GetContextAsync(request, TestContext.CancellationToken);
+
+                // Assert
+                Assert.AreEqual(Consts.ContextKeyCallers, response.ContextKey);
+                Assert.HasCount(1, response.Items);
+                Assert.AreEqual("Demo.ReviewWorkerService", response.Items[0].Title);
+                Assert.AreEqual(consumerPath, response.Items[0].SourcePath);
+                Assert.Contains("references", response.Items[0].Content);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
         private sealed class StubHttpMessageHandler : HttpMessageHandler
         {
             private readonly Queue<StubResponse> _responses;

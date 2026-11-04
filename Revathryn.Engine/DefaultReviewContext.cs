@@ -62,11 +62,13 @@ namespace Revathryn.Engine
             - Include both "results" and "contextRequests" in every response.
             - Set "results" to an empty array when no issues are found.
             - "severity" must be one of: info, low, medium, high, critical.
-            - "contextRequests" is normally empty. When you need additional context before finalising the review, list the context keys you require. The only supported keys are:
-              - "symbols" (symbol information for the file), 
-              - "dependencies" (dependency information), and 
-              - "files" (other files that reference the reviewed file, showing how it is used). 
-              You will be called again with the requested context.
+            - "contextRequests" is normally empty. When you need additional context before finalising the review, list the context keys you require. The supported keys are:
+              - "symbols" (symbol information for the file),
+              - "dependencies" (dependency information),
+              - "files:<filename>" or "callers:<filename>" (request the specific file, by name, that references the reviewed file, e.g. "files:Consumer.cs"),
+              - "files" or "callers" (coarse fallback: all files that reference the reviewed file), and
+              - "search:<name>" (find a symbol by name or namespace, e.g. "search:Program").
+              Prefer the filename-specific forms to limit how much context is returned. You will be called again with the requested context. Related symbols are provided up front and do not need to be requested.
             - In the description indicate how it relates to the review type, if it does not relate, DO NOT REPORT
             - Request only the context necessary to complete the review. Context is read-only; never request command or script execution.
             """;

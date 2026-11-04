@@ -15,6 +15,7 @@ namespace Revathryn.Review
     public sealed class SymbolContextProvider : IReviewContextProvider
     {
         private readonly IManifestManager _manifestManager;
+        private readonly ISymbolIndexQuery _symbolIndexQuery;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -23,9 +24,12 @@ namespace Revathryn.Review
         };
 
         /// <summary>Initialises a new context provider.</summary>
-        public SymbolContextProvider(IManifestManager manifestManager)
+        /// <param name="manifestManager">Manifest manager used as a JSON fallback source.</param>
+        /// <param name="symbolIndexQuery">Optional per-repository symbol index query. The JSON source is used when null or empty.</param>
+        public SymbolContextProvider(IManifestManager manifestManager, ISymbolIndexQuery symbolIndexQuery = null)
         {
             _manifestManager = manifestManager;
+            _symbolIndexQuery = symbolIndexQuery;
         }
 
         /// <summary>Returns context for the requested key, e.g. symbol information.</summary>
@@ -37,6 +41,19 @@ namespace Revathryn.Review
             {
                 ContextKey = request.ContextKey ?? string.Empty
             };
+
+            if (_symbolIndexQuery is not null)
+            {
+                SymbolQueryResponse queryResponse = await _symbolIndexQuery
+                    .QueryAsync(request.RepositoryName, BuildQueryRequest(request), cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (queryResponse.Candidates is not null && queryResponse.Candidates.Count > 0)
+                {
+                    response.Items = BuildContextItems(queryResponse.Candidates);
+                    return response;
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(request.SourcePath))
             {
@@ -67,12 +84,37 @@ namespace Revathryn.Review
             {
                 response.Items = BuildDependencyItems(symbols, maxItems);
             }
-            else if (string.Equals(request.ContextKey, Consts.ContextKeyFiles, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(request.ContextKey, Consts.ContextKeyFiles, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(request.ContextKey, Consts.ContextKeyCallers, StringComparison.OrdinalIgnoreCase))
             {
-                response.Items = await BuildFileUsageItemsAsync(request.RepositoryName, request.SourcePath, symbols, maxItems, cancellationToken).ConfigureAwait(false);
+                response.Items = await BuildFileUsageItemsAsync(request.RepositoryName, request.SourcePath, symbols, request.Query, maxItems, cancellationToken).ConfigureAwait(false);
             }
 
             return response;
+        }
+
+        private static SymbolQueryRequest BuildQueryRequest(ReviewContextRequest request)
+        {
+            return new SymbolQueryRequest
+            {
+                ContextKey = request.ContextKey ?? string.Empty,
+                SourcePath = request.SourcePath ?? string.Empty,
+                Query = request.Query ?? string.Empty,
+                MaxItems = request.MaxItems
+            };
+        }
+
+        private static List<ContextItem> BuildContextItems(IReadOnlyList<SymbolCandidate> candidates)
+        {
+            List<ContextItem> items = [];
+
+            foreach (SymbolCandidate candidate in candidates)
+            {
+                string title = string.IsNullOrWhiteSpace(candidate.FullyQualifiedName) ? candidate.Name ?? string.Empty : candidate.FullyQualifiedName;
+                items.Add(CreateItem(title, candidate.Content, candidate.FilePath));
+            }
+
+            return items;
         }
 
         private static async Task<List<CodeSymbol>> ReadSymbolsAsync(string outputFile, CancellationToken cancellationToken)
@@ -135,6 +177,7 @@ namespace Revathryn.Review
             string repositoryName,
             string sourcePath,
             List<CodeSymbol> reviewedSymbols,
+            string fileNameFilter,
             int maxItems,
             CancellationToken cancellationToken)
         {
@@ -162,6 +205,11 @@ namespace Revathryn.Review
                 }
 
                 if (PathsReferToSameFile(entry.SourcePath, sourcePath))
+                {
+                    continue;
+                }
+
+                if (!PathMatchesFilter(entry.SourcePath, fileNameFilter))
                 {
                     continue;
                 }
@@ -353,6 +401,30 @@ namespace Revathryn.Review
                 Path.GetFullPath(first).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
                 Path.GetFullPath(second).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
                 StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool PathMatchesFilter(string filePath, string filter)
+        {
+            string target = filePath ?? string.Empty;
+            string normalized = (filter ?? string.Empty).Trim();
+
+            if (normalized.Length == 0)
+            {
+                return true;
+            }
+
+            if (string.Equals(Path.GetFileName(target), normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(target, normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return target.EndsWith(string.Concat(Path.DirectorySeparatorChar, normalized), StringComparison.OrdinalIgnoreCase)
+                || target.EndsWith(string.Concat(Path.AltDirectorySeparatorChar, normalized), StringComparison.OrdinalIgnoreCase);
         }
 
         private static void AddDistinct(List<string> list, string value)

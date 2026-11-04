@@ -38,11 +38,19 @@ namespace Revathryn.Contracts.Tests
         }
 
         [TestMethod]
-        public void ReviewRequest_AdditionalContext_DefaultsToEmpty()
+        public void ReviewRequest_InitialContext_DefaultsToEmpty()
         {
             ReviewRequest request = new();
 
-            Assert.HasCount(0, request.AdditionalContext);
+            Assert.HasCount(0, request.InitialContext);
+        }
+
+        [TestMethod]
+        public void ReviewRequest_ContextRounds_DefaultsToEmpty()
+        {
+            ReviewRequest request = new();
+
+            Assert.HasCount(0, request.ContextRounds);
         }
 
         [TestMethod]

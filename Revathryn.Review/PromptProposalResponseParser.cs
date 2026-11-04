@@ -129,7 +129,7 @@ namespace Revathryn.Review
 
             if (trimmed.StartsWith(Consts.CodeFence, StringComparison.Ordinal))
             {
-                int firstNewLine = trimmed.IndexOf(Consts.NewLine);
+                int firstNewLine = trimmed.IndexOf(Consts.CharNewLine);
                 int closing = trimmed.LastIndexOf(Consts.CodeFence, StringComparison.Ordinal);
 
                 if (firstNewLine >= 0 && closing > firstNewLine)

@@ -23,5 +23,8 @@ namespace Revathryn.Contracts.Review
 
         /// <summary>Absolute path of the file context is requested for.</summary>
         public string SourcePath { get; set; } = string.Empty;
+
+        /// <summary>Free-text query used when <see cref="ContextKey"/> is "search".</summary>
+        public string Query { get; set; } = string.Empty;
     }
 }

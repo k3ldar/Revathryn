@@ -7,6 +7,7 @@
         public const string DefaultDatabaseFileName = "revathryn.db";
         public const string DatabasePath = "db";
         public const string DefaultDataStore = "Data Source={0}";
+        public const string SqlitePoolingDisabled = "Pooling=False";
         public const string FileTypeCSharp = "cs";
         public const string CEpExtensions = "c,cpp,h,hpp,cc,cxx,hxx";
         public const string FileTypeJson = "json";
@@ -24,6 +25,7 @@
         public const string FileTypeYaml = "yaml";
         public const string PathAnalysisOutput = "analysis-output";
         public const string AnalysisManifestPrefix = "analysis-manifest-";
+        public const string SymbolIndexDatabaseFileName = "symbol-index.db";
         public const string DefaultRepositoryFolderName = "repository";
         public const string Star = "*";
         public const char CharAsterisk = '*';
@@ -38,7 +40,7 @@
         public const string FilePathPackages = "packages";
         public const string FilePathBuild = "build";
         public const string FilePathDist = "dist";
-        public const string JsonFileExtension = ".json";
+        public const string JsonFileExtension = "json";
         public const string CSharpFilePattern = Star + FullStop + FileTypeCSharp;
         public const char CharLessThan = '<';
         public const char CharGreaterThan = '>';
@@ -48,13 +50,17 @@
         public const char CharBackSlash = '\\';
         public const char CharFullStop = '.';
         public const char CharI = 'I';
-        public const char NewLine = '\n';
+        public const char CharNewLine = '\n';
         public const char CharComma = ',';
         public const char CharLeftSquareBracket = '[';
         public const char CharRightSquareBracket = ']';
         public const char CharSpace = ' ';
         public const char CharPlus = '+';
         public const char CharHyphen = '-';
+        public const char CharLeftParenthesis = '(';
+        public const char CharRightParenthesis = ')';
+        public const char CharColon = ':';
+        public const char CharTilde = '~';
         public const string FullStop = ".";
         public const string StringArrayIdentifier = "[]";
         public const string StringSpace = " ";
@@ -65,6 +71,11 @@
         public const string ModifierProtected = "protected";
         public const string ModifierInternal = "internal";
         public const string ModifierProtectedInternal = ModifierProtected + StringSpace + ModifierInternal;
+        public const string ModifierStatic = "static";
+        public const string ModifierAbstract = "abstract";
+        public const string ModifierSealed = "sealed";
+        public const string OperatorKeyword = "operator";
+        public const string KeywordThis = "this";
 
         public const string TypeInt = "int";
         public const string TypeUshort = "ushort";
@@ -153,7 +164,19 @@
         public const string ContextKeySymbols = "symbols";
         public const string ContextKeyDependencies = "dependencies";
         public const string ContextKeyFiles = "files";
+        public const string ContextKeyCallers = "callers";
+        public const string ContextKeySearch = "search";
+        public const string ContextKeyRelated = "related";
         public const string ContextLabelReferences = "references";
+        public const string ContextLabelIsUsedBy = "is used by";
+        public const string MemberKindMethod = "Method";
+        public const string MemberKindProperty = "Property";
+        public const string MemberKindField = "Field";
+        public const string MemberKindConstructor = "Constructor";
+        public const string MemberKindDestructor = "Destructor";
+        public const string MemberKindIndexer = "Indexer";
+        public const string MemberKindOperator = "Operator";
+        public const string MemberKindEnumMember = "EnumMember";
         public const string FindingFingerprintSeparator = ":";
         public const string OperationalFailureFingerprintSuffix = "operational";
         public const int OpenAIRequestTimeoutSeconds = 120;

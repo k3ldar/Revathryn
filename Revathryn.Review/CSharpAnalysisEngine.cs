@@ -1,5 +1,10 @@
+using System.Text.Json;
+
 using Revathryn.Contracts;
 using Revathryn.Contracts.Analysis;
+using Revathryn.Contracts.Models;
+using Revathryn.Contracts.Persistence;
+using Revathryn.Review.CSharp;
 
 namespace Revathryn.Review
 {
@@ -8,12 +13,17 @@ namespace Revathryn.Review
     {
         private readonly IAnalyser _analyser;
         private readonly IManifestManager _manifestManager;
+        private readonly ISymbolIndexStore _symbolIndexStore;
 
-        /// <summary>Initialises a new engine over the supplied analyser and manifest.</summary>
-        public CSharpAnalysisEngine(IAnalyser analyser, IManifestManager manifestManager)
+        /// <summary>Initialises a new engine over the supplied analyser, manifest and optional symbol index store.</summary>
+        /// <param name="analyser">Analyser used to extract symbols.</param>
+        /// <param name="manifestManager">Manifest manager used to gate and record analysis.</param>
+        /// <param name="symbolIndexStore">Optional per-repository symbol index store. Indexing is skipped when null.</param>
+        public CSharpAnalysisEngine(IAnalyser analyser, IManifestManager manifestManager, ISymbolIndexStore symbolIndexStore = null)
         {
             _analyser = analyser;
             _manifestManager = manifestManager;
+            _symbolIndexStore = symbolIndexStore;
         }
 
         /// <summary>Display name of the engine.</summary>
@@ -37,7 +47,7 @@ namespace Revathryn.Review
             return Task.Run(() => _analyser.Analyse(repositoryName, filePath, _manifestManager), cancellationToken);
         }
 
-        /// <summary>Analyses C# source and returns the extracted symbols as JSON.</summary>
+        /// <summary>Analyses C# source, returns the extracted symbols as JSON, and refreshes the repository index.</summary>
         public async Task<string> AnalyseSymbolsAsync(string repositoryName, string filePath, CancellationToken cancellationToken = default)
         {
             await AnalyseAsync(repositoryName, filePath, cancellationToken).ConfigureAwait(false);
@@ -49,7 +59,53 @@ namespace Revathryn.Review
                 return string.Empty;
             }
 
-            return await File.ReadAllTextAsync(entry.OutputFile, cancellationToken).ConfigureAwait(false);
+            string json = await File.ReadAllTextAsync(entry.OutputFile, cancellationToken).ConfigureAwait(false);
+
+            await IndexSymbolsAsync(repositoryName, entry, json, cancellationToken).ConfigureAwait(false);
+
+            return json;
+        }
+
+        private async Task IndexSymbolsAsync(string repositoryName, IManifestEntry entry, string json, CancellationToken cancellationToken)
+        {
+            if (_symbolIndexStore is null || string.IsNullOrWhiteSpace(json))
+            {
+                return;
+            }
+
+            List<CodeSymbol> symbols = DeserializeSymbols(json);
+
+            if (symbols is null || symbols.Count == 0)
+            {
+                return;
+            }
+
+            IndexedFile file = new()
+            {
+                SourcePath = entry.SourcePath ?? string.Empty,
+                SourceHash = entry.SourceHash ?? string.Empty,
+                SourceLastWriteUtc = entry.SourceLastWriteUtc,
+                AnalysedUtc = entry.AnalysedUtc,
+                AnalyserVersion = entry.AnalyserVersion,
+                Language = entry.Language ?? string.Empty,
+                LanguageVersion = entry.LanguageVersion ?? string.Empty
+            };
+
+            IReadOnlyList<IndexedSymbol> indexedSymbols = [.. symbols.Select(CodeSymbolMapper.ToIndexedSymbol)];
+
+            await _symbolIndexStore.UpsertFileAsync(repositoryName, file, indexedSymbols, cancellationToken).ConfigureAwait(false);
+        }
+
+        private static List<CodeSymbol> DeserializeSymbols(string json)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<CodeSymbol>>(json);
+            }
+            catch (JsonException)
+            {
+                return [];
+            }
         }
     }
 }

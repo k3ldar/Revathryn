@@ -146,6 +146,8 @@ namespace Revathryn.Engine
             List<ReviewContextItem> capturedContextItems = [];
             List<string> requestedContextKeys = [];
 
+            await SeedRelatedContextAsync(repository, file, request, capturedContextItems, requestedContextKeys, cancellationToken).ConfigureAwait(false);
+
             while (true)
             {
                 ReviewResponse response = await _aiReviewEngine.ReviewAsync(request, cancellationToken).ConfigureAwait(false);
@@ -350,8 +352,41 @@ namespace Revathryn.Engine
             CancellationToken cancellationToken)
         {
             string sourcePath = ResolveAbsolutePath(repository.LocalPath, file.RelativePath);
+            ReviewContextRound round = new();
 
             foreach (string contextKey in contextRequests.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                (string resolvedKey, string query) = ParseContextRequest(contextKey);
+                round.RequestedKeys.Add(contextKey);
+
+                ReviewContextRequest contextRequest = new()
+                {
+                    RepositoryId = request.RepositoryId,
+                    RepositoryName = repository.Name,
+                    RepoFileId = request.RepoFileId,
+                    Language = request.Language,
+                    ContextKey = resolvedKey,
+                    Query = query,
+                    MaxItems = Consts.MaxContextItemsPerRequest,
+                    SourcePath = sourcePath
+                };
+
+                ReviewContextResponse contextResponse = await _contextProvider.GetContextAsync(contextRequest, cancellationToken).ConfigureAwait(false);
+                AppendContextItems(round.Items, contextResponse?.Items, capturedItems);
+            }
+
+            request.ContextRounds.Add(round);
+        }
+
+        private async Task SeedRelatedContextAsync(
+            Repository repository,
+            RepoFile file,
+            ReviewRequest request,
+            List<ReviewContextItem> capturedItems,
+            List<string> requestedContextKeys,
+            CancellationToken cancellationToken)
+        {
+            try
             {
                 ReviewContextRequest contextRequest = new()
                 {
@@ -359,27 +394,69 @@ namespace Revathryn.Engine
                     RepositoryName = repository.Name,
                     RepoFileId = request.RepoFileId,
                     Language = request.Language,
-                    ContextKey = contextKey,
+                    ContextKey = Consts.ContextKeyRelated,
                     MaxItems = Consts.MaxContextItemsPerRequest,
-                    SourcePath = sourcePath
+                    SourcePath = ResolveAbsolutePath(repository.LocalPath, file.RelativePath)
                 };
 
                 ReviewContextResponse contextResponse = await _contextProvider.GetContextAsync(contextRequest, cancellationToken).ConfigureAwait(false);
 
-                foreach (ContextItem item in contextResponse?.Items ?? [])
+                if (contextResponse?.Items is null || contextResponse.Items.Count == 0)
                 {
-                    string rendered = RenderContextItem(item, out bool renderTruncated);
-                    request.AdditionalContext.Add(rendered);
-                    capturedItems.Add(new ReviewContextItem
-                    {
-                        Title = item.Title ?? string.Empty,
-                        SourcePath = item.SourcePath ?? string.Empty,
-                        Content = rendered,
-                        Truncated = item.Truncated || renderTruncated,
-                        OriginalLength = Math.Max(item.OriginalLength, renderTruncated ? (item.Content ?? string.Empty).Length : 0)
-                    });
+                    return;
+                }
+
+                requestedContextKeys.Add(Consts.ContextKeyRelated);
+                AppendContextItems(request.InitialContext, contextResponse.Items, capturedItems);
+            }
+            catch (Exception)
+            {
+                // Related context is best-effort; a failed index read must not block the review.
+            }
+        }
+
+        private static void AppendContextItems(List<string> target, IReadOnlyList<ContextItem> items, List<ReviewContextItem> capturedItems)
+        {
+            foreach (ContextItem item in items ?? [])
+            {
+                string rendered = RenderContextItem(item, out bool renderTruncated);
+                target.Add(rendered);
+                capturedItems.Add(new ReviewContextItem
+                {
+                    Title = item.Title ?? string.Empty,
+                    SourcePath = item.SourcePath ?? string.Empty,
+                    Content = rendered,
+                    Truncated = item.Truncated || renderTruncated,
+                    OriginalLength = Math.Max(item.OriginalLength, renderTruncated ? (item.Content ?? string.Empty).Length : 0)
+                });
+            }
+        }
+
+        private static (string ContextKey, string Query) ParseContextRequest(string contextKey)
+        {
+            string searchPrefix = string.Concat(Consts.ContextKeySearch, Consts.CharColon);
+            string filesPrefix = string.Concat(Consts.ContextKeyFiles, Consts.CharColon);
+            string callersPrefix = string.Concat(Consts.ContextKeyCallers, Consts.CharColon);
+
+            if (!string.IsNullOrWhiteSpace(contextKey))
+            {
+                if (contextKey.StartsWith(searchPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (Consts.ContextKeySearch, contextKey[searchPrefix.Length..].Trim());
+                }
+
+                if (contextKey.StartsWith(filesPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (Consts.ContextKeyFiles, contextKey[filesPrefix.Length..].Trim());
+                }
+
+                if (contextKey.StartsWith(callersPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (Consts.ContextKeyCallers, contextKey[callersPrefix.Length..].Trim());
                 }
             }
+
+            return (contextKey ?? string.Empty, string.Empty);
         }
 
         private static string RenderContextItem(ContextItem item, out bool truncated)

@@ -168,7 +168,7 @@ namespace Revathryn.Engine
                 Language = original.Language ?? string.Empty,
                 FileContent = original.FileContent ?? string.Empty,
                 Prompt = combinedPrompt,
-                AdditionalContext = [.. original.ContextItems.Select(item => item.Content ?? string.Empty)]
+                InitialContext = [.. original.ContextItems.Select(item => item.Content ?? string.Empty)]
             };
 
             ReviewResponse response = await _aiReviewEngine.ReviewAsync(request, cancellationToken).ConfigureAwait(false);

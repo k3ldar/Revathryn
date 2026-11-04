@@ -33,6 +33,7 @@ namespace Revathryn.Review
         private const string CodeFence = "```";
         private const string FileContentHeader = "File content:";
         private const string AdditionalContextHeader = "Additional context:";
+        private const string RequestedContextHeader = "Requested context:";
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -141,6 +142,14 @@ namespace Revathryn.Review
                 new OpenAIMessage { Role = UserRole, Content = BuildUserContent(request) }
             ];
 
+            if (request.ContextRounds is not null)
+            {
+                foreach (ReviewContextRound round in request.ContextRounds)
+                {
+                    messages.Add(new OpenAIMessage { Role = UserRole, Content = BuildContextRoundContent(round) });
+                }
+            }
+
             if (correctionMessages is not null && correctionMessages.Count > 0)
             {
                 messages.AddRange(correctionMessages);
@@ -164,15 +173,28 @@ namespace Revathryn.Review
             builder.AppendLine(FileContentHeader);
             builder.AppendLine(request.FileContent ?? string.Empty);
 
-            if (request.AdditionalContext is not null && request.AdditionalContext.Count > 0)
+            if (request.InitialContext is not null && request.InitialContext.Count > 0)
             {
                 builder.AppendLine();
                 builder.AppendLine(AdditionalContextHeader);
 
-                foreach (string contextItem in request.AdditionalContext)
+                foreach (string contextItem in request.InitialContext)
                 {
                     builder.AppendLine(contextItem);
                 }
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildContextRoundContent(ReviewContextRound round)
+        {
+            StringBuilder builder = new();
+            builder.AppendLine(RequestedContextHeader);
+
+            foreach (string contextItem in round.Items ?? [])
+            {
+                builder.AppendLine(contextItem);
             }
 
             return builder.ToString();
@@ -185,7 +207,7 @@ namespace Revathryn.Review
         }
 
         private static ReviewResponse ParseReviewOutput(string body)
-         {
+        {
             try
             {
                 OpenAIChatCompletionResponse completion = JsonSerializer.Deserialize<OpenAIChatCompletionResponse>(body);
@@ -323,7 +345,7 @@ namespace Revathryn.Review
                 return trimmed;
             }
 
-            int start = trimmed.IndexOf(NewLine);
+            int start = trimmed.IndexOf(CharNewLine);
 
             if (start < 0)
             {
