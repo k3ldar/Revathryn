@@ -17,5 +17,8 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Length of the content before truncation. 0 when not recorded.</summary>
         public int OriginalLength { get; set; }
+
+        /// <summary>True when this item was fetched in response to an explicit AI context request; false when it was supplied up front.</summary>
+        public bool Requested { get; set; }
     }
 }

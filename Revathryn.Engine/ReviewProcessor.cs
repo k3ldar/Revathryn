@@ -146,7 +146,7 @@ namespace Revathryn.Engine
             List<ReviewContextItem> capturedContextItems = [];
             List<string> requestedContextKeys = [];
 
-            await SeedRelatedContextAsync(repository, file, request, capturedContextItems, requestedContextKeys, cancellationToken).ConfigureAwait(false);
+            await SeedRelatedContextAsync(repository, file, request, capturedContextItems, cancellationToken).ConfigureAwait(false);
 
             while (true)
             {
@@ -372,7 +372,7 @@ namespace Revathryn.Engine
                 };
 
                 ReviewContextResponse contextResponse = await _contextProvider.GetContextAsync(contextRequest, cancellationToken).ConfigureAwait(false);
-                AppendContextItems(round.Items, contextResponse?.Items, capturedItems);
+                AppendContextItems(round.Items, contextResponse?.Items, capturedItems, requested: true);
             }
 
             request.ContextRounds.Add(round);
@@ -383,7 +383,6 @@ namespace Revathryn.Engine
             RepoFile file,
             ReviewRequest request,
             List<ReviewContextItem> capturedItems,
-            List<string> requestedContextKeys,
             CancellationToken cancellationToken)
         {
             try
@@ -406,8 +405,7 @@ namespace Revathryn.Engine
                     return;
                 }
 
-                requestedContextKeys.Add(Consts.ContextKeyRelated);
-                AppendContextItems(request.InitialContext, contextResponse.Items, capturedItems);
+                AppendContextItems(request.InitialContext, contextResponse.Items, capturedItems, requested: false);
             }
             catch (Exception)
             {
@@ -415,7 +413,7 @@ namespace Revathryn.Engine
             }
         }
 
-        private static void AppendContextItems(List<string> target, IReadOnlyList<ContextItem> items, List<ReviewContextItem> capturedItems)
+        private static void AppendContextItems(List<string> target, IReadOnlyList<ContextItem> items, List<ReviewContextItem> capturedItems, bool requested)
         {
             foreach (ContextItem item in items ?? [])
             {
@@ -427,7 +425,8 @@ namespace Revathryn.Engine
                     SourcePath = item.SourcePath ?? string.Empty,
                     Content = rendered,
                     Truncated = item.Truncated || renderTruncated,
-                    OriginalLength = Math.Max(item.OriginalLength, renderTruncated ? (item.Content ?? string.Empty).Length : 0)
+                    OriginalLength = Math.Max(item.OriginalLength, renderTruncated ? (item.Content ?? string.Empty).Length : 0),
+                    Requested = requested
                 });
             }
         }

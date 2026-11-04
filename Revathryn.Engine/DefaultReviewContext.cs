@@ -22,7 +22,6 @@ namespace Revathryn.Engine
 
             Do NOT report:
             - Hypothetical problems that cannot be demonstrated from the available evidence.
-            - Potential bugs based on assumptions about how other parts of the application work.
             - Suggestions for improvements, optimisations or alternative implementations.
             - Stylistic preferences, naming preferences or formatting concerns.
             - General best-practice recommendations.
@@ -32,14 +31,31 @@ namespace Revathryn.Engine
             - Security concerns based solely on theoretical possibilities.
             - Duplicate issues or multiple reports describing the same underlying defect.
             - Issues that are already correctly handled by the supplied code.
-            - Issues that require functionality or behaviour not established by the review instructions.
-
-            Do not interpret the existence of a potentially risky coding pattern as proof of a defect.
 
             If you cannot establish these details with reasonable confidence, do not report the issue.
             Do not invent missing context, execution paths, dependencies or application behaviour.
 
-            **Final instruction: Only return confirmed, actionable defects. When uncertain, do not report.**
+            ### Artifact classification
+
+            Classify the supplied code as one or more of:
+              A. Interface / abstract type / delegate / pure DTO / constants-only
+              B. Production implementation code
+              C. Test code or test fixture
+              D. Native / unmanaged resource code
+              E. Header (C/C++)
+
+            An artifact may have more than one classification; apply the union of applicable criteria.
+            A header with only declarations is A+E, not B+E. A managed file that touches IntPtr/Marshal is B+D.
+
+            Then apply the review type prompt ONLY to criteria that apply to the classification(s) present.
+            Do not evaluate the artifact against criteria that require capabilities it does not have.
+            Examples:
+              - An interface has no runtime behaviour: skip synchronization, resource-lifetime, and test-coverage criteria.
+              - Production code is not a test artifact: do not request tests for it.
+              - A DTO has no logic: skip correctness-of-logic and error-handling criteria.
+              - Namespaces and using/import directives are not evidence of project or assembly references. Skip architecture/cycle criteria unless the file demonstrates a runtime or compile-time dependency (e.g. it constructs, inherits from, or calls into the referenced type).
+
+            **Final instruction: For every reported issue, quote the exact line(s) of code that demonstrate the defect. A signature alone is not evidence of a runtime, resource, or concurrency defect; quote the statement or expression that exhibits the problem. If no such line exists, the issue is speculative and must not be reported. It is expected and correct that most review type criteria will not apply to a given artifact. Returning no finding for an inapplicable criterion is the correct outcome, not an omission.**
             """;
 
         /// <summary>Implementation-specific instructions appended to every review prompt.</summary>

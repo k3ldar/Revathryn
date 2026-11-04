@@ -965,6 +965,21 @@
 			<data name="ContextItemsSuppliedLabel" xml:space="preserve">
 			  <value>{0} items</value>
 			</data>
+			<data name="SuppliedContextLabel" xml:space="preserve">
+			  <value>Supplied context</value>
+			</data>
+			<data name="RequestedContextLabel" xml:space="preserve">
+			  <value>Requested context</value>
+			</data>
+			<data name="AIRequestedContextBadge" xml:space="preserve">
+			  <value>AI requested additional context</value>
+			</data>
+			<data name="AINoRequestedContextMessage" xml:space="preserve">
+			  <value>The AI did not request additional context.</value>
+			</data>
+			<data name="RequestedContextNoItemsMessage" xml:space="preserve">
+			  <value>The AI requested additional context, but no items were captured.</value>
+			</data>
 			<data name="ExpandLabel" xml:space="preserve">
 			  <value>Expand</value>
 			</data>

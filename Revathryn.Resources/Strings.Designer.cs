@@ -2708,6 +2708,51 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Supplied context.
+        /// </summary>
+        public static string SuppliedContextLabel {
+            get {
+                return ResourceManager.GetString("SuppliedContextLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Requested context.
+        /// </summary>
+        public static string RequestedContextLabel {
+            get {
+                return ResourceManager.GetString("RequestedContextLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to AI requested additional context.
+        /// </summary>
+        public static string AIRequestedContextBadge {
+            get {
+                return ResourceManager.GetString("AIRequestedContextBadge", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The AI did not request additional context..
+        /// </summary>
+        public static string AINoRequestedContextMessage {
+            get {
+                return ResourceManager.GetString("AINoRequestedContextMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The AI requested additional context, but no items were captured..
+        /// </summary>
+        public static string RequestedContextNoItemsMessage {
+            get {
+                return ResourceManager.GetString("RequestedContextNoItemsMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Expand.
         /// </summary>
         public static string ExpandLabel {

@@ -2086,8 +2086,9 @@ namespace Revathryn.Engine.Tests
                     }
                 };
                 ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                FakeReviewOutcomeStore outcomes = new();
 
-                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, contextProvider: contextProvider);
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes, contextProvider: contextProvider);
 
                 bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
 
@@ -2098,6 +2099,11 @@ namespace Revathryn.Engine.Tests
                 Assert.HasCount(0, engine.LastRequest.ContextRounds);
                 Assert.HasCount(1, contextProvider.Requests);
                 Assert.AreEqual(Consts.ContextKeyRelated, contextProvider.Requests[0].ContextKey);
+                Assert.HasCount(1, outcomes.Outcomes);
+                Assert.IsNotNull(outcomes.Outcomes[0].Context);
+                Assert.HasCount(1, outcomes.Outcomes[0].Context.ContextItems);
+                Assert.IsFalse(outcomes.Outcomes[0].Context.ContextItems[0].Requested);
+                Assert.HasCount(0, outcomes.Outcomes[0].Context.RequestedContextKeys);
             }
             finally
             {
@@ -2138,8 +2144,9 @@ namespace Revathryn.Engine.Tests
 
                 FakeReviewContextProvider contextProvider = new();
                 ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                FakeReviewOutcomeStore outcomes = new();
 
-                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, contextProvider: contextProvider);
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes, contextProvider: contextProvider);
 
                 bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
 
@@ -2147,6 +2154,11 @@ namespace Revathryn.Engine.Tests
                 ReviewContextRequest searchRequest = contextProvider.Requests.FirstOrDefault(request => request.ContextKey == Consts.ContextKeySearch);
                 Assert.IsNotNull(searchRequest);
                 Assert.AreEqual("Program", searchRequest.Query);
+                Assert.HasCount(1, outcomes.Outcomes);
+                Assert.IsNotNull(outcomes.Outcomes[0].Context);
+                Assert.HasCount(1, outcomes.Outcomes[0].Context.RequestedContextKeys);
+                Assert.AreEqual("search:Program", outcomes.Outcomes[0].Context.RequestedContextKeys[0]);
+                Assert.HasCount(0, outcomes.Outcomes[0].Context.ContextItems);
             }
             finally
             {
@@ -2187,8 +2199,9 @@ namespace Revathryn.Engine.Tests
 
                 FakeReviewContextProvider contextProvider = new();
                 ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                FakeReviewOutcomeStore outcomes = new();
 
-                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, contextProvider: contextProvider);
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes, contextProvider: contextProvider);
 
                 bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
 
@@ -2200,6 +2213,80 @@ namespace Revathryn.Engine.Tests
                 Assert.HasCount(1, engine.LastRequest.ContextRounds);
                 Assert.HasCount(1, engine.LastRequest.ContextRounds[0].RequestedKeys);
                 Assert.AreEqual("files:Consumer.cs", engine.LastRequest.ContextRounds[0].RequestedKeys[0]);
+                Assert.HasCount(1, outcomes.Outcomes);
+                Assert.IsNotNull(outcomes.Outcomes[0].Context);
+                Assert.HasCount(1, outcomes.Outcomes[0].Context.RequestedContextKeys);
+                Assert.AreEqual("files:Consumer.cs", outcomes.Outcomes[0].Context.RequestedContextKeys[0]);
+                Assert.HasCount(0, outcomes.Outcomes[0].Context.ContextItems);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task ReviewProcessor_RequestedContext_MarksItemsAsRequested()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    Priority = 100,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new();
+                engine.Responses.Add(new ReviewResponse { Success = true, ContextRequests = ["search:Program"] });
+                engine.Responses.Add(new ReviewResponse { Success = true, Results = [] });
+
+                FakeReviewContextProvider contextProvider = new()
+                {
+                    Response = new ReviewContextResponse
+                    {
+                        ContextKey = Consts.ContextKeyRelated,
+                        Items =
+                        [
+                            new ContextItem
+                            {
+                                Title = "Program",
+                                Content = "class Program { }",
+                                SourcePath = Path.Combine(root, "Program.cs")
+                            }
+                        ]
+                    }
+                };
+                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                FakeReviewOutcomeStore outcomes = new();
+
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes, contextProvider: contextProvider);
+
+                bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.IsTrue(processed);
+                Assert.HasCount(1, outcomes.Outcomes);
+                Assert.IsNotNull(outcomes.Outcomes[0].Context);
+                Assert.HasCount(2, outcomes.Outcomes[0].Context.ContextItems);
+                Assert.IsFalse(outcomes.Outcomes[0].Context.ContextItems[0].Requested);
+                Assert.IsTrue(outcomes.Outcomes[0].Context.ContextItems[1].Requested);
+                Assert.HasCount(1, outcomes.Outcomes[0].Context.RequestedContextKeys);
+                Assert.AreEqual("search:Program", outcomes.Outcomes[0].Context.RequestedContextKeys[0]);
             }
             finally
             {
