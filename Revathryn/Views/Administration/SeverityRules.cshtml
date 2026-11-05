@@ -1,0 +1,63 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.SeverityRuleListViewModel
+@{
+    ViewData["Title"] = Strings.SeverityRulesLabel;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@Strings.SeverityRulesTitle</h1>
+    <a asp-action="CreateSeverityRule" class="btn btn-primary">@Strings.AddSeverityRuleButton</a>
+</div>
+
+<div class="alert alert-secondary">
+    @Strings.SeverityRulesNotice
+</div>
+
+@if (Model.Rules.Count == 0)
+{
+    <div class="alert alert-secondary">
+        @Strings.NoSeverityRulesMessage
+    </div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (Revathryn.Contracts.Models.SeverityRule rule in Model.Rules)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <span class="fw-semibold">@rule.Name</span>
+
+                            @if (rule.Enabled)
+                            {
+                                <span class="badge bg-success">@Strings.EnabledLabel</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@Strings.RepositoryDisabled</span>
+                            }
+                        </div>
+
+                        <div class="text-muted small">@Strings.SeverityRuleOrderLabel: @rule.Order</div>
+                        <div class="text-muted small">@Strings.SeverityRuleMatchTextLabel: @rule.MatchText</div>
+                        <div class="text-muted small">@Strings.SeverityRuleMatchFieldLabel: @rule.MatchField</div>
+                        <div class="text-muted small">@Strings.SeverityRuleActionLabel: @rule.Action</div>
+                        <div class="text-muted small">@Strings.SeverityRuleTargetSeverityLabel: @rule.TargetSeverity</div>
+
+                        @if (rule.MatchSeverity.HasValue)
+                        {
+                            <div class="text-muted small">@Strings.SeverityRuleMatchSeverityLabel: @rule.MatchSeverity.Value</div>
+                        }
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a asp-action="EditSeverityRule" asp-route-id="@rule.Id" class="btn btn-outline-secondary btn-sm">@Strings.EditButton</a>
+                        <a asp-action="DeleteSeverityRule" asp-route-id="@rule.Id" class="btn btn-outline-danger btn-sm">@Strings.DeleteButton</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

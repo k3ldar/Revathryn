@@ -44,6 +44,7 @@ namespace Revathryn.Data
                 SqliteDatabaseSchema.CreateFindings,
                 SqliteDatabaseSchema.CreateAIEngines,
                 SqliteDatabaseSchema.CreateAISettings,
+                SqliteDatabaseSchema.CreateSeverityRules,
                 SqliteDatabaseSchema.CreateRepoProjects,
                 SqliteDatabaseSchema.CreateRepositoryScans,
                 SqliteDatabaseSchema.CreateReviewUsage,

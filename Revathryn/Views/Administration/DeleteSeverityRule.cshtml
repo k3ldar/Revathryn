@@ -1,0 +1,37 @@
+@using Revathryn.Resources
+@model Revathryn.Contracts.Models.SeverityRule
+@{
+    ViewData["Title"] = Strings.DeleteButton;
+}
+
+<h1>@Strings.DeleteButton</h1>
+
+<div class="alert alert-danger">
+    @string.Format(Strings.SeverityRuleDeleteConfirmation, Model.Name)
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">@Strings.SeverityRuleNameLabel</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">@Strings.SeverityRuleMatchTextLabel</dt>
+            <dd class="col-sm-9">@Model.MatchText</dd>
+
+            <dt class="col-sm-3">@Strings.SeverityRuleActionLabel</dt>
+            <dd class="col-sm-9">@Model.Action</dd>
+
+            <dt class="col-sm-3">@Strings.SeverityRuleTargetSeverityLabel</dt>
+            <dd class="col-sm-9">@Model.TargetSeverity</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="DeleteSeverityRule" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">@Strings.DeleteButton</button>
+        <a asp-action="SeverityRules" class="btn btn-outline-secondary">@Strings.CancelButton</a>
+    </div>
+</form>

@@ -21,6 +21,8 @@ namespace Revathryn.Controllers
         private readonly IReviewTypeRepository _reviewTypeRepository;
         private readonly IRepositoryService _repositoryService;
         private readonly IIssueSettingsProvider _issueSettingsProvider;
+        private readonly ISeverityRuleRepository _severityRuleRepository;
+        private readonly ISeverityRuleProvider _severityRuleProvider;
 
         /// <summary>Initialises a new administration controller.</summary>
         public AdministrationController(
@@ -30,7 +32,9 @@ namespace Revathryn.Controllers
             IReviewEngineConfigurationService reviewEngineConfiguration,
             IReviewTypeRepository reviewTypeRepository,
             IRepositoryService repositoryService,
-            IIssueSettingsProvider issueSettingsProvider)
+            IIssueSettingsProvider issueSettingsProvider,
+            ISeverityRuleRepository severityRuleRepository,
+            ISeverityRuleProvider severityRuleProvider)
         {
             _aiSettingsRepository = aiSettingsRepository;
             _aiEngineRepository = aiEngineRepository;
@@ -39,6 +43,8 @@ namespace Revathryn.Controllers
             _reviewTypeRepository = reviewTypeRepository;
             _repositoryService = repositoryService;
             _issueSettingsProvider = issueSettingsProvider;
+            _severityRuleRepository = severityRuleRepository;
+            _severityRuleProvider = severityRuleProvider;
         }
 
         /// <summary>Renders the independent review engine configuration, separate from the detection engines.</summary>
@@ -493,6 +499,141 @@ namespace Revathryn.Controllers
             return RedirectToAction(nameof(ReviewTypes));
         }
 
+        /// <summary>Lists configured severity override rules in evaluation order.</summary>
+        [HttpGet]
+        public async Task<IActionResult> SeverityRules(CancellationToken cancellationToken)
+        {
+            IReadOnlyList<SeverityRule> rules = await _severityRuleRepository.GetAllAsync(cancellationToken);
+
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.SeverityRulesLabel);
+
+            return View(new SeverityRuleListViewModel { Rules = rules });
+        }
+
+        /// <summary>Renders the form for adding a severity override rule.</summary>
+        [HttpGet]
+        public IActionResult CreateSeverityRule()
+        {
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildSeverityRuleEditorBreadcrumbs(Strings.AddSeverityRuleTitle);
+            return View(Consts.SeverityRuleFormViewName, new SeverityRuleEditViewModel());
+        }
+
+        /// <summary>Adds a new severity override rule.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateSeverityRule(SeverityRuleEditViewModel form, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewData[Consts.BreadcrumbsViewDataKey] = BuildSeverityRuleEditorBreadcrumbs(Strings.AddSeverityRuleTitle);
+                return View(Consts.SeverityRuleFormViewName, form);
+            }
+
+            try
+            {
+                SeverityRule rule = form.ToRule();
+                rule.CreatedDate = DateTime.UtcNow;
+                rule.LastModifiedDate = DateTime.UtcNow;
+
+                await _severityRuleRepository.AddAsync(rule, cancellationToken);
+                await RefreshSeverityRulesAsync(cancellationToken);
+                TempData[Consts.SuccessMessageTempDataKey] = Strings.SeverityRuleSavedMessage;
+                return RedirectToAction(nameof(SeverityRules));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                ViewData[Consts.BreadcrumbsViewDataKey] = BuildSeverityRuleEditorBreadcrumbs(Strings.AddSeverityRuleTitle);
+                return View(Consts.SeverityRuleFormViewName, form);
+            }
+        }
+
+        /// <summary>Renders the form for editing a severity override rule.</summary>
+        [HttpGet]
+        public async Task<IActionResult> EditSeverityRule(long id, CancellationToken cancellationToken)
+        {
+            SeverityRule rule = await _severityRuleRepository.GetByIdAsync(id, cancellationToken);
+
+            if (rule is null)
+            {
+                return NotFound();
+            }
+
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildSeverityRuleEditorBreadcrumbs(Strings.EditSeverityRuleTitle);
+            return View(Consts.SeverityRuleFormViewName, SeverityRuleEditViewModel.FromRule(rule));
+        }
+
+        /// <summary>Persists changes to a severity override rule.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditSeverityRule(SeverityRuleEditViewModel form, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewData[Consts.BreadcrumbsViewDataKey] = BuildSeverityRuleEditorBreadcrumbs(Strings.EditSeverityRuleTitle);
+                return View(Consts.SeverityRuleFormViewName, form);
+            }
+
+            try
+            {
+                SeverityRule existing = await _severityRuleRepository.GetByIdAsync(form.Id, cancellationToken);
+
+                if (existing is null)
+                {
+                    return NotFound();
+                }
+
+                SeverityRule updated = form.ToRule();
+                updated.Id = existing.Id;
+                updated.CreatedDate = existing.CreatedDate;
+                updated.LastModifiedDate = DateTime.UtcNow;
+
+                await _severityRuleRepository.UpdateAsync(updated, cancellationToken);
+                await RefreshSeverityRulesAsync(cancellationToken);
+                TempData[Consts.SuccessMessageTempDataKey] = Strings.SeverityRuleSavedMessage;
+                return RedirectToAction(nameof(SeverityRules));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                ViewData[Consts.BreadcrumbsViewDataKey] = BuildSeverityRuleEditorBreadcrumbs(Strings.EditSeverityRuleTitle);
+                return View(Consts.SeverityRuleFormViewName, form);
+            }
+        }
+
+        /// <summary>Renders the confirmation view for severity override rule deletion.</summary>
+        [HttpGet]
+        public async Task<IActionResult> DeleteSeverityRule(long id, CancellationToken cancellationToken)
+        {
+            SeverityRule rule = await _severityRuleRepository.GetByIdAsync(id, cancellationToken);
+
+            if (rule is null)
+            {
+                return NotFound();
+            }
+
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.DeleteButton);
+            return View(rule);
+        }
+
+        /// <summary>Deletes a severity override rule.</summary>
+        [HttpPost]
+        [ActionName("DeleteSeverityRule")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSeverityRuleConfirmed(long id, CancellationToken cancellationToken)
+        {
+            await _severityRuleRepository.DeleteAsync(id, cancellationToken);
+            await RefreshSeverityRulesAsync(cancellationToken);
+            TempData[Consts.SuccessMessageTempDataKey] = Strings.SeverityRuleDeletedMessage;
+            return RedirectToAction(nameof(SeverityRules));
+        }
+
+        private async Task RefreshSeverityRulesAsync(CancellationToken cancellationToken)
+        {
+            IReadOnlyList<SeverityRule> rules = await _severityRuleRepository.GetAllAsync(cancellationToken);
+            _severityRuleProvider.Refresh(rules);
+        }
+
         private List<BreadcrumbItem> BuildAdministrationBreadcrumbs(string activeTitle)
         {
             return new List<BreadcrumbItem>
@@ -521,6 +662,17 @@ namespace Revathryn.Controllers
                 new() { Title = Strings.DashboardTitle, Url = Url.Action(nameof(DashboardController.Index), Consts.DashboardControllerName) },
                 new() { Title = Strings.AdministrationTitle },
                 new() { Title = Strings.ReviewTypesLabel, Url = Url.Action(nameof(ReviewTypes)) },
+                new() { Title = activeTitle, IsActive = true }
+            };
+        }
+
+        private List<BreadcrumbItem> BuildSeverityRuleEditorBreadcrumbs(string activeTitle)
+        {
+            return new List<BreadcrumbItem>
+            {
+                new() { Title = Strings.DashboardTitle, Url = Url.Action(nameof(DashboardController.Index), Consts.DashboardControllerName) },
+                new() { Title = Strings.AdministrationTitle },
+                new() { Title = Strings.SeverityRulesLabel, Url = Url.Action(nameof(SeverityRules)) },
                 new() { Title = activeTitle, IsActive = true }
             };
         }

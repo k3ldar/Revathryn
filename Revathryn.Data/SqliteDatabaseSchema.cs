@@ -187,6 +187,23 @@ namespace Revathryn.Data
             );
             """;
 
+        /// <summary>Creates the SeverityRules table holding configurable severity overrides.</summary>
+        internal const string CreateSeverityRules = """
+            CREATE TABLE IF NOT EXISTS SeverityRules (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                RuleOrder INTEGER NOT NULL DEFAULT 0,
+                Name TEXT NOT NULL,
+                MatchText TEXT NOT NULL,
+                MatchField INTEGER NOT NULL DEFAULT 2,
+                MatchSeverity INTEGER NULL,
+                Action INTEGER NOT NULL DEFAULT 1,
+                TargetSeverity INTEGER NOT NULL DEFAULT 2,
+                Enabled INTEGER NOT NULL DEFAULT 1,
+                CreatedDate TEXT NOT NULL,
+                LastModifiedDate TEXT NOT NULL
+            );
+            """;
+
         /// <summary>Creates the RepoProjects table.</summary>
         internal const string CreateRepoProjects = """
             CREATE TABLE IF NOT EXISTS RepoProjects (
@@ -476,7 +493,8 @@ namespace Revathryn.Data
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_PromptOptimisations_ActiveValidation ON PromptOptimisations (IssueValidationId) WHERE Status IN (0, 1) AND IssueValidationId IS NOT NULL;",
             "CREATE INDEX IF NOT EXISTS IX_PromptTestRuns_PromptVersionId ON PromptTestRuns (PromptVersionId, CreatedUtc DESC);",
             "CREATE INDEX IF NOT EXISTS IX_PromptTestRuns_Status ON PromptTestRuns (Status, NextAttemptUtc);",
-            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_PromptTestRuns_ActiveVersionIssue ON PromptTestRuns (PromptVersionId, OriginalIssueId) WHERE Status IN (0, 1) AND OriginalIssueId IS NOT NULL;"
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_PromptTestRuns_ActiveVersionIssue ON PromptTestRuns (PromptVersionId, OriginalIssueId) WHERE Status IN (0, 1) AND OriginalIssueId IS NOT NULL;",
+            "CREATE INDEX IF NOT EXISTS IX_SeverityRules_Order ON SeverityRules (RuleOrder, Id);"
         ];
     }
 }

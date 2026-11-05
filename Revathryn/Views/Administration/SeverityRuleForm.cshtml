@@ -1,0 +1,79 @@
+@using Revathryn.Contracts.Enums
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.SeverityRuleEditViewModel
+@{
+    string formAction = Model.Id == 0 ? "CreateSeverityRule" : "EditSeverityRule";
+    string title = Model.Id == 0 ? Strings.AddSeverityRuleTitle : Strings.EditSeverityRuleTitle;
+    ViewData["Title"] = title;
+}
+
+<h1>@title</h1>
+
+<form asp-action="@formAction" method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Order" class="form-label">@Strings.SeverityRuleOrderLabel</label>
+        <input asp-for="Order" class="form-control" type="number" />
+        <span asp-validation-for="Order" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label">@Strings.SeverityRuleNameLabel</label>
+        <input asp-for="Name" class="form-control" required />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MatchText" class="form-label">@Strings.SeverityRuleMatchTextLabel</label>
+        <input asp-for="MatchText" class="form-control" required />
+        <span asp-validation-for="MatchText" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MatchField" class="form-label">@Strings.SeverityRuleMatchFieldLabel</label>
+        <select asp-for="MatchField" asp-items="Html.GetEnumSelectList<SeverityRuleMatchField>()" class="form-select"></select>
+        <span asp-validation-for="MatchField" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MatchSeverity" class="form-label">@Strings.SeverityRuleMatchSeverityLabel</label>
+        <select asp-for="MatchSeverity" class="form-select">
+            <option value="">@Strings.SeverityRuleAnySeverityOption</option>
+            @foreach (FindingSeverity severity in Enum.GetValues<FindingSeverity>())
+            {
+                <option value="@((int)severity)" selected="@(Model.MatchSeverity == severity)">@severity</option>
+            }
+        </select>
+        <span asp-validation-for="MatchSeverity" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Action" class="form-label">@Strings.SeverityRuleActionLabel</label>
+        <select asp-for="Action" asp-items="Html.GetEnumSelectList<SeverityRuleAction>()" class="form-select"></select>
+        <span asp-validation-for="Action" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="TargetSeverity" class="form-label">@Strings.SeverityRuleTargetSeverityLabel</label>
+        <select asp-for="TargetSeverity" asp-items="Html.GetEnumSelectList<FindingSeverity>()" class="form-select"></select>
+        <span asp-validation-for="TargetSeverity" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="Enabled" class="form-check-input" />
+        <label asp-for="Enabled" class="form-check-label">@Strings.EnabledLabel</label>
+    </div>
+
+    <input asp-for="Id" type="hidden" />
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">@Strings.SaveButton</button>
+        <a asp-action="SeverityRules" class="btn btn-outline-secondary">@Strings.CancelButton</a>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

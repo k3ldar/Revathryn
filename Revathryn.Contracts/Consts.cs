@@ -417,5 +417,16 @@
         public const string PromptRecommendationKeyPotentialDrawbacks = "potentialDrawbacks";
         public const string PromptProposalKeySystemPrompt = "systemPrompt";
         public const string PromptProposalKeyReviewPrompt = "reviewPrompt";
+
+        // Severity override rule configuration.
+        public const string SeverityRuleFormViewName = "SeverityRuleForm";
+        public const int MinimumSeverityRuleOrder = 0;
+        public const int MaximumSeverityRuleOrder = 100000;
+        public const int DefaultSeverityRuleOrder = 10;
+        public const int SeverityRuleOrderStep = 10;
+        public const string DefaultSeverityRuleTypoName = "Typo";
+        public const string DefaultSeverityRuleTypoMatchText = "typo";
+        public const string DefaultSeverityRuleNamingInconsistencyName = "Naming inconsistency";
+        public const string DefaultSeverityRuleNamingInconsistencyMatchText = "naming inconsistency";
     }
 }

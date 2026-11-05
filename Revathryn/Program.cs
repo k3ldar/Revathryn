@@ -87,6 +87,14 @@ namespace Revathryn
                 IIssueSettingsProvider issueSettingsProvider = app.Services.GetRequiredService<IIssueSettingsProvider>();
                 issueSettingsProvider.Refresh(aiSettings);
 
+                // Seed default severity override rules and load them into the runtime provider.
+                ISeverityRuleSeeder severityRuleSeeder = app.Services.GetRequiredService<ISeverityRuleSeeder>();
+                await severityRuleSeeder.SeedAsync();
+
+                ISeverityRuleRepository severityRuleRepository = app.Services.GetRequiredService<ISeverityRuleRepository>();
+                ISeverityRuleProvider severityRuleProvider = app.Services.GetRequiredService<ISeverityRuleProvider>();
+                severityRuleProvider.Refresh(await severityRuleRepository.GetAllAsync());
+
                 // Seed built-in review definitions for any repository that is missing them.
                 IReviewTypeSeeder reviewTypeSeeder = app.Services.GetRequiredService<IReviewTypeSeeder>();
                 IRepositoryService repositoryService = app.Services.GetRequiredService<IRepositoryService>();

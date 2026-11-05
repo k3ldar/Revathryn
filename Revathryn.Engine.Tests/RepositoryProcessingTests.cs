@@ -2321,6 +2321,7 @@ namespace Revathryn.Engine.Tests
                 usageRepository ?? new FakeReviewUsageRepository(),
                 new FakeDuplicateDetectionQueue(),
                 new IssueSettingsProvider(),
+                new SeverityRuleEngine(new SeverityRuleProvider()),
                 options);
         }
 

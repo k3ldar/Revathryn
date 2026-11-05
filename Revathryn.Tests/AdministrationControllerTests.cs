@@ -979,7 +979,9 @@ namespace Revathryn.Tests
             FakeReviewTypeRepository reviewTypeRepository = null,
             FakeRepositoryService repositoryService = null,
             FakeAISettingsRepository aiSettingsRepository = null,
-            IIssueSettingsProvider issueSettingsProvider = null)
+            IIssueSettingsProvider issueSettingsProvider = null,
+            ISeverityRuleRepository severityRuleRepository = null,
+            ISeverityRuleProvider severityRuleProvider = null)
         {
             DefaultHttpContext httpContext = new();
 
@@ -992,7 +994,9 @@ namespace Revathryn.Tests
                 reviewEngine ?? new FakeReviewEngineConfigurationService(),
                 reviewTypeRepository ?? new FakeReviewTypeRepository(),
                 repositoryService ?? new FakeRepositoryService(),
-                issueSettingsProvider ?? new IssueSettingsProvider())
+                issueSettingsProvider ?? new IssueSettingsProvider(),
+                severityRuleRepository ?? new FakeSeverityRuleRepository(),
+                severityRuleProvider ?? new SeverityRuleProvider())
             {
                 ControllerContext = new ControllerContext(actionContext),
                 Url = new FakeUrlHelper(actionContext),
@@ -1000,6 +1004,64 @@ namespace Revathryn.Tests
             };
 
             return controller;
+        }
+
+        private sealed class FakeSeverityRuleRepository : ISeverityRuleRepository
+        {
+            public List<SeverityRule> Rules { get; } = new();
+
+            public int AddCallCount { get; private set; }
+
+            public int UpdateCallCount { get; private set; }
+
+            public int DeleteCallCount { get; private set; }
+
+            public long DeletedId { get; private set; }
+
+            public Task<SeverityRule> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Rules.FirstOrDefault(rule => rule.Id == id));
+            }
+
+            public Task<IReadOnlyList<SeverityRule>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<SeverityRule>>([.. Rules.OrderBy(rule => rule.Order).ThenBy(rule => rule.Id)]);
+            }
+
+            public Task<IReadOnlyList<SeverityRule>> GetEnabledOrderedAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<SeverityRule>>([.. Rules.Where(rule => rule.Enabled).OrderBy(rule => rule.Order).ThenBy(rule => rule.Id)]);
+            }
+
+            public Task<long> AddAsync(SeverityRule rule, CancellationToken cancellationToken = default)
+            {
+                AddCallCount++;
+                rule.Id = Rules.Count == 0 ? 1 : Rules.Max(existing => existing.Id) + 1;
+                Rules.Add(rule);
+                return Task.FromResult(rule.Id);
+            }
+
+            public Task UpdateAsync(SeverityRule rule, CancellationToken cancellationToken = default)
+            {
+                UpdateCallCount++;
+                SeverityRule existing = Rules.FirstOrDefault(candidate => candidate.Id == rule.Id);
+
+                if (existing is not null)
+                {
+                    Rules.Remove(existing);
+                }
+
+                Rules.Add(rule);
+                return Task.CompletedTask;
+            }
+
+            public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
+            {
+                DeleteCallCount++;
+                DeletedId = id;
+                Rules.RemoveAll(rule => rule.Id == id);
+                return Task.CompletedTask;
+            }
         }
 
         private sealed class FakeAIEngineRepository : IAIEngineRepository

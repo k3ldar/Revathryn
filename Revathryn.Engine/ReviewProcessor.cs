@@ -37,6 +37,7 @@ namespace Revathryn.Engine
         private readonly IReviewUsageRepository _reviewUsageRepository;
         private readonly IDuplicateDetectionQueue _duplicateDetectionQueue;
         private readonly IIssueSettingsProvider _issueSettingsProvider;
+        private readonly ISeverityRuleEngine _severityRuleEngine;
         private readonly ResilienceOptions _resilienceOptions;
 
         /// <summary>Initialises a new processor.</summary>
@@ -54,6 +55,7 @@ namespace Revathryn.Engine
             IReviewUsageRepository reviewUsageRepository,
             IDuplicateDetectionQueue duplicateDetectionQueue,
             IIssueSettingsProvider issueSettingsProvider,
+            ISeverityRuleEngine severityRuleEngine,
             ResilienceOptions resilienceOptions)
         {
             _reviewQueue = reviewQueue;
@@ -69,6 +71,7 @@ namespace Revathryn.Engine
             _reviewUsageRepository = reviewUsageRepository;
             _duplicateDetectionQueue = duplicateDetectionQueue;
             _issueSettingsProvider = issueSettingsProvider;
+            _severityRuleEngine = severityRuleEngine;
             _resilienceOptions = resilienceOptions;
         }
 
@@ -247,7 +250,7 @@ namespace Revathryn.Engine
                     RepoFileId = item.RepoFileId,
                     ReviewTypeId = item.ReviewTypeId,
                     Fingerprint = BuildFindingFingerprint(item, result),
-                    Severity = result.Severity,
+                    Severity = _severityRuleEngine.Apply(result.Severity, result.Title ?? string.Empty, result.Description ?? string.Empty),
                     Title = result.Title ?? string.Empty,
                     Description = result.Description ?? string.Empty,
                     SuggestedFix = result.SuggestedFix ?? string.Empty,

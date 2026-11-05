@@ -3230,6 +3230,46 @@ namespace Revathryn.Resources {
 
         public static string DuplicateOfIssueLabel { get { return ResourceManager.GetString("DuplicateOfIssueLabel", resourceCulture); } }
 
+        public static string SeverityRulesLabel { get { return ResourceManager.GetString("SeverityRulesLabel", resourceCulture); } }
+
+        public static string SeverityRulesTitle { get { return ResourceManager.GetString("SeverityRulesTitle", resourceCulture); } }
+
+        public static string AddSeverityRuleButton { get { return ResourceManager.GetString("AddSeverityRuleButton", resourceCulture); } }
+
+        public static string AddSeverityRuleTitle { get { return ResourceManager.GetString("AddSeverityRuleTitle", resourceCulture); } }
+
+        public static string EditSeverityRuleTitle { get { return ResourceManager.GetString("EditSeverityRuleTitle", resourceCulture); } }
+
+        public static string SeverityRuleSavedMessage { get { return ResourceManager.GetString("SeverityRuleSavedMessage", resourceCulture); } }
+
+        public static string SeverityRuleDeletedMessage { get { return ResourceManager.GetString("SeverityRuleDeletedMessage", resourceCulture); } }
+
+        public static string SeverityRulesNotice { get { return ResourceManager.GetString("SeverityRulesNotice", resourceCulture); } }
+
+        public static string NoSeverityRulesMessage { get { return ResourceManager.GetString("NoSeverityRulesMessage", resourceCulture); } }
+
+        public static string SeverityRuleOrderLabel { get { return ResourceManager.GetString("SeverityRuleOrderLabel", resourceCulture); } }
+
+        public static string SeverityRuleOrderRangeMessage { get { return ResourceManager.GetString("SeverityRuleOrderRangeMessage", resourceCulture); } }
+
+        public static string SeverityRuleNameLabel { get { return ResourceManager.GetString("SeverityRuleNameLabel", resourceCulture); } }
+
+        public static string SeverityRuleMatchTextLabel { get { return ResourceManager.GetString("SeverityRuleMatchTextLabel", resourceCulture); } }
+
+        public static string SeverityRuleMatchTextRequiredMessage { get { return ResourceManager.GetString("SeverityRuleMatchTextRequiredMessage", resourceCulture); } }
+
+        public static string SeverityRuleMatchFieldLabel { get { return ResourceManager.GetString("SeverityRuleMatchFieldLabel", resourceCulture); } }
+
+        public static string SeverityRuleMatchSeverityLabel { get { return ResourceManager.GetString("SeverityRuleMatchSeverityLabel", resourceCulture); } }
+
+        public static string SeverityRuleAnySeverityOption { get { return ResourceManager.GetString("SeverityRuleAnySeverityOption", resourceCulture); } }
+
+        public static string SeverityRuleActionLabel { get { return ResourceManager.GetString("SeverityRuleActionLabel", resourceCulture); } }
+
+        public static string SeverityRuleTargetSeverityLabel { get { return ResourceManager.GetString("SeverityRuleTargetSeverityLabel", resourceCulture); } }
+
+        public static string SeverityRuleDeleteConfirmation { get { return ResourceManager.GetString("SeverityRuleDeleteConfirmation", resourceCulture); } }
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>

@@ -1511,4 +1511,64 @@
 			<data name="DuplicateOfIssueLabel" xml:space="preserve">
 			  <value>Duplicate of issue #{0}</value>
 			</data>
+			<data name="SeverityRulesLabel" xml:space="preserve">
+			  <value>Severity Rules</value>
+			</data>
+			<data name="SeverityRulesTitle" xml:space="preserve">
+			  <value>Severity Override Rules</value>
+			</data>
+			<data name="AddSeverityRuleButton" xml:space="preserve">
+			  <value>Add rule</value>
+			</data>
+			<data name="AddSeverityRuleTitle" xml:space="preserve">
+			  <value>Add severity rule</value>
+			</data>
+			<data name="EditSeverityRuleTitle" xml:space="preserve">
+			  <value>Edit severity rule</value>
+			</data>
+			<data name="SeverityRuleSavedMessage" xml:space="preserve">
+			  <value>Severity rule saved.</value>
+			</data>
+			<data name="SeverityRuleDeletedMessage" xml:space="preserve">
+			  <value>Severity rule deleted.</value>
+			</data>
+			<data name="SeverityRulesNotice" xml:space="preserve">
+			  <value>Rules are evaluated in ascending order and the first match wins. Use a Cap action to reduce a severity without raising lower severities.</value>
+			</data>
+			<data name="NoSeverityRulesMessage" xml:space="preserve">
+			  <value>No severity override rules configured.</value>
+			</data>
+			<data name="SeverityRuleOrderLabel" xml:space="preserve">
+			  <value>Order</value>
+			</data>
+			<data name="SeverityRuleOrderRangeMessage" xml:space="preserve">
+			  <value>Order must be between {0} and {1}.</value>
+			</data>
+			<data name="SeverityRuleNameLabel" xml:space="preserve">
+			  <value>Name</value>
+			</data>
+			<data name="SeverityRuleMatchTextLabel" xml:space="preserve">
+			  <value>Match text</value>
+			</data>
+			<data name="SeverityRuleMatchTextRequiredMessage" xml:space="preserve">
+			  <value>Match text is required.</value>
+			</data>
+			<data name="SeverityRuleMatchFieldLabel" xml:space="preserve">
+			  <value>Match field</value>
+			</data>
+			<data name="SeverityRuleMatchSeverityLabel" xml:space="preserve">
+			  <value>Match severity</value>
+			</data>
+			<data name="SeverityRuleAnySeverityOption" xml:space="preserve">
+			  <value>Any severity</value>
+			</data>
+			<data name="SeverityRuleActionLabel" xml:space="preserve">
+			  <value>Action</value>
+			</data>
+			<data name="SeverityRuleTargetSeverityLabel" xml:space="preserve">
+			  <value>Target severity</value>
+			</data>
+			<data name="SeverityRuleDeleteConfirmation" xml:space="preserve">
+			  <value>Delete severity rule '{0}'?</value>
+			</data>
 			</root>
