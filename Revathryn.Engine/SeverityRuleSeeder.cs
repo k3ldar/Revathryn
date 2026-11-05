@@ -58,7 +58,7 @@ namespace Revathryn.Engine
             await _severityRuleRepository.AddAsync(typoRule, cancellationToken).ConfigureAwait(false);
             await _severityRuleRepository.AddAsync(namingRule, cancellationToken).ConfigureAwait(false);
 
-            return 2;
+            return Consts.DefaultSeverityRuleSeedCount;
         }
     }
 }

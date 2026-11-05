@@ -87,6 +87,12 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Findings", "ReviewContextId", "INTEGER NULL");
             EnsureColumn(connection, "Findings", "DuplicateOfFindingId", "INTEGER NULL");
             EnsureColumn(connection, "Findings", "DuplicateSimilarityScore", "REAL NULL");
+            EnsureColumn(connection, "Findings", "FindingKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(connection, "Findings", "LineStart", "INTEGER NULL");
+            EnsureColumn(connection, "Findings", "LineEnd", "INTEGER NULL");
+            EnsureColumn(connection, "Findings", "ResolutionOrigin", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(connection, "Findings", "ResolvedUtc", "TEXT NULL");
+            EnsureColumn(connection, "Findings", "ResolvedReviewSha256", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "AIEngines", "MaxTokens", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxTokens);
             EnsureColumn(connection, "AISettings", "IssueSimilarityEnabled", "INTEGER NOT NULL DEFAULT 1");
             EnsureColumn(connection, "AISettings", "IssueSimilarityThreshold", "REAL NOT NULL DEFAULT " + Consts.DefaultIssueSimilarityThreshold);

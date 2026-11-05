@@ -4,6 +4,7 @@ using Revathryn.Contracts;
 using Revathryn.Contracts.Analysis;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Persistence;
+using Revathryn.Contracts.Services;
 
 namespace Revathryn.Data
 {
@@ -40,6 +41,7 @@ namespace Revathryn.Data
             services.AddTransient<IFindingRepository, FindingRepository>();
             services.AddTransient<IReviewContextRepository, ReviewContextRepository>();
             services.AddTransient<IReviewOutcomeStore, ReviewOutcomeStore>();
+            services.AddTransient<IFindingReconciler, FindingReconciler>();
             services.AddTransient<IQueueRepository, QueueRepository>();
             services.AddTransient<IAIEngineRepository, AIEngineRepository>();
             services.AddTransient<ISeverityRuleRepository, SeverityRuleRepository>();

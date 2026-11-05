@@ -19,5 +19,14 @@ namespace Revathryn.Contracts.Review
 
         /// <summary>Optional suggested fix.</summary>
         public string SuggestedFix { get; set; } = string.Empty;
+
+        /// <summary>Optional stable identifier emitted by the engine, used to correlate findings across reviews.</summary>
+        public string FindingKey { get; set; } = string.Empty;
+
+        /// <summary>Starting line of the finding, when reported by the engine.</summary>
+        public int? LineStart { get; set; }
+
+        /// <summary>Ending line of the finding, when reported by the engine.</summary>
+        public int? LineEnd { get; set; }
     }
 }

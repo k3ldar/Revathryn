@@ -178,6 +178,8 @@
         public const string MemberKindOperator = "Operator";
         public const string MemberKindEnumMember = "EnumMember";
         public const string FindingFingerprintSeparator = ":";
+        public const string FindingKeyRulePrefix = "rule:";
+        public const string FindingKeyLocationPrefix = "loc:";
         public const string OperationalFailureFingerprintSuffix = "operational";
         public const int OpenAIRequestTimeoutSeconds = 120;
         public const string OpenAIChatCompletionsSuffix = "/chat/completions";
@@ -424,6 +426,7 @@
         public const int MaximumSeverityRuleOrder = 100000;
         public const int DefaultSeverityRuleOrder = 10;
         public const int SeverityRuleOrderStep = 10;
+        public const int DefaultSeverityRuleSeedCount = 2;
         public const string DefaultSeverityRuleTypoName = "Typo";
         public const string DefaultSeverityRuleTypoMatchText = "typo";
         public const string DefaultSeverityRuleNamingInconsistencyName = "Naming inconsistency";

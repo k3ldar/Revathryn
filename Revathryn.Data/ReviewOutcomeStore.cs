@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
+using Revathryn.Contracts.Services;
 
 namespace Revathryn.Data
 {
@@ -9,11 +10,13 @@ namespace Revathryn.Data
     public sealed class ReviewOutcomeStore : IReviewOutcomeStore
     {
         private readonly SqliteConnectionFactory _connectionFactory;
+        private readonly IFindingReconciler _findingReconciler;
 
         /// <summary>Initialises a new store.</summary>
-        public ReviewOutcomeStore(SqliteConnectionFactory connectionFactory)
+        public ReviewOutcomeStore(SqliteConnectionFactory connectionFactory, IFindingReconciler findingReconciler)
         {
             _connectionFactory = connectionFactory;
+            _findingReconciler = findingReconciler;
         }
 
         /// <summary>Persists findings and completed analysis in a single transaction.</summary>
@@ -31,10 +34,32 @@ namespace Revathryn.Data
                 reviewContextId = await ReviewContextRepository.AddAsync(connection, transaction, outcome.Context, cancellationToken).ConfigureAwait(false);
             }
 
-            foreach (Finding finding in outcome.Findings ?? [])
+            IReadOnlyList<Finding> newFindings = outcome.Findings ?? [];
+
+            foreach (Finding finding in newFindings)
             {
                 finding.ReviewContextId ??= reviewContextId;
+            }
+
+            IReadOnlyList<Finding> existingFindings = await FindingRepository
+                .GetForFileAndReviewTypeAsync(connection, transaction, outcome.RepoFileId, outcome.ReviewTypeId, cancellationToken)
+                .ConfigureAwait(false);
+
+            FindingReconciliation reconciliation = _findingReconciler.Reconcile(existingFindings, newFindings, outcome.Sha256, outcome.CompletedUtc);
+
+            foreach (Finding finding in reconciliation.FindingsToInsert)
+            {
                 await FindingRepository.AddAsync(connection, transaction, finding, cancellationToken).ConfigureAwait(false);
+            }
+
+            foreach (Finding finding in reconciliation.FindingsToUpdate)
+            {
+                await FindingRepository.UpdateAsync(connection, transaction, finding, cancellationToken).ConfigureAwait(false);
+            }
+
+            foreach (Finding finding in reconciliation.FindingsToResolve)
+            {
+                await FindingRepository.UpdateAsync(connection, transaction, finding, cancellationToken).ConfigureAwait(false);
             }
 
             foreach (ReviewUsage usage in outcome.UsageRecords ?? [])

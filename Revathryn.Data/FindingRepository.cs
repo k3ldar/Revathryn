@@ -10,7 +10,7 @@ namespace Revathryn.Data
     public sealed class FindingRepository : SqliteRepositoryBase, IFindingRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore";
+            "Id, RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore, FindingKey, LineStart, LineEnd, ResolutionOrigin, ResolvedUtc, ResolvedReviewSha256";
 
         /// <summary>Initialises a new repository.</summary>
         public FindingRepository(SqliteConnectionFactory connectionFactory)
@@ -266,8 +266,8 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @ReviewContextId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate, @DuplicateOfFindingId, @DuplicateSimilarityScore);
+                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore, FindingKey, LineStart, LineEnd, ResolutionOrigin, ResolvedUtc, ResolvedReviewSha256)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @ReviewContextId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate, @DuplicateOfFindingId, @DuplicateSimilarityScore, @FindingKey, @LineStart, @LineEnd, @ResolutionOrigin, @ResolvedUtc, @ResolvedReviewSha256);
                 SELECT Id FROM Findings WHERE RepositoryId = @RepositoryId AND Fingerprint = @Fingerprint LIMIT 1;
                 """;
             AddParameters(command, finding);
@@ -278,11 +278,46 @@ namespace Revathryn.Data
             return id;
         }
 
+        /// <summary>Returns all findings recorded for the given file and review type within the supplied transaction.</summary>
+        internal static async Task<IReadOnlyList<Finding>> GetForFileAndReviewTypeAsync(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            long repoFileId,
+            long reviewTypeId,
+            CancellationToken cancellationToken)
+        {
+            using SqliteCommand command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = $"SELECT {SelectColumns} FROM Findings WHERE RepoFileId = @RepoFileId AND ReviewTypeId = @ReviewTypeId ORDER BY Id ASC;";
+            command.Parameters.AddWithValue("@RepoFileId", repoFileId);
+            command.Parameters.AddWithValue("@ReviewTypeId", reviewTypeId);
+
+            List<Finding> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(MapFinding(reader));
+            }
+
+            return results;
+        }
+
         /// <summary>Updates an existing finding.</summary>
         public async Task UpdateAsync(Finding finding, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            await UpdateAsync(connection, null, finding, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>Updates the finding within the supplied transaction.</summary>
+        internal static async Task UpdateAsync(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            Finding finding,
+            CancellationToken cancellationToken)
+        {
             using SqliteCommand command = connection.CreateCommand();
+            command.Transaction = transaction;
             command.CommandText = """
                 UPDATE Findings
                 SET RepositoryId = @RepositoryId,
@@ -299,7 +334,13 @@ namespace Revathryn.Data
                     CreatedDate = @CreatedDate,
                     LastModifiedDate = @LastModifiedDate,
                     DuplicateOfFindingId = @DuplicateOfFindingId,
-                    DuplicateSimilarityScore = @DuplicateSimilarityScore
+                    DuplicateSimilarityScore = @DuplicateSimilarityScore,
+                    FindingKey = @FindingKey,
+                    LineStart = @LineStart,
+                    LineEnd = @LineEnd,
+                    ResolutionOrigin = @ResolutionOrigin,
+                    ResolvedUtc = @ResolvedUtc,
+                    ResolvedReviewSha256 = @ResolvedReviewSha256
                 WHERE Id = @Id;
                 """;
             AddParameters(command, finding);
@@ -419,6 +460,12 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@LastModifiedDate", SqliteValueConverter.ToText(finding.LastModifiedDate));
             command.Parameters.AddWithValue("@DuplicateOfFindingId", SqliteValueConverter.ToParameter(finding.DuplicateOfFindingId));
             command.Parameters.AddWithValue("@DuplicateSimilarityScore", SqliteValueConverter.ToParameter(finding.DuplicateSimilarityScore));
+            command.Parameters.AddWithValue("@FindingKey", finding.FindingKey ?? string.Empty);
+            command.Parameters.AddWithValue("@LineStart", SqliteValueConverter.ToParameter(finding.LineStart));
+            command.Parameters.AddWithValue("@LineEnd", SqliteValueConverter.ToParameter(finding.LineEnd));
+            command.Parameters.AddWithValue("@ResolutionOrigin", (int)finding.ResolutionOrigin);
+            command.Parameters.AddWithValue("@ResolvedUtc", SqliteValueConverter.ToParameter(finding.ResolvedUtc));
+            command.Parameters.AddWithValue("@ResolvedReviewSha256", finding.ResolvedReviewSha256 ?? string.Empty);
         }
 
         private static Finding MapFinding(SqliteDataReader reader)
@@ -440,7 +487,13 @@ namespace Revathryn.Data
                 CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(12)),
                 LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(13)),
                 DuplicateOfFindingId = reader.IsDBNull(14) ? null : reader.GetInt64(14),
-                DuplicateSimilarityScore = reader.IsDBNull(15) ? null : reader.GetDouble(15)
+                DuplicateSimilarityScore = reader.IsDBNull(15) ? null : reader.GetDouble(15),
+                FindingKey = reader.IsDBNull(16) ? string.Empty : reader.GetString(16),
+                LineStart = reader.IsDBNull(17) ? null : reader.GetInt32(17),
+                LineEnd = reader.IsDBNull(18) ? null : reader.GetInt32(18),
+                ResolutionOrigin = (FindingResolutionOrigin)reader.GetInt32(19),
+                ResolvedUtc = reader.IsDBNull(20) ? null : SqliteValueConverter.ToDateTime(reader.GetString(20)),
+                ResolvedReviewSha256 = reader.IsDBNull(21) ? string.Empty : reader.GetString(21)
             };
         }
     }

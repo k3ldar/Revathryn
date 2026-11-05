@@ -958,7 +958,7 @@ namespace Revathryn.Data.Tests
             RepoFileRepository files = new(database.Factory);
             ReviewTypeRepository reviewTypes = new(database.Factory);
             ReviewContextRepository contexts = new(database.Factory);
-            ReviewOutcomeStore store = new(database.Factory);
+            ReviewOutcomeStore store = new(database.Factory, new FindingReconciler());
             FindingRepository findings = new(database.Factory);
 
             long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
@@ -1016,7 +1016,7 @@ namespace Revathryn.Data.Tests
             RepositoryRepository repositories = new(database.Factory);
             RepoFileRepository files = new(database.Factory);
             ReviewTypeRepository reviewTypes = new(database.Factory);
-            ReviewOutcomeStore store = new(database.Factory);
+            ReviewOutcomeStore store = new(database.Factory, new FindingReconciler());
             FindingRepository findings = new(database.Factory);
 
             long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
@@ -1049,7 +1049,7 @@ namespace Revathryn.Data.Tests
             RepoFileRepository files = new(database.Factory);
             ReviewTypeRepository reviewTypes = new(database.Factory);
             ReviewContextRepository contexts = new(database.Factory);
-            ReviewOutcomeStore store = new(database.Factory);
+            ReviewOutcomeStore store = new(database.Factory, new FindingReconciler());
             FindingRepository findings = new(database.Factory);
 
             long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);

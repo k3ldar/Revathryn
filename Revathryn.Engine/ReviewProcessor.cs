@@ -256,6 +256,10 @@ namespace Revathryn.Engine
                     SuggestedFix = result.SuggestedFix ?? string.Empty,
                     Status = FindingStatus.New,
                     Category = FindingCategory.CodeIssue,
+                    FindingKey = BuildFindingKey(result),
+                    LineStart = result.LineStart,
+                    LineEnd = result.LineEnd,
+                    ResolutionOrigin = FindingResolutionOrigin.None,
                     CreatedDate = DateTime.UtcNow,
                     LastModifiedDate = DateTime.UtcNow
                 };
@@ -535,6 +539,27 @@ namespace Revathryn.Engine
                 item.RepoFileId.ToString(),
                 item.ReviewTypeId.ToString(),
                 NormaliseResultFingerprint(result));
+        }
+
+        private static string BuildFindingKey(ReviewResult result)
+        {
+            if (!string.IsNullOrWhiteSpace(result.FindingKey))
+            {
+                return string.Concat(Consts.FindingKeyRulePrefix, result.FindingKey.Trim());
+            }
+
+            if (result.LineStart.HasValue && result.LineEnd.HasValue)
+            {
+                return string.Concat(
+                    Consts.FindingKeyLocationPrefix,
+                    ((int)result.Severity).ToString(),
+                    Consts.FindingFingerprintSeparator,
+                    result.LineStart.Value.ToString(),
+                    Consts.FindingFingerprintSeparator,
+                    result.LineEnd.Value.ToString());
+            }
+
+            return string.Empty;
         }
 
         private static string BuildOperationalFailureFingerprint(QueueItem item)

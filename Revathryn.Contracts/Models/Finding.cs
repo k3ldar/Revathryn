@@ -52,5 +52,23 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>UTC timestamp when the finding was last modified.</summary>
         public DateTime LastModifiedDate { get; set; }
+
+        /// <summary>Stable cross-review key used to correlate findings across reviews. Empty when not correlatable.</summary>
+        public string FindingKey { get; set; } = string.Empty;
+
+        /// <summary>Starting line of the finding, when reported by the engine.</summary>
+        public int? LineStart { get; set; }
+
+        /// <summary>Ending line of the finding, when reported by the engine.</summary>
+        public int? LineEnd { get; set; }
+
+        /// <summary>How the finding was resolved, when resolved.</summary>
+        public FindingResolutionOrigin ResolutionOrigin { get; set; }
+
+        /// <summary>UTC timestamp when the finding was resolved, when resolved.</summary>
+        public DateTime? ResolvedUtc { get; set; }
+
+        /// <summary>SHA256 of the reviewed file content the finding was resolved against.</summary>
+        public string ResolvedReviewSha256 { get; set; } = string.Empty;
     }
 }

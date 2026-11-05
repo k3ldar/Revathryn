@@ -68,7 +68,10 @@ namespace Revathryn.Engine
                   "severity": "<info|low|medium|high|critical>",
                   "title": "<short summary of the issue>",
                   "description": "<clear explanation of the problem>",
-                  "suggestedFix": "<concrete, actionable remediation>"
+                  "suggestedFix": "<concrete, actionable remediation>",
+                  "findingKey": "<optional stable identifier for this finding, independent of wording>",
+                  "lineStart": <1-based first line of the code that demonstrates the defect>,
+                  "lineEnd": <1-based last line of the code that demonstrates the defect>
                 }
               ],
               "contextRequests": ["<context key>"]
@@ -78,6 +81,8 @@ namespace Revathryn.Engine
             - Include both "results" and "contextRequests" in every response.
             - Set "results" to an empty array when no issues are found.
             - "severity" must be one of: info, low, medium, high, critical.
+            - "lineStart" and "lineEnd" are integers and must both be present when the defect is tied to specific lines; omit both when it is not.
+            - "findingKey" is optional; provide a short stable identifier (for example a rule name or category) only when one is obvious, otherwise omit it.
             - "contextRequests" is normally empty. When you need additional context before finalising the review, list the context keys you require. The supported keys are:
               - "symbols" (symbol information for the file),
               - "dependencies" (dependency information),

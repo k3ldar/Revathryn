@@ -245,7 +245,10 @@ namespace Revathryn.Review
                         Severity = ParseSeverity(result.Severity),
                         Title = result.Title ?? string.Empty,
                         Description = result.Description ?? string.Empty,
-                        SuggestedFix = result.SuggestedFix ?? string.Empty
+                        SuggestedFix = result.SuggestedFix ?? string.Empty,
+                        FindingKey = result.FindingKey ?? string.Empty,
+                        LineStart = result.LineStart,
+                        LineEnd = result.LineEnd
                     });
                 }
 
@@ -590,6 +593,15 @@ namespace Revathryn.Review
 
             [JsonPropertyName("suggestedFix")]
             public string SuggestedFix { get; set; }
+
+            [JsonPropertyName("findingKey")]
+            public string FindingKey { get; set; }
+
+            [JsonPropertyName("lineStart")]
+            public int? LineStart { get; set; }
+
+            [JsonPropertyName("lineEnd")]
+            public int? LineEnd { get; set; }
         }
 
         private sealed class SendResult
