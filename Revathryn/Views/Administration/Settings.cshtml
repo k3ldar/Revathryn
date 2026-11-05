@@ -1,3 +1,4 @@
+@using Revathryn.Contracts
 @using Revathryn.Resources
 @model Revathryn.Models.Administration.GeneralSettingsViewModel
 @{
@@ -13,6 +14,40 @@
         <label asp-for="MasterPrompt" class="form-label">@Strings.MasterPromptLabel</label>
         <textarea asp-for="MasterPrompt" class="form-control" rows="10"></textarea>
         <span asp-validation-for="MasterPrompt" class="text-danger"></span>
+    </div>
+
+    <h2 class="h5 mt-4">@Strings.DuplicateDetectionSettingsHeading</h2>
+
+    <div class="form-check mb-3">
+        <input asp-for="IssueSimilarityEnabled" class="form-check-input" />
+        <label asp-for="IssueSimilarityEnabled" class="form-check-label">@Strings.IssueSimilarityEnabledLabel</label>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="IssueSimilarityThresholdPercent" class="form-label">@Strings.IssueSimilarityThresholdPercentLabel</label>
+        <input asp-for="IssueSimilarityThresholdPercent" class="form-control" type="number" min="@Consts.MinimumIssueSimilarityThresholdPercent" max="@Consts.MaximumIssueSimilarityThresholdPercent" />
+        <span asp-validation-for="IssueSimilarityThresholdPercent" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="IssueSimilarityMinimumTokenLength" class="form-label">@Strings.IssueSimilarityMinimumTokenLengthLabel</label>
+        <input asp-for="IssueSimilarityMinimumTokenLength" class="form-control" type="number" min="@Consts.MinimumIssueSimilarityTokenLength" max="@Consts.MaximumIssueSimilarityTokenLength" />
+        <span asp-validation-for="IssueSimilarityMinimumTokenLength" class="text-danger"></span>
+    </div>
+
+    <h2 class="h5 mt-4">@Strings.IssueBrowsingSettingsHeading</h2>
+
+    <div class="mb-3">
+        <label asp-for="IssueDefaultPageSize" class="form-label">@Strings.IssueDefaultPageSizeLabel</label>
+        <input asp-for="IssueDefaultPageSize" class="form-control" type="number" min="@Consts.MinimumIssuePageSize" max="@Consts.MaximumIssuePageSize" />
+        <span asp-validation-for="IssueDefaultPageSize" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="IssuePageSizeOptions" class="form-label">@Strings.IssuePageSizeOptionsLabel</label>
+        <input asp-for="IssuePageSizeOptions" class="form-control" />
+        <div class="form-text">@Strings.IssuePageSizeOptionsHint</div>
+        <span asp-validation-for="IssuePageSizeOptions" class="text-danger"></span>
     </div>
 
     <div class="mb-3 text-muted small">

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 using Revathryn.Contracts;
 using Revathryn.Contracts.Enums;
@@ -23,7 +22,7 @@ namespace Revathryn.Controllers
         private readonly IReviewContextRepository _reviewContextRepository;
         private readonly IIssueValidationService _validationService;
         private readonly IReviewEngineConfigurationService _reviewEngineConfiguration;
-        private readonly IssueViewingOptions _options;
+        private readonly IIssueSettingsProvider _issueSettingsProvider;
 
         /// <summary>Initialises a new issues controller.</summary>
         public IssuesController(
@@ -34,7 +33,7 @@ namespace Revathryn.Controllers
             IReviewContextRepository reviewContextRepository,
             IIssueValidationService validationService,
             IReviewEngineConfigurationService reviewEngineConfiguration,
-            IOptions<IssueViewingOptions> options)
+            IIssueSettingsProvider issueSettingsProvider)
         {
             _repositoryService = repositoryService;
             _repositoryFileService = repositoryFileService;
@@ -43,7 +42,7 @@ namespace Revathryn.Controllers
             _reviewContextRepository = reviewContextRepository;
             _validationService = validationService;
             _reviewEngineConfiguration = reviewEngineConfiguration;
-            _options = options.Value;
+            _issueSettingsProvider = issueSettingsProvider;
         }
 
         /// <summary>Renders repository selection for issue browsing.</summary>
@@ -144,7 +143,7 @@ namespace Revathryn.Controllers
                 PageIndex = query.PageIndex + 1,
                 PageSize = query.PageSize,
                 TotalPages = CalculateTotalPages(result.TotalCount, query.PageSize),
-                PageSizeOptions = _options.PageSizeOptions,
+                PageSizeOptions = _issueSettingsProvider.IssueViewing.PageSizeOptions,
                 Severity = query.Severity,
                 ReviewTypeId = query.ReviewTypeId,
                 Search = query.SearchText,
@@ -370,12 +369,12 @@ namespace Revathryn.Controllers
 
         private int ResolvePageSize(int? pageSize)
         {
-            if (pageSize.HasValue && _options.PageSizeOptions.Contains(pageSize.Value))
+            if (pageSize.HasValue && _issueSettingsProvider.IssueViewing.PageSizeOptions.Contains(pageSize.Value))
             {
                 return pageSize.Value;
             }
 
-            return _options.DefaultPageSize;
+            return _issueSettingsProvider.IssueViewing.DefaultPageSize;
         }
 
         private static int CalculateTotalPages(int totalCount, int pageSize)

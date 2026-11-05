@@ -20,6 +20,7 @@ namespace Revathryn.Controllers
         private readonly IReviewEngineConfigurationService _reviewEngineConfiguration;
         private readonly IReviewTypeRepository _reviewTypeRepository;
         private readonly IRepositoryService _repositoryService;
+        private readonly IIssueSettingsProvider _issueSettingsProvider;
 
         /// <summary>Initialises a new administration controller.</summary>
         public AdministrationController(
@@ -28,7 +29,8 @@ namespace Revathryn.Controllers
             IReviewUsageRepository reviewUsageRepository,
             IReviewEngineConfigurationService reviewEngineConfiguration,
             IReviewTypeRepository reviewTypeRepository,
-            IRepositoryService repositoryService)
+            IRepositoryService repositoryService,
+            IIssueSettingsProvider issueSettingsProvider)
         {
             _aiSettingsRepository = aiSettingsRepository;
             _aiEngineRepository = aiEngineRepository;
@@ -36,6 +38,7 @@ namespace Revathryn.Controllers
             _reviewEngineConfiguration = reviewEngineConfiguration;
             _reviewTypeRepository = reviewTypeRepository;
             _repositoryService = repositoryService;
+            _issueSettingsProvider = issueSettingsProvider;
         }
 
         /// <summary>Renders the independent review engine configuration, separate from the detection engines.</summary>
@@ -87,10 +90,22 @@ namespace Revathryn.Controllers
         {
             AISettings settings = await _aiSettingsRepository.GetAsync(cancellationToken);
 
+            string pageSizeOptions = settings.IssuePageSizeOptions;
+
+            if (string.IsNullOrWhiteSpace(pageSizeOptions))
+            {
+                pageSizeOptions = IssuePageSizeOptionsFormatter.Format(new IssueViewingOptions().PageSizeOptions);
+            }
+
             GeneralSettingsViewModel model = new()
             {
                 MasterPrompt = settings.MasterPrompt,
-                LastModifiedDate = settings.LastModifiedDate
+                LastModifiedDate = settings.LastModifiedDate,
+                IssueSimilarityEnabled = settings.IssueSimilarityEnabled,
+                IssueSimilarityThresholdPercent = (int)Math.Round(settings.IssueSimilarityThreshold * Consts.IssueSimilarityThresholdPercentageScale),
+                IssueSimilarityMinimumTokenLength = settings.IssueSimilarityMinimumTokenLength,
+                IssueDefaultPageSize = settings.IssueDefaultPageSize,
+                IssuePageSizeOptions = pageSizeOptions
             };
 
             ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.GeneralSettingsTitle);
@@ -103,24 +118,89 @@ namespace Revathryn.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Settings(GeneralSettingsViewModel model, CancellationToken cancellationToken)
         {
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.GeneralSettingsTitle);
+
+            if (!TryValidateIssueSettings(model))
+            {
+                return View(model);
+            }
+
             try
             {
+                List<int> pageSizeOptions = IssuePageSizeOptionsFormatter.Parse(model.IssuePageSizeOptions);
+
                 AISettings settings = new()
                 {
                     MasterPrompt = model.MasterPrompt?.Trim() ?? string.Empty,
-                    LastModifiedDate = DateTime.UtcNow
+                    LastModifiedDate = DateTime.UtcNow,
+                    IssueSimilarityEnabled = model.IssueSimilarityEnabled,
+                    IssueSimilarityThreshold = model.IssueSimilarityThresholdPercent / Consts.IssueSimilarityThresholdPercentageScale,
+                    IssueSimilarityMinimumTokenLength = model.IssueSimilarityMinimumTokenLength,
+                    IssueDefaultPageSize = model.IssueDefaultPageSize,
+                    IssuePageSizeOptions = IssuePageSizeOptionsFormatter.Format(pageSizeOptions)
                 };
 
                 await _aiSettingsRepository.UpdateAsync(settings, cancellationToken);
+                _issueSettingsProvider.Refresh(settings);
                 TempData[Consts.SuccessMessageTempDataKey] = Strings.SettingsSavedMessage;
                 return RedirectToAction(nameof(Settings));
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, string.Format(Strings.SettingsSaveFailedMessage, ex.Message));
-                ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.GeneralSettingsTitle);
                 return View(model);
             }
+        }
+
+        private bool TryValidateIssueSettings(GeneralSettingsViewModel model)
+        {
+            bool valid = true;
+
+            if (model.IssueSimilarityThresholdPercent < Consts.MinimumIssueSimilarityThresholdPercent
+                || model.IssueSimilarityThresholdPercent > Consts.MaximumIssueSimilarityThresholdPercent)
+            {
+                ModelState.AddModelError(
+                    nameof(GeneralSettingsViewModel.IssueSimilarityThresholdPercent),
+                    string.Format(Strings.IssueSimilarityThresholdPercentRangeMessage, Consts.MinimumIssueSimilarityThresholdPercent, Consts.MaximumIssueSimilarityThresholdPercent));
+                valid = false;
+            }
+
+            if (model.IssueSimilarityMinimumTokenLength < Consts.MinimumIssueSimilarityTokenLength
+                || model.IssueSimilarityMinimumTokenLength > Consts.MaximumIssueSimilarityTokenLength)
+            {
+                ModelState.AddModelError(
+                    nameof(GeneralSettingsViewModel.IssueSimilarityMinimumTokenLength),
+                    string.Format(Strings.IssueSimilarityMinimumTokenLengthRangeMessage, Consts.MinimumIssueSimilarityTokenLength, Consts.MaximumIssueSimilarityTokenLength));
+                valid = false;
+            }
+
+            if (model.IssueDefaultPageSize < Consts.MinimumIssuePageSize
+                || model.IssueDefaultPageSize > Consts.MaximumIssuePageSize)
+            {
+                ModelState.AddModelError(
+                    nameof(GeneralSettingsViewModel.IssueDefaultPageSize),
+                    string.Format(Strings.IssueDefaultPageSizeRangeMessage, Consts.MinimumIssuePageSize, Consts.MaximumIssuePageSize));
+                valid = false;
+            }
+
+            List<int> pageSizeOptions = IssuePageSizeOptionsFormatter.Parse(model.IssuePageSizeOptions);
+
+            if (pageSizeOptions.Count == 0 || pageSizeOptions.Count > Consts.MaximumIssuePageSizeOptionCount)
+            {
+                ModelState.AddModelError(
+                    nameof(GeneralSettingsViewModel.IssuePageSizeOptions),
+                    string.Format(Strings.IssuePageSizeOptionsInvalidMessage, Consts.MinimumIssuePageSize, Consts.MaximumIssuePageSize, Consts.MaximumIssuePageSizeOptionCount));
+                valid = false;
+            }
+            else if (!pageSizeOptions.Contains(model.IssueDefaultPageSize))
+            {
+                ModelState.AddModelError(
+                    nameof(GeneralSettingsViewModel.IssueDefaultPageSize),
+                    Strings.IssueDefaultPageSizeMustBeOptionMessage);
+                valid = false;
+            }
+
+            return valid;
         }
 
         /// <summary>Lists configured AI engines.</summary>

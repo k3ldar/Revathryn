@@ -46,6 +46,7 @@ namespace Revathryn.Data
             services.AddTransient<IAISettingsRepository, AISettingsRepository>();
             services.AddTransient<IReviewEngineSettingsRepository, ReviewEngineSettingsRepository>();
             services.AddTransient<IIssueValidationRepository, IssueValidationRepository>();
+            services.AddTransient<IDuplicateDetectionQueue, DuplicateDetectionRepository>();
             services.AddTransient<IPromptRepository, PromptRepository>();
             services.AddTransient<IPromptVersionRepository, PromptVersionRepository>();
             services.AddTransient<IPromptOptimisationRepository, PromptOptimisationRepository>();

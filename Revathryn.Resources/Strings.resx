@@ -638,6 +638,45 @@
 			<data name="MasterPromptLabel" xml:space="preserve">
 			  <value>Master prompt</value>
 			</data>
+			<data name="DuplicateDetectionSettingsHeading" xml:space="preserve">
+			  <value>Duplicate detection</value>
+			</data>
+			<data name="IssueSimilarityEnabledLabel" xml:space="preserve">
+			  <value>Enable duplicate detection</value>
+			</data>
+			<data name="IssueSimilarityThresholdPercentLabel" xml:space="preserve">
+			  <value>Similarity threshold (%)</value>
+			</data>
+			<data name="IssueSimilarityMinimumTokenLengthLabel" xml:space="preserve">
+			  <value>Minimum token length</value>
+			</data>
+			<data name="IssueBrowsingSettingsHeading" xml:space="preserve">
+			  <value>Issue browsing</value>
+			</data>
+			<data name="IssueDefaultPageSizeLabel" xml:space="preserve">
+			  <value>Default page size</value>
+			</data>
+			<data name="IssuePageSizeOptionsLabel" xml:space="preserve">
+			  <value>Page size options</value>
+			</data>
+			<data name="IssuePageSizeOptionsHint" xml:space="preserve">
+			  <value>Comma-separated list of whole numbers, for example 10, 25, 50, 100.</value>
+			</data>
+			<data name="IssueSimilarityThresholdPercentRangeMessage" xml:space="preserve">
+			  <value>Similarity threshold must be between {0} and {1} percent.</value>
+			</data>
+			<data name="IssueSimilarityMinimumTokenLengthRangeMessage" xml:space="preserve">
+			  <value>Minimum token length must be between {0} and {1}.</value>
+			</data>
+			<data name="IssueDefaultPageSizeRangeMessage" xml:space="preserve">
+			  <value>Default page size must be between {0} and {1}.</value>
+			</data>
+			<data name="IssuePageSizeOptionsInvalidMessage" xml:space="preserve">
+			  <value>Page size options must contain between 1 and {2} whole numbers, each between {0} and {1}.</value>
+			</data>
+			<data name="IssueDefaultPageSizeMustBeOptionMessage" xml:space="preserve">
+			  <value>Default page size must be one of the page size options.</value>
+			</data>
 			<data name="SaveSettingsButton" xml:space="preserve">
 			  <value>Save settings</value>
 			</data>
@@ -1441,5 +1480,35 @@
 			</data>
 			<data name="PromptStatisticsComputedLog" xml:space="preserve">
 			  <value>Prompt statistics computed for the requested filter.</value>
+			</data>
+			<data name="DuplicateDetectionRetryLimitExceeded" xml:space="preserve">
+			  <value>Duplicate detection exceeded the maximum number of attempts.</value>
+			</data>
+			<data name="DuplicateDetectionFindingNotFound" xml:space="preserve">
+			  <value>The finding was not found.</value>
+			</data>
+			<data name="DuplicateDetectionMatchedLog" xml:space="preserve">
+			  <value>Duplicate detection {0} for finding {1} marked it as a duplicate of finding {2} with similarity {3:P0}.</value>
+			</data>
+			<data name="DuplicateDetectionNoMatchLog" xml:space="preserve">
+			  <value>Duplicate detection {0} for finding {1} found no duplicate above the configured threshold.</value>
+			</data>
+			<data name="DuplicateDetectionFailedLog" xml:space="preserve">
+			  <value>Duplicate detection {0} for finding {1} failed: {2}.</value>
+			</data>
+			<data name="DuplicateDetectionWorkerCycleFailed" xml:space="preserve">
+			  <value>The duplicate detection worker cycle failed.</value>
+			</data>
+			<data name="DuplicateBadge" xml:space="preserve">
+			  <value>Duplicate</value>
+			</data>
+			<data name="ViewOriginalIssue" xml:space="preserve">
+			  <value>View original issue</value>
+			</data>
+			<data name="DuplicateSimilarityLabel" xml:space="preserve">
+			  <value>Similarity: {0:P0}</value>
+			</data>
+			<data name="DuplicateOfIssueLabel" xml:space="preserve">
+			  <value>Duplicate of issue #{0}</value>
 			</data>
 			</root>

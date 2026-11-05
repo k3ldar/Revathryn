@@ -1653,6 +1653,123 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Duplicate detection.
+        /// </summary>
+        public static string DuplicateDetectionSettingsHeading {
+            get {
+                return ResourceManager.GetString("DuplicateDetectionSettingsHeading", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enable duplicate detection.
+        /// </summary>
+        public static string IssueSimilarityEnabledLabel {
+            get {
+                return ResourceManager.GetString("IssueSimilarityEnabledLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Similarity threshold (%).
+        /// </summary>
+        public static string IssueSimilarityThresholdPercentLabel {
+            get {
+                return ResourceManager.GetString("IssueSimilarityThresholdPercentLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Minimum token length.
+        /// </summary>
+        public static string IssueSimilarityMinimumTokenLengthLabel {
+            get {
+                return ResourceManager.GetString("IssueSimilarityMinimumTokenLengthLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Issue browsing.
+        /// </summary>
+        public static string IssueBrowsingSettingsHeading {
+            get {
+                return ResourceManager.GetString("IssueBrowsingSettingsHeading", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Default page size.
+        /// </summary>
+        public static string IssueDefaultPageSizeLabel {
+            get {
+                return ResourceManager.GetString("IssueDefaultPageSizeLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Page size options.
+        /// </summary>
+        public static string IssuePageSizeOptionsLabel {
+            get {
+                return ResourceManager.GetString("IssuePageSizeOptionsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Comma-separated list of whole numbers, for example 10, 25, 50, 100..
+        /// </summary>
+        public static string IssuePageSizeOptionsHint {
+            get {
+                return ResourceManager.GetString("IssuePageSizeOptionsHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Similarity threshold must be between {0} and {1} percent..
+        /// </summary>
+        public static string IssueSimilarityThresholdPercentRangeMessage {
+            get {
+                return ResourceManager.GetString("IssueSimilarityThresholdPercentRangeMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Minimum token length must be between {0} and {1}..
+        /// </summary>
+        public static string IssueSimilarityMinimumTokenLengthRangeMessage {
+            get {
+                return ResourceManager.GetString("IssueSimilarityMinimumTokenLengthRangeMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Default page size must be between {0} and {1}..
+        /// </summary>
+        public static string IssueDefaultPageSizeRangeMessage {
+            get {
+                return ResourceManager.GetString("IssueDefaultPageSizeRangeMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Page size options must contain between 1 and {2} whole numbers, each between {0} and {1}..
+        /// </summary>
+        public static string IssuePageSizeOptionsInvalidMessage {
+            get {
+                return ResourceManager.GetString("IssuePageSizeOptionsInvalidMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Default page size must be one of the page size options..
+        /// </summary>
+        public static string IssueDefaultPageSizeMustBeOptionMessage {
+            get {
+                return ResourceManager.GetString("IssueDefaultPageSizeMustBeOptionMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Save settings.
         /// </summary>
         public static string SaveSettingsButton {
@@ -3092,6 +3209,26 @@ namespace Revathryn.Resources {
         public static string PromptDraftCommittedLog { get { return ResourceManager.GetString("PromptDraftCommittedLog", resourceCulture); } }
 
         public static string PromptStatisticsComputedLog { get { return ResourceManager.GetString("PromptStatisticsComputedLog", resourceCulture); } }
+
+        public static string DuplicateDetectionRetryLimitExceeded { get { return ResourceManager.GetString("DuplicateDetectionRetryLimitExceeded", resourceCulture); } }
+
+        public static string DuplicateDetectionFindingNotFound { get { return ResourceManager.GetString("DuplicateDetectionFindingNotFound", resourceCulture); } }
+
+        public static string DuplicateDetectionMatchedLog { get { return ResourceManager.GetString("DuplicateDetectionMatchedLog", resourceCulture); } }
+
+        public static string DuplicateDetectionNoMatchLog { get { return ResourceManager.GetString("DuplicateDetectionNoMatchLog", resourceCulture); } }
+
+        public static string DuplicateDetectionFailedLog { get { return ResourceManager.GetString("DuplicateDetectionFailedLog", resourceCulture); } }
+
+        public static string DuplicateDetectionWorkerCycleFailed { get { return ResourceManager.GetString("DuplicateDetectionWorkerCycleFailed", resourceCulture); } }
+
+        public static string DuplicateBadge { get { return ResourceManager.GetString("DuplicateBadge", resourceCulture); } }
+
+        public static string ViewOriginalIssue { get { return ResourceManager.GetString("ViewOriginalIssue", resourceCulture); } }
+
+        public static string DuplicateSimilarityLabel { get { return ResourceManager.GetString("DuplicateSimilarityLabel", resourceCulture); } }
+
+        public static string DuplicateOfIssueLabel { get { return ResourceManager.GetString("DuplicateOfIssueLabel", resourceCulture); } }
 
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.

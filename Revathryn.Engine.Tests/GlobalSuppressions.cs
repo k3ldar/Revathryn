@@ -6,3 +6,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Usage", "MSTEST0058:Do not use asserts in catch blocks", Justification = "<Pending>", Scope = "member", Target = "~M:Revathryn.Engine.Tests.RepositoryManagementTests.RepositoryScanner_SkipsSymbolicLinks~System.Threading.Tasks.Task")]
+[assembly: SuppressMessage("Performance", "CA1861:Avoid constant arrays as arguments", Justification = "<Pending>", Scope = "member", Target = "~M:Revathryn.Engine.Tests.IssueSettingsProviderTests.Refresh_DefaultPageSizeMissingFromOptions_AddsIt")]

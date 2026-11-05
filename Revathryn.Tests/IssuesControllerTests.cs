@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.Extensions.Options;
 
 using Revathryn.Contracts;
 using Revathryn.Contracts.Enums;
@@ -11,6 +10,7 @@ using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Services;
 using Revathryn.Controllers;
+using Revathryn.Engine;
 using Revathryn.Models.Issues;
 
 namespace Revathryn.Tests
@@ -393,11 +393,12 @@ namespace Revathryn.Tests
 
             ControllerContext context = ControllerTestSupport.CreateControllerContext(out DefaultHttpContext httpContext);
 
-            IssueViewingOptions options = new()
+            IssueSettingsProvider issueSettingsProvider = new();
+            issueSettingsProvider.Refresh(new AISettings
             {
-                DefaultPageSize = 25,
-                PageSizeOptions = [10, 25, 50, 100]
-            };
+                IssueDefaultPageSize = 25,
+                IssuePageSizeOptions = "10,25,50,100"
+            });
 
             return new IssuesController(
                 repositoryService,
@@ -407,7 +408,7 @@ namespace Revathryn.Tests
                 reviewContextRepository,
                 validationService,
                 reviewEngineConfiguration,
-                Options.Create(options))
+                issueSettingsProvider)
             {
                 ControllerContext = context,
                 Url = new FakeUrlHelper(context),
@@ -538,6 +539,16 @@ namespace Revathryn.Tests
             }
 
             public Task<int> CountOutstandingOperationalFailuresAsync(CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task<IReadOnlyList<Finding>> GetSimilarityCandidatesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task MarkDuplicateAsync(long findingId, long duplicateOfFindingId, double similarityScore, DateTime lastModifiedUtc, CancellationToken cancellationToken = default)
             {
                 throw new NotSupportedException();
             }

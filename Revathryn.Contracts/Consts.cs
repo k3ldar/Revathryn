@@ -260,6 +260,10 @@
         public const int IssuePageSizeLarge = 50;
         public const int IssuePageSizeXLarge = 100;
         public const int IssueDefaultPageSize = IssuePageSizeMedium;
+        public const int MinimumIssuePageSize = 1;
+        public const int MaximumIssuePageSize = 500;
+        public const int MaximumIssuePageSizeOptionCount = 10;
+        public const string IssuePageSizeOptionsSeparator = ",";
 
         // UI and MVC request keys and route values.
         public const string BreadcrumbsViewDataKey = "Breadcrumbs";
@@ -267,7 +271,6 @@
         public const string ErrorMessageTempDataKey = "ErrorMessage";
         public const string DashboardControllerName = "Dashboard";
         public const string IssuesControllerName = "Issues";
-        public const string IssueViewingOptionsKey = "IssueViewing";
         public const string DashboardDataActionName = "Data";
         public const string DashboardContentViewName = "_DashboardContent";
         public const int DashboardRefreshIntervalMilliseconds = 1000;
@@ -300,6 +303,28 @@
         public const int IssueValidationPollIntervalSeconds = 5;
         public const int IssueValidationDrainLimit = 20;
         public const int IssueValidationStatusPollMilliseconds = 3000;
+
+        // Duplicate detection configuration.
+        public const double DefaultIssueSimilarityThreshold = 0.80;
+        public const int DefaultIssueSimilarityMinimumTokenLength = 3;
+        public const double IssueSimilarityMinimumScore = 0.0;
+        public const double IssueSimilarityPerfectScore = 1.0;
+        public const int MinimumIssueSimilarityThresholdPercent = 1;
+        public const int MaximumIssueSimilarityThresholdPercent = 100;
+        public const double IssueSimilarityThresholdPercentageScale = 100.0;
+        public const int MinimumIssueSimilarityTokenLength = 1;
+        public const int MaximumIssueSimilarityTokenLength = 20;
+
+        // Duplicate detection components and operations.
+        public const string IssueSimilarityServiceComponent = "IssueSimilarityService";
+        public const string DuplicateDetectionProcessorComponent = "DuplicateDetectionProcessor";
+        public const string DuplicateDetectionWorkerServiceComponent = "DuplicateDetectionWorkerService";
+        public const string QueueDuplicateDetectionOperation = "QueueDuplicateDetection";
+        public const string ProcessDuplicateDetectionOperation = "ProcessDuplicateDetection";
+
+        // Duplicate detection worker timing.
+        public const int DuplicateDetectionPollIntervalSeconds = 5;
+        public const int DuplicateDetectionDrainLimit = 20;
 
         // Review engine defaults and limits.
         public const string DefaultReviewEngineEndpoint = "https://api.openai.com/v1";

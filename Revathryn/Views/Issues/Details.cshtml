@@ -41,6 +41,17 @@
 
 <h1 class="mb-3">@displayTitle</h1>
 
+@if (Model.Finding.DuplicateOfFindingId.HasValue)
+{
+    <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span>
+            <strong>@Strings.DuplicateBadge</strong>
+            @string.Format(System.Globalization.CultureInfo.CurrentCulture, Strings.DuplicateSimilarityLabel, Model.Finding.DuplicateSimilarityScore ?? 0)
+        </span>
+        <a asp-action="Details" asp-all-route-data="@IssueDetailsRoute(Model.Finding.DuplicateOfFindingId.Value)" class="btn btn-sm btn-outline-dark">@string.Format(System.Globalization.CultureInfo.CurrentCulture, Strings.DuplicateOfIssueLabel, Model.Finding.DuplicateOfFindingId.Value)</a>
+    </div>
+}
+
 <div class="card mb-4">
     <div class="card-header">@Strings.ReviewActionsTitle</div>
     <div class="card-body">

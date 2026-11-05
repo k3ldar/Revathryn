@@ -108,6 +108,11 @@ else
                             {
                                 <span class="badge border text-dark" title="@item.ValidationVerdict">@Strings.AIReviewedBadge</span>
                             }
+                            @if (item.Finding.DuplicateOfFindingId.HasValue)
+                            {
+                                <span class="badge bg-warning text-dark" title="@string.Format(System.Globalization.CultureInfo.CurrentCulture, Strings.DuplicateSimilarityLabel, item.Finding.DuplicateSimilarityScore ?? 0)">@Strings.DuplicateBadge</span>
+                                <a asp-action="Details" asp-all-route-data="@DetailsRoute(item.Finding.DuplicateOfFindingId.Value)" class="small">@Strings.ViewOriginalIssue</a>
+                            }
                         </div>
 
                         <div class="text-muted small">

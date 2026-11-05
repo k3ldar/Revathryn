@@ -195,7 +195,13 @@
                         {
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div class="text-truncate me-2">
-                                    <div class="text-truncate">@finding.Title</div>
+                                    <div class="text-truncate">
+                                        @finding.Title
+                                        @if (finding.DuplicateOfFindingId.HasValue)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1" title="@string.Format(System.Globalization.CultureInfo.CurrentCulture, Strings.DuplicateSimilarityLabel, finding.DuplicateSimilarityScore ?? 0)">@Strings.DuplicateBadge</span>
+                                        }
+                                    </div>
                                     <div class="text-muted small">@RepositoryName(Model, finding.RepositoryId) · @FormatUtc(finding.CreatedDate)</div>
                                 </div>
                                 <span class="badge @SeverityBadgeClass(finding.Severity)">@SeverityLabel(finding.Severity)</span>

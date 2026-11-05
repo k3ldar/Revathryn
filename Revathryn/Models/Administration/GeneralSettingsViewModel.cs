@@ -8,5 +8,20 @@ namespace Revathryn.Models.Administration
 
         /// <summary>UTC timestamp when the settings were last modified.</summary>
         public DateTime LastModifiedDate { get; set; }
+
+        /// <summary>Whether background duplicate detection is active.</summary>
+        public bool IssueSimilarityEnabled { get; set; } = true;
+
+        /// <summary>User-facing duplicate-detection threshold expressed as a whole percentage.</summary>
+        public int IssueSimilarityThresholdPercent { get; set; }
+
+        /// <summary>Minimum token length considered when tokenising finding text.</summary>
+        public int IssueSimilarityMinimumTokenLength { get; set; }
+
+        /// <summary>Default page size used when browsing issues.</summary>
+        public int IssueDefaultPageSize { get; set; }
+
+        /// <summary>Comma-separated page sizes offered when browsing issues.</summary>
+        public string IssuePageSizeOptions { get; set; } = string.Empty;
     }
 }

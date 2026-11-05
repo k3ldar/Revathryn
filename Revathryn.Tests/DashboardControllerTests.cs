@@ -535,6 +535,16 @@ namespace Revathryn.Tests
                 return Task.FromResult(Findings.Count(finding => finding.Category == FindingCategory.OperationalFailure));
             }
 
+            public Task<IReadOnlyList<Finding>> GetSimilarityCandidatesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task MarkDuplicateAsync(long findingId, long duplicateOfFindingId, double similarityScore, DateTime lastModifiedUtc, CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
+            }
+
             public Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult((long)Findings.Count + 1);

@@ -52,13 +52,13 @@ namespace Revathryn
                 // Add services to the container.
                 builder.Services.AddSingleton(new UptimeModel());
                 builder.Services.AddControllersWithViews();
-                builder.Services.Configure<IssueViewingOptions>(builder.Configuration.GetSection(Consts.IssueViewingOptionsKey));
                 builder.Services.AddDataServices(settings);
                 builder.Services.AddEngineServices();
                 builder.Services.AddSingleton<IOperationalLogSink, OperationalLoggingSink>();
                 builder.Services.AddReviewServices(settings);
                 builder.Services.AddHostedService<ReviewWorkerService>();
                 builder.Services.AddHostedService<IssueValidationWorkerService>();
+                builder.Services.AddHostedService<DuplicateDetectionWorkerService>();
                 builder.Services.AddHostedService<PromptOptimisationWorkerService>();
                 builder.Services.AddHostedService<PromptTestRunWorkerService>();
 
@@ -82,6 +82,10 @@ namespace Revathryn
                     aiSettings.MasterPrompt = DefaultReviewContext.DefaultMasterPrompt;
                     await aiSettingsRepository.UpdateAsync(aiSettings);
                 }
+
+                // Seed the runtime issue settings provider from the persisted settings.
+                IIssueSettingsProvider issueSettingsProvider = app.Services.GetRequiredService<IIssueSettingsProvider>();
+                issueSettingsProvider.Refresh(aiSettings);
 
                 // Seed built-in review definitions for any repository that is missing them.
                 IReviewTypeSeeder reviewTypeSeeder = app.Services.GetRequiredService<IReviewTypeSeeder>();

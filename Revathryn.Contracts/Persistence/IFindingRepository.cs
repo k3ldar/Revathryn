@@ -29,6 +29,12 @@ namespace Revathryn.Contracts.Persistence
         /// <summary>Returns the number of outstanding operational failure findings.</summary>
         Task<int> CountOutstandingOperationalFailuresAsync(CancellationToken cancellationToken = default);
 
+        /// <summary>Returns the code-issue findings in a repository that are eligible for similarity matching.</summary>
+        Task<IReadOnlyList<Finding>> GetSimilarityCandidatesAsync(long repositoryId, CancellationToken cancellationToken = default);
+
+        /// <summary>Records that a finding duplicates another finding with the given similarity score.</summary>
+        Task MarkDuplicateAsync(long findingId, long duplicateOfFindingId, double similarityScore, DateTime lastModifiedUtc, CancellationToken cancellationToken = default);
+
         /// <summary>Inserts the finding and returns its assigned id.</summary>
         Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default);
 

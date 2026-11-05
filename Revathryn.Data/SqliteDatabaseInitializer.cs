@@ -50,6 +50,7 @@ namespace Revathryn.Data
                 SqliteDatabaseSchema.CreateReviewContexts,
                 SqliteDatabaseSchema.CreateReviewEngineSettings,
                 SqliteDatabaseSchema.CreateIssueValidations,
+                SqliteDatabaseSchema.CreateDuplicateDetectionQueue,
                 SqliteDatabaseSchema.CreatePrompts,
                 SqliteDatabaseSchema.CreatePromptOptimisations,
                 SqliteDatabaseSchema.CreatePromptVersions,
@@ -83,7 +84,14 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Queue", "LeasedUntilUtc", "TEXT NULL");
             EnsureColumn(connection, "Queue", "Status", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(connection, "Findings", "ReviewContextId", "INTEGER NULL");
+            EnsureColumn(connection, "Findings", "DuplicateOfFindingId", "INTEGER NULL");
+            EnsureColumn(connection, "Findings", "DuplicateSimilarityScore", "REAL NULL");
             EnsureColumn(connection, "AIEngines", "MaxTokens", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxTokens);
+            EnsureColumn(connection, "AISettings", "IssueSimilarityEnabled", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(connection, "AISettings", "IssueSimilarityThreshold", "REAL NOT NULL DEFAULT " + Consts.DefaultIssueSimilarityThreshold);
+            EnsureColumn(connection, "AISettings", "IssueSimilarityMinimumTokenLength", "INTEGER NOT NULL DEFAULT " + Consts.DefaultIssueSimilarityMinimumTokenLength);
+            EnsureColumn(connection, "AISettings", "IssueDefaultPageSize", "INTEGER NOT NULL DEFAULT " + Consts.IssueDefaultPageSize);
+            EnsureColumn(connection, "AISettings", "IssuePageSizeOptions", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "ReviewPrompt", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "SystemPrompt", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "ReviewDefinitionVersion", "TEXT NOT NULL DEFAULT ''");

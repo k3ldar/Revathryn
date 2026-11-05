@@ -20,8 +20,14 @@ namespace Revathryn.Contracts.Models
         /// <summary>Optional reference to the original AI context supplied to the review that produced this finding.</summary>
         public long? ReviewContextId { get; set; }
 
-        /// <summary>Stable fingerprint used for duplicate detection.</summary>
+        /// <summary>Stable fingerprint used for exact duplicate detection.</summary>
         public string Fingerprint { get; set; } = string.Empty;
+
+        /// <summary>Id of the finding this finding duplicates, or null when not a duplicate.</summary>
+        public long? DuplicateOfFindingId { get; set; }
+
+        /// <summary>Jaccard similarity score recorded when this finding was marked duplicate.</summary>
+        public double? DuplicateSimilarityScore { get; set; }
 
         /// <summary>Severity of the finding.</summary>
         public FindingSeverity Severity { get; set; }

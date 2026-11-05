@@ -35,6 +35,8 @@ namespace Revathryn.Engine
         private readonly IReviewContextProvider _contextProvider;
         private readonly IRetryPolicyProvider _retryPolicyProvider;
         private readonly IReviewUsageRepository _reviewUsageRepository;
+        private readonly IDuplicateDetectionQueue _duplicateDetectionQueue;
+        private readonly IIssueSettingsProvider _issueSettingsProvider;
         private readonly ResilienceOptions _resilienceOptions;
 
         /// <summary>Initialises a new processor.</summary>
@@ -50,6 +52,8 @@ namespace Revathryn.Engine
             IReviewContextProvider contextProvider,
             IRetryPolicyProvider retryPolicyProvider,
             IReviewUsageRepository reviewUsageRepository,
+            IDuplicateDetectionQueue duplicateDetectionQueue,
+            IIssueSettingsProvider issueSettingsProvider,
             ResilienceOptions resilienceOptions)
         {
             _reviewQueue = reviewQueue;
@@ -63,6 +67,8 @@ namespace Revathryn.Engine
             _contextProvider = contextProvider;
             _retryPolicyProvider = retryPolicyProvider;
             _reviewUsageRepository = reviewUsageRepository;
+            _duplicateDetectionQueue = duplicateDetectionQueue;
+            _issueSettingsProvider = issueSettingsProvider;
             _resilienceOptions = resilienceOptions;
         }
 
@@ -290,6 +296,19 @@ namespace Revathryn.Engine
             };
 
             await _reviewOutcomeStore.PersistAsync(outcome, cancellationToken).ConfigureAwait(false);
+
+            if (_issueSettingsProvider.IssueSimilarity.Enabled)
+            {
+                foreach (Finding finding in findings)
+                {
+                    if (finding.Id > 0)
+                    {
+                        await _duplicateDetectionQueue
+                            .EnqueueAsync(item.RepositoryId, finding.Id, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                }
+            }
         }
 
         private async Task RecordOperationalFailureAsync(QueueItem item, string error, CancellationToken cancellationToken)

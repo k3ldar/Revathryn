@@ -132,10 +132,29 @@ namespace Revathryn.Data
                 Category INTEGER NOT NULL,
                 CreatedDate TEXT NOT NULL,
                 LastModifiedDate TEXT NOT NULL,
+                DuplicateOfFindingId INTEGER NULL,
+                DuplicateSimilarityScore REAL NULL,
                 CONSTRAINT UQ_Findings_Repository_Fingerprint UNIQUE (RepositoryId, Fingerprint),
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
                 FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE SET NULL,
                 FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE SET NULL
+            );
+            """;
+
+        /// <summary>Creates the DuplicateDetectionQueue table.</summary>
+        internal const string CreateDuplicateDetectionQueue = """
+            CREATE TABLE IF NOT EXISTS DuplicateDetectionQueue (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                RepositoryId INTEGER NOT NULL,
+                FindingId INTEGER NOT NULL,
+                Status INTEGER NOT NULL DEFAULT 0,
+                AttemptCount INTEGER NOT NULL DEFAULT 0,
+                CreatedUtc TEXT NOT NULL,
+                NextAttemptUtc TEXT NULL,
+                LeasedUntilUtc TEXT NULL,
+                LastError TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
+                FOREIGN KEY (FindingId) REFERENCES Findings (Id) ON DELETE CASCADE
             );
             """;
 
@@ -155,11 +174,16 @@ namespace Revathryn.Data
             """;
 
         /// <summary>Creates the AISettings singleton table.</summary>
-        internal const string CreateAISettings = """
+        internal static readonly string CreateAISettings = $"""
             CREATE TABLE IF NOT EXISTS AISettings (
                 Id INTEGER PRIMARY KEY CHECK (Id = 1),
                 MasterPrompt TEXT NOT NULL DEFAULT '',
-                LastModifiedDate TEXT NOT NULL
+                LastModifiedDate TEXT NOT NULL,
+                IssueSimilarityEnabled INTEGER NOT NULL DEFAULT 1,
+                IssueSimilarityThreshold REAL NOT NULL DEFAULT {Consts.DefaultIssueSimilarityThreshold},
+                IssueSimilarityMinimumTokenLength INTEGER NOT NULL DEFAULT {Consts.DefaultIssueSimilarityMinimumTokenLength},
+                IssueDefaultPageSize INTEGER NOT NULL DEFAULT {Consts.IssueDefaultPageSize},
+                IssuePageSizeOptions TEXT NOT NULL DEFAULT ''
             );
             """;
 
@@ -427,6 +451,10 @@ namespace Revathryn.Data
             "CREATE INDEX IF NOT EXISTS IX_Findings_RepoFileId ON Findings (RepoFileId);",
             "CREATE INDEX IF NOT EXISTS IX_Findings_ReviewTypeId ON Findings (ReviewTypeId);",
             "CREATE INDEX IF NOT EXISTS IX_Findings_Status ON Findings (Status);",
+            "CREATE INDEX IF NOT EXISTS IX_Findings_DuplicateOfFindingId ON Findings (DuplicateOfFindingId);",
+            "CREATE INDEX IF NOT EXISTS IX_DuplicateDetectionQueue_Status ON DuplicateDetectionQueue (Status, NextAttemptUtc);",
+            "CREATE INDEX IF NOT EXISTS IX_DuplicateDetectionQueue_FindingId ON DuplicateDetectionQueue (FindingId);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_DuplicateDetectionQueue_ActiveFinding ON DuplicateDetectionQueue (FindingId) WHERE Status IN (0, 1);",
             "CREATE INDEX IF NOT EXISTS IX_RepoProjects_RepositoryId ON RepoProjects (RepositoryId);",
             "CREATE INDEX IF NOT EXISTS IX_RepositoryScans_RepositoryId ON RepositoryScans (RepositoryId, StartedUtc DESC);",
             "CREATE INDEX IF NOT EXISTS IX_ReviewUsage_RepositoryId ON ReviewUsage (RepositoryId);",

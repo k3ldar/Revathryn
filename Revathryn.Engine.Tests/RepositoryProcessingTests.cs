@@ -2319,7 +2319,40 @@ namespace Revathryn.Engine.Tests
                 contextProvider ?? new FakeReviewContextProvider(),
                 new FakeRetryPolicyProvider(retryPolicy),
                 usageRepository ?? new FakeReviewUsageRepository(),
+                new FakeDuplicateDetectionQueue(),
+                new IssueSettingsProvider(),
                 options);
+        }
+
+        private sealed class FakeDuplicateDetectionQueue : IDuplicateDetectionQueue
+        {
+            public List<(long RepositoryId, long FindingId)> Enqueued { get; } = [];
+
+            public Task<long> EnqueueAsync(long repositoryId, long findingId, CancellationToken cancellationToken = default)
+            {
+                Enqueued.Add((repositoryId, findingId));
+                return Task.FromResult((long)Enqueued.Count);
+            }
+
+            public Task<DuplicateDetectionQueueItem> ClaimNextAsync(DateTime utcNow, TimeSpan leaseDuration, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<DuplicateDetectionQueueItem>(null);
+            }
+
+            public Task CompleteAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task FailAsync(long id, string errorMessage, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string errorMessage, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
         }
 
         private sealed class FakeAIReviewEngine : IAIReviewEngine
@@ -2415,6 +2448,16 @@ namespace Revathryn.Engine.Tests
             public Task<int> CountOutstandingOperationalFailuresAsync(CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(Added.Count(finding => finding.Category == FindingCategory.OperationalFailure));
+            }
+
+            public Task<IReadOnlyList<Finding>> GetSimilarityCandidatesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<Finding>>([]);
+            }
+
+            public Task MarkDuplicateAsync(long findingId, long duplicateOfFindingId, double similarityScore, DateTime lastModifiedUtc, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
             }
 
             public Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default)

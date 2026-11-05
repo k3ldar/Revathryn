@@ -10,7 +10,7 @@ namespace Revathryn.Data
     public sealed class FindingRepository : SqliteRepositoryBase, IFindingRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate";
+            "Id, RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore";
 
         /// <summary>Initialises a new repository.</summary>
         public FindingRepository(SqliteConnectionFactory connectionFactory)
@@ -210,6 +210,45 @@ namespace Revathryn.Data
             return Convert.ToInt32(result);
         }
 
+        /// <summary>Returns the code-issue findings in a repository that are eligible for similarity matching.</summary>
+        public async Task<IReadOnlyList<Finding>> GetSimilarityCandidatesAsync(long repositoryId, CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = $"SELECT {SelectColumns} FROM Findings WHERE RepositoryId = @RepositoryId AND Category = @Category ORDER BY Id ASC;";
+            command.Parameters.AddWithValue("@RepositoryId", repositoryId);
+            command.Parameters.AddWithValue("@Category", (int)FindingCategory.CodeIssue);
+
+            List<Finding> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(MapFinding(reader));
+            }
+
+            return results;
+        }
+
+        /// <summary>Records that a finding duplicates another finding with the given similarity score.</summary>
+        public async Task MarkDuplicateAsync(long findingId, long duplicateOfFindingId, double similarityScore, DateTime lastModifiedUtc, CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = """
+                UPDATE Findings
+                SET DuplicateOfFindingId = @DuplicateOfFindingId,
+                    DuplicateSimilarityScore = @DuplicateSimilarityScore,
+                    LastModifiedDate = @LastModifiedDate
+                WHERE Id = @Id;
+                """;
+            command.Parameters.AddWithValue("@Id", findingId);
+            command.Parameters.AddWithValue("@DuplicateOfFindingId", duplicateOfFindingId);
+            command.Parameters.AddWithValue("@DuplicateSimilarityScore", similarityScore);
+            command.Parameters.AddWithValue("@LastModifiedDate", SqliteValueConverter.ToText(lastModifiedUtc));
+
+            _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         /// <summary>Inserts the finding, or returns the existing id when an equivalent finding already exists.</summary>
         public async Task<long> AddAsync(Finding finding, CancellationToken cancellationToken = default)
         {
@@ -227,14 +266,16 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @ReviewContextId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate);
+                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @ReviewContextId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate, @DuplicateOfFindingId, @DuplicateSimilarityScore);
                 SELECT Id FROM Findings WHERE RepositoryId = @RepositoryId AND Fingerprint = @Fingerprint LIMIT 1;
                 """;
             AddParameters(command, finding);
 
             object result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
-            return (long)result;
+            long id = (long)result;
+            finding.Id = id;
+            return id;
         }
 
         /// <summary>Updates an existing finding.</summary>
@@ -256,7 +297,9 @@ namespace Revathryn.Data
                     Status = @Status,
                     Category = @Category,
                     CreatedDate = @CreatedDate,
-                    LastModifiedDate = @LastModifiedDate
+                    LastModifiedDate = @LastModifiedDate,
+                    DuplicateOfFindingId = @DuplicateOfFindingId,
+                    DuplicateSimilarityScore = @DuplicateSimilarityScore
                 WHERE Id = @Id;
                 """;
             AddParameters(command, finding);
@@ -374,6 +417,8 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@Category", (int)finding.Category);
             command.Parameters.AddWithValue("@CreatedDate", SqliteValueConverter.ToText(finding.CreatedDate));
             command.Parameters.AddWithValue("@LastModifiedDate", SqliteValueConverter.ToText(finding.LastModifiedDate));
+            command.Parameters.AddWithValue("@DuplicateOfFindingId", SqliteValueConverter.ToParameter(finding.DuplicateOfFindingId));
+            command.Parameters.AddWithValue("@DuplicateSimilarityScore", SqliteValueConverter.ToParameter(finding.DuplicateSimilarityScore));
         }
 
         private static Finding MapFinding(SqliteDataReader reader)
@@ -393,7 +438,9 @@ namespace Revathryn.Data
                 Status = (FindingStatus)reader.GetInt32(10),
                 Category = (FindingCategory)reader.GetInt32(11),
                 CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(12)),
-                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(13))
+                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(13)),
+                DuplicateOfFindingId = reader.IsDBNull(14) ? null : reader.GetInt64(14),
+                DuplicateSimilarityScore = reader.IsDBNull(15) ? null : reader.GetDouble(15)
             };
         }
     }

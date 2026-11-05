@@ -47,6 +47,9 @@ namespace Revathryn.Engine
             services.AddSingleton<IIssueValidationContextBuilder, IssueValidationContextBuilder>();
             services.AddSingleton<IIssueValidationService, IssueValidationService>();
             services.AddSingleton<IIssueValidationProcessor, IssueValidationProcessor>();
+            services.AddSingleton<IIssueSettingsProvider, IssueSettingsProvider>();
+            services.AddSingleton<IIssueSimilarityService, IssueSimilarityService>();
+            services.AddSingleton<IDuplicateDetectionProcessor, DuplicateDetectionProcessor>();
             services.AddSingleton<IPromptResolutionService, PromptResolutionService>();
             services.AddSingleton<IPromptOptimisationContextBuilder, PromptOptimisationContextBuilder>();
             services.AddSingleton<IPromptOptimisationProcessor, PromptOptimisationProcessor>();

@@ -15,6 +15,7 @@ using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Services;
 using Revathryn.Controllers;
+using Revathryn.Engine;
 using Revathryn.Models;
 using Revathryn.Models.Administration;
 using Revathryn.Resources;
@@ -824,24 +825,174 @@ namespace Revathryn.Tests
             Assert.AreEqual(Strings.ReviewTypeDeletedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
         }
 
+        [TestMethod]
+        public async Task Settings_Get_PopulatesModelFromPersistedSettings()
+        {
+            FakeAISettingsRepository repository = new()
+            {
+                Settings = new AISettings
+                {
+                    MasterPrompt = "prompt",
+                    LastModifiedDate = new DateTime(2024, 1, 2, 3, 4, 5, DateTimeKind.Utc),
+                    IssueSimilarityEnabled = false,
+                    IssueSimilarityThreshold = 0.6,
+                    IssueSimilarityMinimumTokenLength = 5,
+                    IssueDefaultPageSize = 50,
+                    IssuePageSizeOptions = "10,50,100"
+                }
+            };
+
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), aiSettingsRepository: repository);
+
+            IActionResult result = await controller.Settings(TestContext.CancellationToken);
+
+            ViewResult view = result as ViewResult;
+            Assert.IsNotNull(view);
+            GeneralSettingsViewModel model = view.Model as GeneralSettingsViewModel;
+            Assert.IsNotNull(model);
+            Assert.AreEqual("prompt", model.MasterPrompt);
+            Assert.IsFalse(model.IssueSimilarityEnabled);
+            Assert.AreEqual(60, model.IssueSimilarityThresholdPercent);
+            Assert.AreEqual(5, model.IssueSimilarityMinimumTokenLength);
+            Assert.AreEqual(50, model.IssueDefaultPageSize);
+            Assert.AreEqual("10,50,100", model.IssuePageSizeOptions);
+        }
+
+        [TestMethod]
+        public async Task Settings_Post_ValidInput_PersistsAndRefreshesProvider()
+        {
+            FakeAISettingsRepository repository = new();
+            IssueSettingsProvider provider = new();
+            AdministrationController controller = CreateController(
+                new FakeAIEngineRepository(),
+                aiSettingsRepository: repository,
+                issueSettingsProvider: provider);
+
+            GeneralSettingsViewModel model = new()
+            {
+                MasterPrompt = " prompt ",
+                IssueSimilarityEnabled = true,
+                IssueSimilarityThresholdPercent = 85,
+                IssueSimilarityMinimumTokenLength = 4,
+                IssueDefaultPageSize = 50,
+                IssuePageSizeOptions = "10, 50, 100"
+            };
+
+            IActionResult result = await controller.Settings(model, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(AdministrationController.Settings), redirect.ActionName);
+            Assert.IsNotNull(repository.LastUpdated);
+            Assert.AreEqual("prompt", repository.LastUpdated.MasterPrompt);
+            Assert.IsTrue(repository.LastUpdated.IssueSimilarityEnabled);
+            Assert.AreEqual(0.85, repository.LastUpdated.IssueSimilarityThreshold);
+            Assert.AreEqual(4, repository.LastUpdated.IssueSimilarityMinimumTokenLength);
+            Assert.AreEqual(50, repository.LastUpdated.IssueDefaultPageSize);
+            Assert.AreEqual("10,50,100", repository.LastUpdated.IssuePageSizeOptions);
+            Assert.IsTrue(provider.IssueSimilarity.Enabled);
+            Assert.AreEqual(0.85, provider.IssueSimilarity.Threshold);
+            Assert.AreEqual(4, provider.IssueSimilarity.MinimumTokenLength);
+            Assert.AreEqual(50, provider.IssueViewing.DefaultPageSize);
+            CollectionAssert.AreEqual(new int[] { 10, 50, 100 }, provider.IssueViewing.PageSizeOptions);
+            Assert.AreEqual(Strings.SettingsSavedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public async Task Settings_Post_InvalidPageSizeOptions_ReturnsViewWithError()
+        {
+            FakeAISettingsRepository repository = new();
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), aiSettingsRepository: repository);
+
+            GeneralSettingsViewModel model = new()
+            {
+                MasterPrompt = "prompt",
+                IssueSimilarityEnabled = true,
+                IssueSimilarityThresholdPercent = 80,
+                IssueSimilarityMinimumTokenLength = 3,
+                IssueDefaultPageSize = 25,
+                IssuePageSizeOptions = "10, abc"
+            };
+
+            IActionResult result = await controller.Settings(model, TestContext.CancellationToken);
+
+            ViewResult view = result as ViewResult;
+            Assert.IsNotNull(view);
+            Assert.AreSame(model, view.Model);
+            Assert.IsNull(repository.LastUpdated);
+            Assert.IsFalse(controller.ModelState.IsValid);
+            Assert.IsTrue(controller.ModelState.ContainsKey(nameof(GeneralSettingsViewModel.IssuePageSizeOptions)));
+        }
+
+        [TestMethod]
+        public async Task Settings_Post_DefaultPageSizeNotInOptions_ReturnsViewWithError()
+        {
+            FakeAISettingsRepository repository = new();
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), aiSettingsRepository: repository);
+
+            GeneralSettingsViewModel model = new()
+            {
+                MasterPrompt = "prompt",
+                IssueSimilarityEnabled = true,
+                IssueSimilarityThresholdPercent = 80,
+                IssueSimilarityMinimumTokenLength = 3,
+                IssueDefaultPageSize = 40,
+                IssuePageSizeOptions = "10,25,50"
+            };
+
+            IActionResult result = await controller.Settings(model, TestContext.CancellationToken);
+
+            ViewResult view = result as ViewResult;
+            Assert.IsNotNull(view);
+            Assert.IsNull(repository.LastUpdated);
+            Assert.IsTrue(controller.ModelState.ContainsKey(nameof(GeneralSettingsViewModel.IssueDefaultPageSize)));
+        }
+
+        [TestMethod]
+        public async Task Settings_Post_RepositoryException_ReturnsViewWithError()
+        {
+            FakeAISettingsRepository repository = new() { UpdateException = new InvalidOperationException("boom") };
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), aiSettingsRepository: repository);
+
+            GeneralSettingsViewModel model = new()
+            {
+                MasterPrompt = "prompt",
+                IssueSimilarityEnabled = true,
+                IssueSimilarityThresholdPercent = 80,
+                IssueSimilarityMinimumTokenLength = 3,
+                IssueDefaultPageSize = 25,
+                IssuePageSizeOptions = "10,25,50"
+            };
+
+            IActionResult result = await controller.Settings(model, TestContext.CancellationToken);
+
+            ViewResult view = result as ViewResult;
+            Assert.IsNotNull(view);
+            Assert.AreSame(model, view.Model);
+            Assert.IsFalse(controller.ModelState.IsValid);
+        }
+
         private static AdministrationController CreateController(
             IAIEngineRepository engineRepository,
             FakeReviewUsageRepository usageRepository = null,
             FakeReviewEngineConfigurationService reviewEngine = null,
             FakeReviewTypeRepository reviewTypeRepository = null,
-            FakeRepositoryService repositoryService = null)
+            FakeRepositoryService repositoryService = null,
+            FakeAISettingsRepository aiSettingsRepository = null,
+            IIssueSettingsProvider issueSettingsProvider = null)
         {
             DefaultHttpContext httpContext = new();
 
             ActionContext actionContext = new(httpContext, new RouteData(), new ControllerActionDescriptor());
 
             AdministrationController controller = new(
-                new FakeAISettingsRepository(),
+                aiSettingsRepository ?? new FakeAISettingsRepository(),
                 engineRepository,
                 usageRepository ?? new FakeReviewUsageRepository(),
                 reviewEngine ?? new FakeReviewEngineConfigurationService(),
                 reviewTypeRepository ?? new FakeReviewTypeRepository(),
-                repositoryService ?? new FakeRepositoryService())
+                repositoryService ?? new FakeRepositoryService(),
+                issueSettingsProvider ?? new IssueSettingsProvider())
             {
                 ControllerContext = new ControllerContext(actionContext),
                 Url = new FakeUrlHelper(actionContext),
@@ -929,13 +1080,26 @@ namespace Revathryn.Tests
 
         private sealed class FakeAISettingsRepository : IAISettingsRepository
         {
+            public AISettings Settings { get; set; } = new();
+
+            public Exception UpdateException { get; set; }
+
+            public AISettings LastUpdated { get; private set; }
+
             public Task<AISettings> GetAsync(CancellationToken cancellationToken = default)
             {
-                return Task.FromResult(new AISettings());
+                return Task.FromResult(Settings);
             }
 
             public Task UpdateAsync(AISettings settings, CancellationToken cancellationToken = default)
             {
+                if (UpdateException is not null)
+                {
+                    throw UpdateException;
+                }
+
+                LastUpdated = settings;
+                Settings = settings;
                 return Task.CompletedTask;
             }
         }
