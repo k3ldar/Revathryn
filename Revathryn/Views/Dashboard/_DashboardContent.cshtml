@@ -46,6 +46,25 @@
                     <dt class="col-8">@Strings.OldestQueuedLabel</dt>
                     <dd class="col-4 text-end">@(Model.QueueMetrics.OldestPendingUtc.HasValue ? FormatUtc(Model.QueueMetrics.OldestPendingUtc.Value) : Strings.NoQueuedAnalysesLabel)</dd>
                 </dl>
+                <div class="mb-2">
+                    <h2 class="h6 mb-1">@Strings.QueuedByRepositoryLabel</h2>
+                    @if (!Model.Repositories.Any(item => item.QueuedAnalysisCount > 0))
+                    {
+                        <span class="text-muted small">@Strings.NoQueuedAnalysesLabel</span>
+                    }
+                    else
+                    {
+                        <ul class="list-group">
+                            @foreach (Revathryn.Contracts.Models.RepositoryDashboardItem item in Model.Repositories.Where(item => item.QueuedAnalysisCount > 0).OrderByDescending(item => item.QueuedAnalysisCount))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <a asp-controller="Repository" asp-action="Details" asp-route-id="@item.Repository.Id" class="text-truncate">@item.Repository.Name</a>
+                                    <span class="badge bg-secondary rounded-pill">@item.QueuedAnalysisCount</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
                 <p class="text-muted small mb-0">@Strings.AnalysisOutcomesRepresentedByIssues</p>
             </div>
         </div>

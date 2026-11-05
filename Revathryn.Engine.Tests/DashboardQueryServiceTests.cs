@@ -146,6 +146,36 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
+        public async Task GetSnapshotAsync_SetsQueuedAnalysisCountPerRepository()
+        {
+            FakeRepositoryRepository repositories = new();
+            repositories.Repositories.Add(new Repository { Id = 1, Name = "Repo One" });
+            repositories.Repositories.Add(new Repository { Id = 2, Name = "Repo Two" });
+
+            FakeRepositoryScanRepository scans = new();
+            FakeQueueRepository queue = new();
+            queue.PendingItems.Add(new QueueItem { Id = 1, RepositoryId = 1, Status = QueueItemStatus.Pending });
+            queue.PendingItems.Add(new QueueItem { Id = 2, RepositoryId = 1, Status = QueueItemStatus.Pending });
+            queue.PendingItems.Add(new QueueItem { Id = 3, RepositoryId = 2, Status = QueueItemStatus.Pending });
+
+            DashboardQueryService service = new(
+                repositories,
+                scans,
+                queue,
+                new FakeIssueQueryService(),
+                new FakeHealthService(),
+                new FakeFindingRepository(),
+                new FakeReviewUsageRepository(),
+                new UptimeModel());
+
+            DashboardSnapshot snapshot = await service.GetSnapshotAsync(TestContext.CancellationToken);
+
+            Assert.HasCount(2, snapshot.Repositories);
+            Assert.AreEqual(2, snapshot.Repositories[0].QueuedAnalysisCount);
+            Assert.AreEqual(1, snapshot.Repositories[1].QueuedAnalysisCount);
+        }
+
+        [TestMethod]
         public async Task GetSnapshotAsync_MapsReviewUsageSummaryToSnapshot()
         {
             FakeRepositoryRepository repositories = new();
@@ -296,9 +326,11 @@ namespace Revathryn.Engine.Tests
                 return Task.CompletedTask;
             }
 
+            public List<QueueItem> PendingItems { get; } = [];
+
             public Task<IReadOnlyList<QueueItem>> GetPendingAsync(CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<QueueItem>>([]);
+                return Task.FromResult<IReadOnlyList<QueueItem>>([.. PendingItems]);
             }
 
             public Task<IReadOnlyList<QueueItem>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)

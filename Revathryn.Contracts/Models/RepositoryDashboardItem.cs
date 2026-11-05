@@ -12,6 +12,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Whether the configured local path can no longer be reached.</summary>
         public bool PathMissing { get; set; }
 
+        /// <summary>Number of analyses currently queued for the repository.</summary>
+        public int QueuedAnalysisCount { get; set; }
+
         /// <summary>Whether the repository has a discovery or configuration problem.</summary>
         public bool HasProblems => PathMissing || (LastScan is not null && !LastScan.Succeeded);
     }

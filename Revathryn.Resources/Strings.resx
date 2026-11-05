@@ -413,6 +413,9 @@
 			<data name="QueuedAnalysesLabel" xml:space="preserve">
 			  <value>Analyses queued</value>
 			</data>
+			<data name="QueuedByRepositoryLabel" xml:space="preserve">
+			  <value>Queued by repository</value>
+			</data>
 			<data name="AnalysisOutcomesRepresentedByIssues" xml:space="preserve">
 			  <value>Completed analyses are represented by persisted issues.</value>
 			</data>

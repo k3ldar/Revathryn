@@ -978,6 +978,15 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Queued by repository.
+        /// </summary>
+        public static string QueuedByRepositoryLabel {
+            get {
+                return ResourceManager.GetString("QueuedByRepositoryLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Completed analyses are represented by persisted issues..
         /// </summary>
         public static string AnalysisOutcomesRepresentedByIssues {

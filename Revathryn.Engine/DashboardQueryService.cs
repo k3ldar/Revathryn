@@ -48,6 +48,8 @@ namespace Revathryn.Engine
         {
             IReadOnlyList<Repository> repositories = await _repositoryRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
             IReadOnlyList<RepositoryScanRecord> scans = await _scanRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<QueueItem> pendingItems = await _queueRepository.GetPendingAsync(cancellationToken).ConfigureAwait(false);
+            Dictionary<long, int> queuedByRepository = BuildQueuedCountsByRepository(pendingItems);
 
             Dictionary<long, Repository> repositoriesById = [];
             foreach (Repository repository in repositories)
@@ -73,11 +75,14 @@ namespace Revathryn.Engine
                     }
                 }
 
+                queuedByRepository.TryGetValue(repository.Id, out int queuedCount);
+
                 repositoryItems.Add(new RepositoryDashboardItem
                 {
                     Repository = repository,
                     LastScan = lastScan,
-                    PathMissing = !Directory.Exists(repository.LocalPath)
+                    PathMissing = !Directory.Exists(repository.LocalPath),
+                    QueuedAnalysisCount = queuedCount
                 });
             }
 
@@ -135,6 +140,19 @@ namespace Revathryn.Engine
             }
 
             return processCpuTime.TotalMilliseconds * CpuUsagePercentageScale / elapsedMilliseconds;
+        }
+
+        private static Dictionary<long, int> BuildQueuedCountsByRepository(IReadOnlyList<QueueItem> pendingItems)
+        {
+            Dictionary<long, int> counts = [];
+
+            foreach (QueueItem item in pendingItems)
+            {
+                counts.TryGetValue(item.RepositoryId, out int currentCount);
+                counts[item.RepositoryId] = currentCount + 1;
+            }
+
+            return counts;
         }
 
         private static IReadOnlyList<RecentScanItem> BuildRecentScans(IReadOnlyList<RepositoryScanRecord> scans, Dictionary<long, Repository> repositoriesById)
