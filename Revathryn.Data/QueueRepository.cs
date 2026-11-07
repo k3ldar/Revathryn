@@ -216,11 +216,13 @@ namespace Revathryn.Data
             using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
+                DateTime? oldestPendingUtc = reader.IsDBNull(2) ? (DateTime?)null : SqliteValueConverter.ToDateTime(reader.GetString(2));
+
                 return new QueueMetrics
                 {
                     PendingCount = Convert.ToInt32(reader.GetValue(0)),
                     RetryCount = Convert.ToInt32(reader.GetValue(1)),
-                    OldestPendingUtc = reader.IsDBNull(2) ? (DateTime?)null : SqliteValueConverter.ToDateTime(reader.GetString(2))
+                    OldestPendingAge = oldestPendingUtc.HasValue ? DateTime.UtcNow - oldestPendingUtc.Value : (TimeSpan?)null
                 };
             }
 

@@ -9,7 +9,7 @@ namespace Revathryn.Contracts.Models
         /// <summary>Number of pending items awaiting at least one retry.</summary>
         public int RetryCount { get; set; }
 
-        /// <summary>UTC timestamp of the oldest pending item, or null when the queue is empty.</summary>
-        public DateTime? OldestPendingUtc { get; set; }
+        /// <summary>Elapsed time since the oldest pending item was queued, or null when the queue is empty.</summary>
+        public TimeSpan? OldestPendingAge { get; set; }
     }
 }

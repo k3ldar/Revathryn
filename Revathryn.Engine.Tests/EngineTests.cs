@@ -599,7 +599,7 @@ namespace Revathryn.Engine.Tests
                 {
                     PendingCount = pending.Count,
                     RetryCount = pending.Count(i => i.AttemptCount > 0),
-                    OldestPendingUtc = pending.Count == 0 ? (DateTime?)null : pending.Min(i => i.CreatedDate)
+                    OldestPendingAge = pending.Count == 0 ? (TimeSpan?)null : DateTime.UtcNow - pending.Min(i => i.CreatedDate)
                 };
 
                 return Task.FromResult(metrics);

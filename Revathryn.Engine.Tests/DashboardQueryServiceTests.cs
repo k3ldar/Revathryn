@@ -120,7 +120,7 @@ namespace Revathryn.Engine.Tests
                 {
                     PendingCount = 3,
                     RetryCount = 1,
-                    OldestPendingUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                    OldestPendingAge = new TimeSpan(1, 2, 3)
                 }
             };
             FakeFindingRepository findings = new() { OperationalFailureCount = 2 };
@@ -142,7 +142,7 @@ namespace Revathryn.Engine.Tests
             Assert.AreEqual(3, snapshot.QueueMetrics.PendingCount);
             Assert.AreEqual(1, snapshot.QueueMetrics.RetryCount);
             Assert.AreEqual(2, snapshot.FailedAnalysisCount);
-            Assert.AreEqual(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), snapshot.QueueMetrics.OldestPendingUtc.Value);
+            Assert.AreEqual(new TimeSpan(1, 2, 3), snapshot.QueueMetrics.OldestPendingAge.Value);
         }
 
         [TestMethod]

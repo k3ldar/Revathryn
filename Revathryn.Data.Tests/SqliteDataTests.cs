@@ -318,7 +318,7 @@ namespace Revathryn.Data.Tests
 
             Assert.AreEqual(3, metrics.PendingCount);
             Assert.AreEqual(1, metrics.RetryCount);
-            Assert.IsTrue(metrics.OldestPendingUtc.HasValue);
+            Assert.IsTrue(metrics.OldestPendingAge.HasValue);
         }
 
         [TestMethod]

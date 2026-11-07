@@ -44,7 +44,7 @@
                     <dd class="col-4 text-end">@Model.FailedAnalysisCount</dd>
 
                     <dt class="col-8">@Strings.OldestQueuedLabel</dt>
-                    <dd class="col-4 text-end">@(Model.QueueMetrics.OldestPendingUtc.HasValue ? FormatUtc(Model.QueueMetrics.OldestPendingUtc.Value) : Strings.NoQueuedAnalysesLabel)</dd>
+                    <dd class="col-4 text-end">@(Model.QueueMetrics.OldestPendingAge.HasValue ? FormatElapsed(Model.QueueMetrics.OldestPendingAge.Value) : Strings.NoQueuedAnalysesLabel)</dd>
                 </dl>
                 <div class="mb-2">
                     <h2 class="h6 mb-1">@Strings.QueuedByRepositoryLabel</h2>
@@ -369,6 +369,11 @@
         }
 
         return $"{value.Hours:00}:{value.Minutes:00}:{value.Seconds:00}";
+    }
+
+    private static string FormatElapsed(TimeSpan value)
+    {
+        return $"{(int)value.TotalHours:00}:{value.Minutes:00}:{value.Seconds:00}";
     }
 
     private static string FormatBytes(long bytes)
