@@ -22,6 +22,8 @@ namespace Revathryn.Engine
             services.AddSingleton(resilienceOptions);
             services.AddSingleton<ICorrelationContext, CorrelationContext>();
             services.AddSingleton<IFailureClassifier, FailureClassifier>();
+            services.AddSingleton<IProcessingGate, ProcessingGate>();
+            services.AddSingleton<IProcessingPauseRevalidator, ProcessingPauseRevalidator>();
             services.AddSingleton<IOperationalDiagnostics, OperationalDiagnostics>();
             services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
             services.AddSingleton<IRetryExecutor, RetryExecutor>();

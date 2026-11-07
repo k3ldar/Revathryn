@@ -67,14 +67,19 @@ namespace Revathryn.Review
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            AIEngine engine = await ResolveEngineAsync(cancellationToken).ConfigureAwait(false);
+            AIEngine engine = await ResolveEngineAsync(request, cancellationToken).ConfigureAwait(false);
 
             if (engine is null)
             {
-                return Failure(Strings.AIEngineNotConfigured);
+                return ConfigurationFailure(Strings.AIEngineNotConfigured);
             }
 
-            string apiKey = await _secretsProvider.GetSecretAsync(engine.SecretKeyName, cancellationToken).ConfigureAwait(false);
+            string apiKey = await _secretsProvider.GetSecretAsync(engine.SecretKeyName, cancellationToken).ConfigureAwait(false) ?? string.Empty;
+
+            if (engine.Provider is not AIProvider.Local && string.IsNullOrWhiteSpace(apiKey))
+            {
+                return ConfigurationFailure(Strings.ReviewEngineSecretMissing, engine);
+            }
 
             List<OpenAIMessage> correctionMessages = null;
             TokenUsage usage = new();
@@ -124,8 +129,18 @@ namespace Revathryn.Review
             }
         }
 
-        private async Task<AIEngine> ResolveEngineAsync(CancellationToken cancellationToken)
+        private async Task<AIEngine> ResolveEngineAsync(ReviewRequest request, CancellationToken cancellationToken)
         {
+            if (request.AIEngineId is long engineId)
+            {
+                AIEngine selected = await _engineRepository.GetByIdAsync(engineId, cancellationToken).ConfigureAwait(false);
+
+                if (selected is not null)
+                {
+                    return selected;
+                }
+            }
+
             AIEngine engine = await _engineRepository.GetDefaultAsync(cancellationToken).ConfigureAwait(false);
 
             if (engine is not null && engine.Enabled)
@@ -429,6 +444,13 @@ namespace Revathryn.Review
         private static ReviewResponse Failure(string error)
         {
             return Failure(error, null, new TokenUsage());
+        }
+
+        private static ReviewResponse ConfigurationFailure(string error, AIEngine engine = null)
+        {
+            ReviewResponse response = Failure(error, engine, new TokenUsage());
+            response.IsConfigurationFailure = true;
+            return response;
         }
 
         private static ReviewResponse Failure(string error, AIEngine engine, TokenUsage usage)

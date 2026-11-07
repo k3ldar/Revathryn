@@ -219,12 +219,97 @@ namespace Revathryn.Engine.Tests
             };
 
             FakeFindingRepository findings = new() { OperationalFailureCount = 1 };
-            HealthService healthService = new(new FakeDatabaseContext(), queue, new FakeAIEngineRepository(new AIEngine { Enabled = true }), findings);
+            HealthService healthService = new(new FakeDatabaseContext(), queue, new FakeAIEngineRepository(new AIEngine { Enabled = true }), findings, new FakeRepositoryRepository(), new ProcessingGate());
 
             HealthReport report = await healthService.GetReadinessAsync(TestContext.CancellationToken);
 
             HealthCheckResult reviewCheck = report.Checks.Single(check => check.Name == Consts.ReviewProcessingCheck);
             Assert.AreEqual(HealthStatus.Degraded, reviewCheck.Status);
+        }
+
+        [TestMethod]
+        public async Task HealthService_GetReadinessAsync_RepositoryAnalyserHealthyWhenSelectionsValid()
+        {
+            FakeRepositoryRepository repositories = new();
+            repositories.Repositories.Add(new Repository { Id = 1, Name = "Repo One", AIEngineId = 1 });
+
+            AIEngine enabledEngine = new() { Id = 1, Name = "Enabled", Enabled = true };
+            HealthService healthService = new(
+                new FakeDatabaseContext(),
+                new FakeQueueRepository(),
+                new FakeAIEngineRepository(enabledEngine),
+                new FakeFindingRepository(),
+                repositories,
+                new ProcessingGate());
+
+            HealthReport report = await healthService.GetReadinessAsync(TestContext.CancellationToken);
+
+            HealthCheckResult analyserCheck = report.Checks.Single(check => check.Name == Consts.RepositoryAnalyserCheck);
+            Assert.AreEqual(HealthStatus.Healthy, analyserCheck.Status);
+        }
+
+        [TestMethod]
+        public async Task HealthService_GetReadinessAsync_RepositoryAnalyserDegradedWhenEngineMissing()
+        {
+            FakeRepositoryRepository repositories = new();
+            repositories.Repositories.Add(new Repository { Id = 1, Name = "Repo One", AIEngineId = 99 });
+
+            AIEngine enabledEngine = new() { Id = 1, Name = "Enabled", Enabled = true };
+            HealthService healthService = new(
+                new FakeDatabaseContext(),
+                new FakeQueueRepository(),
+                new FakeAIEngineRepository(enabledEngine),
+                new FakeFindingRepository(),
+                repositories,
+                new ProcessingGate());
+
+            HealthReport report = await healthService.GetReadinessAsync(TestContext.CancellationToken);
+
+            HealthCheckResult analyserCheck = report.Checks.Single(check => check.Name == Consts.RepositoryAnalyserCheck);
+            Assert.AreEqual(HealthStatus.Degraded, analyserCheck.Status);
+        }
+
+        [TestMethod]
+        public async Task HealthService_GetReadinessAsync_RepositoryAnalyserDegradedWhenEngineDisabled()
+        {
+            FakeRepositoryRepository repositories = new();
+            repositories.Repositories.Add(new Repository { Id = 1, Name = "Repo One", AIEngineId = 2 });
+
+            AIEngine enabledEngine = new() { Id = 1, Name = "Enabled", Enabled = true };
+            AIEngine disabledEngine = new() { Id = 2, Name = "Disabled", Enabled = false };
+            HealthService healthService = new(
+                new FakeDatabaseContext(),
+                new FakeQueueRepository(),
+                new FakeAIEngineRepository(enabledEngine, disabledEngine),
+                new FakeFindingRepository(),
+                repositories,
+                new ProcessingGate());
+
+            HealthReport report = await healthService.GetReadinessAsync(TestContext.CancellationToken);
+
+            HealthCheckResult analyserCheck = report.Checks.Single(check => check.Name == Consts.RepositoryAnalyserCheck);
+            Assert.AreEqual(HealthStatus.Degraded, analyserCheck.Status);
+        }
+
+        [TestMethod]
+        public async Task HealthService_GetReadinessAsync_UnavailableWhenProcessingPaused()
+        {
+            ProcessingGate gate = new();
+            gate.Pause("misconfigured");
+
+            HealthService healthService = new(
+                new FakeDatabaseContext(),
+                new FakeQueueRepository(),
+                new FakeAIEngineRepository(new AIEngine { Enabled = true }),
+                new FakeFindingRepository(),
+                new FakeRepositoryRepository(),
+                gate);
+
+            HealthReport report = await healthService.GetReadinessAsync(TestContext.CancellationToken);
+
+            HealthCheckResult pauseCheck = report.Checks.Single(check => check.Name == Consts.ProcessingPauseCheck);
+            Assert.AreEqual(HealthStatus.Unavailable, pauseCheck.Status);
+            Assert.AreEqual(HealthStatus.Unavailable, report.Status);
         }
 
         private static DashboardQueryService CreateService(

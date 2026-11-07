@@ -1,4 +1,5 @@
 @using Revathryn.Resources
+@using Revathryn.Contracts.Models
 @model Revathryn.Models.Repositories.RepositoryEditViewModel
 @{
     string formAction = ViewData["FormAction"] as string ?? "Create";
@@ -40,6 +41,18 @@
     <div class="form-check mb-3">
         <input asp-for="AutomaticReviewEnabled" class="form-check-input" />
         <label asp-for="AutomaticReviewEnabled" class="form-check-label">@Strings.AutomaticReviewEnabledLabel</label>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AIEngineId" class="form-label">@Strings.AIEngineLabel</label>
+        <select asp-for="AIEngineId" class="form-select">
+            <option value="">@Strings.AIEngineDefaultOption</option>
+            @foreach (AIEngine engine in Model.AvailableEngines)
+            {
+                <option value="@engine.Id">@engine.Name@(engine.Enabled ? string.Empty : Strings.AIEngineDisabledSuffix)</option>
+            }
+        </select>
+        <span asp-validation-for="AIEngineId" class="text-danger"></span>
     </div>
 
     <input asp-for="Id" type="hidden" />

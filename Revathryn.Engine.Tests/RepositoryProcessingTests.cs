@@ -10,6 +10,7 @@ using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Reliability;
 using Revathryn.Contracts.Review;
 using Revathryn.Contracts.Services;
+using Revathryn.Engine.Reliability;
 
 namespace Revathryn.Engine.Tests
 {
@@ -1865,6 +1866,60 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
+        public async Task ReviewProcessor_ConfigurationFailure_PausesProcessingAndRequeues()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    Priority = 100,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new()
+                {
+                    Response = new ReviewResponse { Success = false, Error = "misconfigured", IsConfigurationFailure = true }
+                };
+                FakeRetryPolicy retryPolicy = new() { Delay = TimeSpan.FromMinutes(7) };
+                ResilienceOptions options = new();
+                ProcessingGate gate = new();
+
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, retryPolicy, options, processingGate: gate);
+
+                bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.IsTrue(processed);
+                Assert.IsTrue(gate.IsPaused);
+                Assert.AreEqual("misconfigured", gate.Reason);
+                Assert.AreEqual(1, await queue.CountAsync(TestContext.CancellationToken));
+
+                QueueItem pending = (await queue.GetPendingAsync(TestContext.CancellationToken))[0];
+                Assert.AreEqual(QueueItemStatus.Pending, pending.Status);
+                Assert.AreEqual("misconfigured", pending.LastError);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
         public async Task ReviewProcessor_FailedReview_PersistsUsageRecord()
         {
             string root = CreateTempDirectory();
@@ -2034,6 +2089,63 @@ namespace Revathryn.Engine.Tests
                 Assert.IsTrue(processed);
                 Assert.AreEqual(0, await queue.CountAsync(TestContext.CancellationToken));
                 Assert.HasCount(1, outcomes.Outcomes);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task ReviewProcessor_MissingArchitectureSummary_SkipsReviewWithoutPersistingOutcome()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    Priority = 100,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new() { Response = new ReviewResponse { Success = true, Results = [] } };
+                FakeReviewOutcomeStore outcomes = new();
+                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                FakeArchitectureSummaryService architectureSummaryService = new() { Summary = string.Empty };
+
+                ReviewProcessor processor = CreateReviewProcessor(
+                    queue,
+                    repositories,
+                    files,
+                    reviewTypes,
+                    engine,
+                    new FakeRetryPolicy(),
+                    options,
+                    outcomes: outcomes,
+                    architectureSummaryService: architectureSummaryService);
+
+                bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.IsTrue(processed);
+                Assert.AreEqual(0, await queue.CountAsync(TestContext.CancellationToken));
+                Assert.AreEqual(0, engine.CallCount);
+                Assert.HasCount(0, outcomes.Outcomes);
+                Assert.AreEqual(1, architectureSummaryService.CallCount);
             }
             finally
             {
@@ -2306,7 +2418,8 @@ namespace Revathryn.Engine.Tests
             FakeReviewOutcomeStore outcomes = null,
             FakeReviewUsageRepository usageRepository = null,
             FakeReviewContextProvider contextProvider = null,
-            IArchitectureSummaryService architectureSummaryService = null)
+            IArchitectureSummaryService architectureSummaryService = null,
+            IProcessingGate processingGate = null)
         {
             return new ReviewProcessor(
                 new ReviewQueue(queue),
@@ -2324,6 +2437,7 @@ namespace Revathryn.Engine.Tests
                 new IssueSettingsProvider(),
                 new SeverityRuleEngine(new SeverityRuleProvider()),
                 architectureSummaryService ?? new FakeArchitectureSummaryService(),
+                processingGate ?? new ProcessingGate(),
                 options);
         }
 
@@ -2379,7 +2493,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeArchitectureSummaryService : IArchitectureSummaryService
         {
-            public string Summary { get; set; } = string.Empty;
+            public string Summary { get; set; } = "architecture summary";
 
             public int CallCount { get; private set; }
 

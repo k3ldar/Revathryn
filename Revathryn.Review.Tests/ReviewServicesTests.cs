@@ -151,6 +151,114 @@ namespace Revathryn.Review.Tests
         }
 
         [TestMethod]
+        public async Task OpenAIReviewEngine_SelectedDisabledEngine_StillUsed()
+        {
+            // Arrange
+            AIEngine disabledEngine = new()
+            {
+                Id = 2,
+                Name = "Disabled OpenAI",
+                Provider = AIProvider.OpenAI,
+                Endpoint = "https://example.test/v1",
+                Model = "disabled-model",
+                SecretKeyName = "test-secret",
+                Enabled = false,
+                IsDefault = false
+            };
+
+            string completionBody = """
+                {
+                  "choices": [
+                    {
+                      "message": {
+                        "content": "{\"results\":[{\"fingerprint\":\"fp-disabled\",\"severity\":\"Medium\",\"title\":\"Title\",\"description\":\"Description\",\"suggestedFix\":\"Fix\"}],\"contextRequests\":[]}"
+                      }
+                    }
+                  ],
+                  "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15
+                  }
+                }
+                """;
+
+            StubHttpMessageHandler handler = new(HttpStatusCode.OK, completionBody, "application/json");
+            HttpClient httpClient = new(handler);
+
+            OpenAIReviewEngine engine = new(
+                new FakeAIEngineRepository(disabledEngine),
+                new FakeSecretsProvider("api-key"),
+                httpClient,
+                new FakeOperationalDiagnostics());
+
+            ReviewRequest request = new()
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                ReviewTypeId = 1,
+                AIEngineId = 2,
+                Language = "CSharp",
+                FileContent = "class Program { }",
+                Prompt = "Review this file."
+            };
+
+            // Act
+            ReviewResponse response = await engine.ReviewAsync(request, TestContext.CancellationToken);
+
+            // Assert
+            Assert.IsTrue(response.Success);
+            Assert.AreEqual(2, response.EngineId);
+            Assert.AreEqual("Disabled OpenAI", response.EngineName);
+            Assert.AreEqual("disabled-model", response.EngineModel);
+        }
+
+        [TestMethod]
+        public async Task OpenAIReviewEngine_MissingSecret_ReturnsConfigurationFailureWithoutHttpCall()
+        {
+            // Arrange
+            AIEngine configuredEngine = new()
+            {
+                Id = 1,
+                Name = "OpenAI",
+                Provider = AIProvider.OpenAI,
+                Endpoint = "https://example.test/v1",
+                Model = "test-model",
+                SecretKeyName = "test-secret",
+                Enabled = true,
+                IsDefault = true
+            };
+
+            StubHttpMessageHandler handler = new(HttpStatusCode.OK, "{}", "application/json");
+            HttpClient httpClient = new(handler);
+
+            OpenAIReviewEngine engine = new(
+                new FakeAIEngineRepository(configuredEngine),
+                new FakeSecretsProvider(null),
+                httpClient,
+                new FakeOperationalDiagnostics());
+
+            ReviewRequest request = new()
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                ReviewTypeId = 1,
+                Language = "CSharp",
+                FileContent = "class Program { }",
+                Prompt = "Review this file."
+            };
+
+            // Act
+            ReviewResponse response = await engine.ReviewAsync(request, TestContext.CancellationToken);
+
+            // Assert
+            Assert.IsFalse(response.Success);
+            Assert.IsTrue(response.IsConfigurationFailure);
+            Assert.AreEqual(1, response.EngineId);
+            Assert.AreEqual(0, handler.RequestCount);
+        }
+
+        [TestMethod]
         public async Task OpenAIReviewEngine_MalformedJsonResponse_ReturnsFailure()
         {
             // Arrange

@@ -77,6 +77,7 @@ namespace Revathryn.Data
             EnsureColumn(connection, "RepoFileAnalysis", "ReviewDefinitionVersion", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "Repositories", "ScanOptions", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "Repositories", "LastSuccessfulScanDate", "TEXT NULL");
+            EnsureColumn(connection, "Repositories", "AIEngineId", "INTEGER NULL");
             EnsureColumn(connection, "RepoFiles", "IsRemoved", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(connection, "RepoFiles", "ProjectPath", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "RepositoryScans", "RenamedFiles", "INTEGER NOT NULL DEFAULT 0");

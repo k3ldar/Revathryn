@@ -12,6 +12,9 @@ namespace Revathryn.Contracts.Review
         /// <summary>The review type driving the request.</summary>
         public long ReviewTypeId { get; set; }
 
+        /// <summary>Identifier of the AI engine selected for the owning repository, or null to use the system default.</summary>
+        public long? AIEngineId { get; set; }
+
         /// <summary>Language of the file under review, e.g. "CSharp".</summary>
         public string Language { get; set; } = string.Empty;
 

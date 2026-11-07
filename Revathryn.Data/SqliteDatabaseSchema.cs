@@ -16,6 +16,7 @@ namespace Revathryn.Data
                 Enabled INTEGER NOT NULL DEFAULT 0,
                 AutomaticReviewEnabled INTEGER NOT NULL DEFAULT 0,
                 MaxContextRequests INTEGER NOT NULL DEFAULT 0,
+                AIEngineId INTEGER NULL,
                 ScanOptions TEXT NOT NULL DEFAULT '',
                 LastSuccessfulScanDate TEXT NULL,
                 CreatedDate TEXT NOT NULL,

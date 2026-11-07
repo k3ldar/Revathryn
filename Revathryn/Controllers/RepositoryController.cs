@@ -17,18 +17,21 @@ namespace Revathryn.Controllers
         private readonly IRepositoryProcessor _repositoryProcessor;
         private readonly IRepositoryScanRepository _scanRepository;
         private readonly IReviewTypeRepository _reviewTypeRepository;
+        private readonly IAIEngineRepository _aiEngineRepository;
 
         /// <summary>Initialises a new repository controller.</summary>
         public RepositoryController(
             IRepositoryService repositoryService,
             IRepositoryProcessor repositoryProcessor,
             IRepositoryScanRepository scanRepository,
-            IReviewTypeRepository reviewTypeRepository)
+            IReviewTypeRepository reviewTypeRepository,
+            IAIEngineRepository aiEngineRepository)
         {
             _repositoryService = repositoryService;
             _repositoryProcessor = repositoryProcessor;
             _scanRepository = scanRepository;
             _reviewTypeRepository = reviewTypeRepository;
+            _aiEngineRepository = aiEngineRepository;
         }
 
         /// <summary>Lists configured repositories and their current operational state.</summary>
@@ -69,10 +72,12 @@ namespace Revathryn.Controllers
 
         /// <summary>Renders the form for registering a new repository.</summary>
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create(CancellationToken cancellationToken)
         {
+            RepositoryEditViewModel model = new();
+            await PopulateEngineOptionsAsync(model, cancellationToken);
             ViewData[Consts.BreadcrumbsViewDataKey] = BuildEditorBreadcrumbs(Strings.AddRepositoryTitle);
-            return View(new RepositoryEditViewModel());
+            return View(model);
         }
 
         /// <summary>Registers a new repository.</summary>
@@ -82,6 +87,7 @@ namespace Revathryn.Controllers
         {
             if (!ModelState.IsValid)
             {
+                await PopulateEngineOptionsAsync(model, cancellationToken);
                 ViewData[Consts.BreadcrumbsViewDataKey] = BuildEditorBreadcrumbs(Strings.AddRepositoryTitle);
                 return View(model);
             }
@@ -95,6 +101,7 @@ namespace Revathryn.Controllers
             catch (Exception ex) when (ex is ArgumentException or DirectoryNotFoundException or InvalidOperationException)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
+                await PopulateEngineOptionsAsync(model, cancellationToken);
                 ViewData[Consts.BreadcrumbsViewDataKey] = BuildEditorBreadcrumbs(Strings.AddRepositoryTitle);
                 return View(model);
             }
@@ -112,7 +119,9 @@ namespace Revathryn.Controllers
             }
 
             ViewData[Consts.BreadcrumbsViewDataKey] = BuildEditorBreadcrumbs(Strings.EditRepositoryTitle);
-            return View(RepositoryEditViewModel.FromRepository(repository));
+            RepositoryEditViewModel model = RepositoryEditViewModel.FromRepository(repository);
+            await PopulateEngineOptionsAsync(model, cancellationToken);
+            return View(model);
         }
 
         /// <summary>Persists changes to an existing repository.</summary>
@@ -122,6 +131,7 @@ namespace Revathryn.Controllers
         {
             if (!ModelState.IsValid)
             {
+                await PopulateEngineOptionsAsync(model, cancellationToken);
                 ViewData[Consts.BreadcrumbsViewDataKey] = BuildEditorBreadcrumbs(Strings.EditRepositoryTitle);
                 return View(model);
             }
@@ -135,6 +145,7 @@ namespace Revathryn.Controllers
             catch (Exception ex) when (ex is ArgumentException or DirectoryNotFoundException or InvalidOperationException)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
+                await PopulateEngineOptionsAsync(model, cancellationToken);
                 ViewData[Consts.BreadcrumbsViewDataKey] = BuildEditorBreadcrumbs(Strings.EditRepositoryTitle);
                 return View(model);
             }
@@ -228,6 +239,11 @@ namespace Revathryn.Controllers
             await _repositoryService.DeleteAsync(id, cancellationToken);
             TempData[Consts.SuccessMessageTempDataKey] = Strings.RepositoryDeletedMessage;
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task PopulateEngineOptionsAsync(RepositoryEditViewModel model, CancellationToken cancellationToken)
+        {
+            model.AvailableEngines = await _aiEngineRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private List<BreadcrumbItem> BuildEditorBreadcrumbs(string activeTitle)

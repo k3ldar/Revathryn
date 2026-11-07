@@ -11,6 +11,9 @@ namespace Revathryn.Contracts.Review
         /// <summary>Optional error message when <see cref="Success"/> is false.</summary>
         public string Error { get; set; } = string.Empty;
 
+        /// <summary>Whether the failure is caused by engine misconfiguration rather than transient or model output issues.</summary>
+        public bool IsConfigurationFailure { get; set; }
+
         /// <summary>Identifier of the engine that served the review.</summary>
         public long EngineId { get; set; }
 

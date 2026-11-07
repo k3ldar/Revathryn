@@ -39,6 +39,7 @@ namespace Revathryn.Engine
         private readonly IIssueSettingsProvider _issueSettingsProvider;
         private readonly ISeverityRuleEngine _severityRuleEngine;
         private readonly IArchitectureSummaryService _architectureSummaryService;
+        private readonly IProcessingGate _processingGate;
         private readonly ResilienceOptions _resilienceOptions;
 
         /// <summary>Initialises a new processor.</summary>
@@ -58,6 +59,7 @@ namespace Revathryn.Engine
             IIssueSettingsProvider issueSettingsProvider,
             ISeverityRuleEngine severityRuleEngine,
             IArchitectureSummaryService architectureSummaryService,
+            IProcessingGate processingGate,
             ResilienceOptions resilienceOptions)
         {
             _reviewQueue = reviewQueue;
@@ -75,6 +77,7 @@ namespace Revathryn.Engine
             _issueSettingsProvider = issueSettingsProvider;
             _severityRuleEngine = severityRuleEngine;
             _architectureSummaryService = architectureSummaryService;
+            _processingGate = processingGate;
             _resilienceOptions = resilienceOptions;
         }
 
@@ -93,9 +96,14 @@ namespace Revathryn.Engine
             {
                 ProcessingResult result = await ProcessItemAsync(item, cancellationToken).ConfigureAwait(false);
 
-                if (result.Succeeded)
+                if (result.Succeeded || result.Skipped)
                 {
                     await _reviewQueue.MarkCompletedAsync(item.Id, cancellationToken).ConfigureAwait(false);
+                }
+                else if (result.IsConfigurationFailure)
+                {
+                    _processingGate.Pause(result.Error);
+                    await _reviewQueue.ReleaseForRetryAsync(item.Id, item.Priority, DateTime.UtcNow.Add(_resilienceOptions.QueueLeaseDuration), result.Error, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -147,6 +155,7 @@ namespace Revathryn.Engine
                 RepositoryId = item.RepositoryId,
                 RepoFileId = item.RepoFileId,
                 ReviewTypeId = item.ReviewTypeId,
+                AIEngineId = repository.AIEngineId,
                 Language = ResolveLanguage(file),
                 FileContent = fileContent,
                 Prompt = BuildPrompt(reviewType, resolvedPrompts)
@@ -155,6 +164,11 @@ namespace Revathryn.Engine
             request.ArchitectureSummary = await _architectureSummaryService
                 .GetOrCreateAsync(file, fileContent, request.Language, cancellationToken)
                 .ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(request.ArchitectureSummary))
+            {
+                return ProcessingResult.Skip();
+            }
 
             int maxContextRequests = repository.MaxContextRequests > 0 ? repository.MaxContextRequests : Consts.DefaultMaxContextRequests;
             int contextIterations = 0;
@@ -171,6 +185,12 @@ namespace Revathryn.Engine
                 if (!response.Success)
                 {
                     await PersistUsageRecordAsync(item, response, cancellationToken).ConfigureAwait(false);
+
+                    if (response.IsConfigurationFailure)
+                    {
+                        return ProcessingResult.ConfigurationFailure(response.Error);
+                    }
+
                     return ProcessingResult.Failed(response.Error);
                 }
 
@@ -613,6 +633,10 @@ namespace Revathryn.Engine
         {
             public bool Succeeded { get; init; }
 
+            public bool Skipped { get; init; }
+
+            public bool IsConfigurationFailure { get; init; }
+
             public string Error { get; init; } = string.Empty;
 
             public static ProcessingResult Success()
@@ -620,9 +644,19 @@ namespace Revathryn.Engine
                 return new ProcessingResult { Succeeded = true };
             }
 
+            public static ProcessingResult Skip()
+            {
+                return new ProcessingResult { Skipped = true };
+            }
+
             public static ProcessingResult Failed(string error)
             {
                 return new ProcessingResult { Succeeded = false, Error = error ?? string.Empty };
+            }
+
+            public static ProcessingResult ConfigurationFailure(string error)
+            {
+                return new ProcessingResult { Succeeded = false, IsConfigurationFailure = true, Error = error ?? string.Empty };
             }
         }
     }

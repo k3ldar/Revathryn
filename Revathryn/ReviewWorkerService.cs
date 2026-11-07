@@ -1,5 +1,6 @@
 using Revathryn.Contracts;
 using Revathryn.Contracts.Orchestration;
+using Revathryn.Contracts.Reliability;
 using Revathryn.Contracts.Services;
 using Revathryn.Resources;
 
@@ -13,16 +14,22 @@ namespace Revathryn
     {
         private readonly IRepositoryProcessor _repositoryProcessor;
         private readonly IReviewProcessor _reviewProcessor;
+        private readonly IProcessingGate _processingGate;
+        private readonly IProcessingPauseRevalidator _pauseRevalidator;
         private readonly ILogger<ReviewWorkerService> _logger;
 
         /// <summary>Initialises a new review worker.</summary>
         public ReviewWorkerService(
             IRepositoryProcessor repositoryProcessor,
             IReviewProcessor reviewProcessor,
+            IProcessingGate processingGate,
+            IProcessingPauseRevalidator pauseRevalidator,
             ILogger<ReviewWorkerService> logger)
         {
             _repositoryProcessor = repositoryProcessor;
             _reviewProcessor = reviewProcessor;
+            _processingGate = processingGate;
+            _pauseRevalidator = pauseRevalidator;
             _logger = logger;
         }
 
@@ -46,6 +53,14 @@ namespace Revathryn
 
         private async Task RunCycleAsync(CancellationToken cancellationToken)
         {
+            if (_processingGate.IsPaused)
+            {
+                if (!await TryResumeProcessingAsync(cancellationToken))
+                {
+                    return;
+                }
+            }
+
             try
             {
                 await _repositoryProcessor.ProcessAllEnabledAsync(cancellationToken);
@@ -61,12 +76,39 @@ namespace Revathryn
             }
         }
 
+        private async Task<bool> TryResumeProcessingAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (await _pauseRevalidator.TryResumeAsync(cancellationToken))
+                {
+                    _logger.LogInformation(Strings.ReviewProcessingResumed);
+                    return true;
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, Strings.ReviewWorkerCycleFailed);
+            }
+
+            return false;
+        }
+
         private async Task DrainQueueAsync(CancellationToken cancellationToken)
         {
             int processed = 0;
 
             while (processed < Consts.ReviewWorkerMaxItemsPerCycle)
             {
+                if (_processingGate.IsPaused)
+                {
+                    return;
+                }
+
                 bool handled = await _reviewProcessor.ProcessNextAsync(cancellationToken);
 
                 if (!handled)

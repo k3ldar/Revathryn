@@ -27,6 +27,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Maximum number of context requests permitted per review.</summary>
         public int MaxContextRequests { get; set; }
 
+        /// <summary>Identifier of the AI engine used for this repository's reviews, or null to use the system default.</summary>
+        public long? AIEngineId { get; set; }
+
         /// <summary>Repository-specific scanning configuration; defaults apply when null.</summary>
         public RepositoryScanOptions ScanOptions { get; set; }
 

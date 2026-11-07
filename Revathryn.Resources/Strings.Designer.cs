@@ -330,6 +330,33 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to AI analyser.
+        /// </summary>
+        public static string AIEngineLabel {
+            get {
+                return ResourceManager.GetString("AIEngineLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Default (use system default engine).
+        /// </summary>
+        public static string AIEngineDefaultOption {
+            get {
+                return ResourceManager.GetString("AIEngineDefaultOption", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to  (disabled).
+        /// </summary>
+        public static string AIEngineDisabledSuffix {
+            get {
+                return ResourceManager.GetString("AIEngineDisabledSuffix", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to The AI engine rejected the request as unauthorized. Configure a valid API key for this engine..
         /// </summary>
         public static string AIEngineAuthenticationFailed {
@@ -344,6 +371,15 @@ namespace Revathryn.Resources {
         public static string ReviewWorkerCycleFailed {
             get {
                 return ResourceManager.GetString("ReviewWorkerCycleFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Automated processing resumed after a successful configuration recheck..
+        /// </summary>
+        public static string ReviewProcessingResumed {
+            get {
+                return ResourceManager.GetString("ReviewProcessingResumed", resourceCulture);
             }
         }
 
@@ -812,6 +848,42 @@ namespace Revathryn.Resources {
         public static string HealthAnalyserAvailabilityUnavailable {
             get {
                 return ResourceManager.GetString("HealthAnalyserAvailabilityUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to All repository AI engine selections are valid..
+        /// </summary>
+        public static string HealthRepositoryAnalyserHealthy {
+            get {
+                return ResourceManager.GetString("HealthRepositoryAnalyserHealthy", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository '{0}' references an AI engine that no longer exists..
+        /// </summary>
+        public static string HealthRepositoryAnalyserMissing {
+            get {
+                return ResourceManager.GetString("HealthRepositoryAnalyserMissing", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository '{0}' references disabled AI engine '{1}'..
+        /// </summary>
+        public static string HealthRepositoryAnalyserDisabled {
+            get {
+                return ResourceManager.GetString("HealthRepositoryAnalyserDisabled", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Repository AI engine selection check failed: {0}.
+        /// </summary>
+        public static string HealthRepositoryAnalyserUnavailable {
+            get {
+                return ResourceManager.GetString("HealthRepositoryAnalyserUnavailable", resourceCulture);
             }
         }
 
@@ -2207,6 +2279,24 @@ namespace Revathryn.Resources {
         public static string HealthReviewProcessingUnavailable {
             get {
                 return ResourceManager.GetString("HealthReviewProcessingUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Automated processing is paused: {0}.
+        /// </summary>
+        public static string HealthProcessingPaused {
+            get {
+                return ResourceManager.GetString("HealthProcessingPaused", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Automated processing is active..
+        /// </summary>
+        public static string HealthProcessingActive {
+            get {
+                return ResourceManager.GetString("HealthProcessingActive", resourceCulture);
             }
         }
 

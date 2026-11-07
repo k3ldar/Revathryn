@@ -200,8 +200,20 @@
 			<data name="AIEngineHttpError" xml:space="preserve">
 			  <value>The AI engine returned HTTP status {0}.</value>
 			</data>
+			<data name="AIEngineLabel" xml:space="preserve">
+			  <value>AI analyser</value>
+			</data>
+			<data name="AIEngineDefaultOption" xml:space="preserve">
+			  <value>Default (use system default engine)</value>
+			</data>
+			<data name="AIEngineDisabledSuffix" xml:space="preserve">
+			  <value> (disabled)</value>
+			</data>
 			<data name="ReviewWorkerCycleFailed" xml:space="preserve">
 			  <value>The review worker cycle failed.</value>
+			</data>
+			<data name="ReviewProcessingResumed" xml:space="preserve">
+			  <value>Automated processing resumed after a successful configuration recheck.</value>
 			</data>
 			<data name="NewFilesLabel" xml:space="preserve">
 			  <value>New files</value>
@@ -358,6 +370,18 @@
 			</data>
 			<data name="HealthAnalyserAvailabilityUnavailable" xml:space="preserve">
 			  <value>Analyser availability check failed: {0}</value>
+			</data>
+			<data name="HealthRepositoryAnalyserHealthy" xml:space="preserve">
+			  <value>All repository AI engine selections are valid.</value>
+			</data>
+			<data name="HealthRepositoryAnalyserMissing" xml:space="preserve">
+			  <value>Repository '{0}' references an AI engine that no longer exists.</value>
+			</data>
+			<data name="HealthRepositoryAnalyserDisabled" xml:space="preserve">
+			  <value>Repository '{0}' references disabled AI engine '{1}'.</value>
+			</data>
+			<data name="HealthRepositoryAnalyserUnavailable" xml:space="preserve">
+			  <value>Repository AI engine selection check failed: {0}</value>
 			</data>
 			<data name="HealthLivenessHealthy" xml:space="preserve">
 			  <value>Application is running.</value>
@@ -799,6 +823,12 @@
 			</data>
 			<data name="HealthReviewProcessingUnavailable" xml:space="preserve">
 			  <value>Review processing check failed: {0}</value>
+			</data>
+			<data name="HealthProcessingPaused" xml:space="preserve">
+			  <value>Automated processing is paused: {0}</value>
+			</data>
+			<data name="HealthProcessingActive" xml:space="preserve">
+			  <value>Automated processing is active.</value>
 			</data>
 			<data name="OldestQueuedLabel" xml:space="preserve">
 			  <value>Oldest queued</value>

@@ -248,8 +248,10 @@
         public const string DatabaseConnectivityCheck = "DatabaseConnectivity";
         public const string BackgroundProcessingCheck = "BackgroundProcessing";
         public const string AnalyserAvailabilityCheck = "AnalyserAvailability";
+        public const string RepositoryAnalyserCheck = "RepositoryAnalyser";
         public const string LivenessCheck = "Liveness";
         public const string ReviewProcessingCheck = "ReviewProcessing";
+        public const string ProcessingPauseCheck = "ProcessingPause";
 
         // Issue query defaults.
         public const int DefaultIssuePageSize = 20;

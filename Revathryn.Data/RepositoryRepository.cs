@@ -11,7 +11,7 @@ namespace Revathryn.Data
     public sealed class RepositoryRepository : SqliteRepositoryBase, IRepositoryRepository
     {
         private const string SelectColumns =
-            "Id, Name, Description, LocalPath, RepositoryUri, Enabled, AutomaticReviewEnabled, MaxContextRequests, ScanOptions, LastSuccessfulScanDate, CreatedDate, LastModifiedDate";
+            "Id, Name, Description, LocalPath, RepositoryUri, Enabled, AutomaticReviewEnabled, MaxContextRequests, AIEngineId, ScanOptions, LastSuccessfulScanDate, CreatedDate, LastModifiedDate";
 
         /// <summary>Initialises a new repository.</summary>
         public RepositoryRepository(SqliteConnectionFactory connectionFactory)
@@ -76,8 +76,8 @@ namespace Revathryn.Data
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO Repositories (Name, Description, LocalPath, RepositoryUri, Enabled, AutomaticReviewEnabled, MaxContextRequests, ScanOptions, LastSuccessfulScanDate, CreatedDate, LastModifiedDate)
-                VALUES (@Name, @Description, @LocalPath, @RepositoryUri, @Enabled, @AutomaticReviewEnabled, @MaxContextRequests, @ScanOptions, @LastSuccessfulScanDate, @CreatedDate, @LastModifiedDate);
+                INSERT INTO Repositories (Name, Description, LocalPath, RepositoryUri, Enabled, AutomaticReviewEnabled, MaxContextRequests, AIEngineId, ScanOptions, LastSuccessfulScanDate, CreatedDate, LastModifiedDate)
+                VALUES (@Name, @Description, @LocalPath, @RepositoryUri, @Enabled, @AutomaticReviewEnabled, @MaxContextRequests, @AIEngineId, @ScanOptions, @LastSuccessfulScanDate, @CreatedDate, @LastModifiedDate);
                 SELECT last_insert_rowid();
                 """;
             AddParameters(command, repository);
@@ -100,6 +100,7 @@ namespace Revathryn.Data
                     Enabled = @Enabled,
                     AutomaticReviewEnabled = @AutomaticReviewEnabled,
                     MaxContextRequests = @MaxContextRequests,
+                    AIEngineId = @AIEngineId,
                     ScanOptions = @ScanOptions,
                     LastSuccessfulScanDate = @LastSuccessfulScanDate,
                     CreatedDate = @CreatedDate,
@@ -132,6 +133,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@Enabled", repository.Enabled);
             command.Parameters.AddWithValue("@AutomaticReviewEnabled", repository.AutomaticReviewEnabled);
             command.Parameters.AddWithValue("@MaxContextRequests", repository.MaxContextRequests);
+            command.Parameters.AddWithValue("@AIEngineId", ToNullableLong(repository.AIEngineId));
             command.Parameters.AddWithValue("@ScanOptions", SerializeScanOptions(repository.ScanOptions));
             command.Parameters.AddWithValue("@LastSuccessfulScanDate", ToNullableText(repository.LastSuccessfulScanDate));
             command.Parameters.AddWithValue("@CreatedDate", SqliteValueConverter.ToText(repository.CreatedDate));
@@ -165,6 +167,11 @@ namespace Revathryn.Data
             return value.HasValue ? SqliteValueConverter.ToText(value.Value) : DBNull.Value;
         }
 
+        private static object ToNullableLong(long? value)
+        {
+            return value.HasValue ? value.Value : DBNull.Value;
+        }
+
         private static Repository MapRepository(SqliteDataReader reader)
         {
             return new Repository
@@ -177,10 +184,11 @@ namespace Revathryn.Data
                 Enabled = reader.GetBoolean(5),
                 AutomaticReviewEnabled = reader.GetBoolean(6),
                 MaxContextRequests = reader.GetInt32(7),
-                ScanOptions = DeserializeScanOptions(reader.GetString(8)),
-                LastSuccessfulScanDate = reader.IsDBNull(9) ? (DateTime?)null : SqliteValueConverter.ToDateTime(reader.GetString(9)),
-                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(10)),
-                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(11))
+                AIEngineId = reader.IsDBNull(8) ? (long?)null : reader.GetInt64(8),
+                ScanOptions = DeserializeScanOptions(reader.GetString(9)),
+                LastSuccessfulScanDate = reader.IsDBNull(10) ? (DateTime?)null : SqliteValueConverter.ToDateTime(reader.GetString(10)),
+                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(11)),
+                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(12))
             };
         }
     }

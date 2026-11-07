@@ -72,11 +72,11 @@ namespace Revathryn.Tests
         }
 
         [TestMethod]
-        public void Create_Get_ReturnsEmptyForm()
+        public async Task Create_Get_ReturnsEmptyForm()
         {
             RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), new FakeReviewTypeRepository(), out _);
 
-            IActionResult result = controller.Create();
+            IActionResult result = await controller.Create(TestContext.CancellationToken);
 
             ViewResult viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult);
@@ -412,11 +412,12 @@ namespace Revathryn.Tests
             FakeRepositoryProcessor processor,
             FakeRepositoryScanRepository scanRepository,
             FakeReviewTypeRepository reviewTypeRepository,
-            out DefaultHttpContext httpContext)
+            out DefaultHttpContext httpContext,
+            FakeAIEngineRepository aiEngineRepository = null)
         {
             ControllerContext context = ControllerTestSupport.CreateControllerContext(out httpContext);
 
-            return new RepositoryController(repositoryService, processor, scanRepository, reviewTypeRepository)
+            return new RepositoryController(repositoryService, processor, scanRepository, reviewTypeRepository, aiEngineRepository ?? new FakeAIEngineRepository())
             {
                 ControllerContext = context,
                 Url = new FakeUrlHelper(context),
@@ -567,6 +568,50 @@ namespace Revathryn.Tests
             }
 
             public Task UpdateAsync(ReviewType reviewType, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeAIEngineRepository : IAIEngineRepository
+        {
+            public List<AIEngine> Engines { get; } = new();
+
+            public Task<AIEngine> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+            {
+                AIEngine match = Engines.FirstOrDefault(engine => engine.Id == id);
+                return Task.FromResult(match);
+            }
+
+            public Task<IReadOnlyList<AIEngine>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<AIEngine>>([.. Engines]);
+            }
+
+            public Task<IReadOnlyList<AIEngine>> GetEnabledAsync(CancellationToken cancellationToken = default)
+            {
+                IReadOnlyList<AIEngine> result = [.. Engines.Where(engine => engine.Enabled)];
+                return Task.FromResult(result);
+            }
+
+            public Task<AIEngine> GetDefaultAsync(CancellationToken cancellationToken = default)
+            {
+                AIEngine match = Engines.FirstOrDefault(engine => engine.IsDefault);
+                return Task.FromResult(match);
+            }
+
+            public Task<long> AddAsync(AIEngine engine, CancellationToken cancellationToken = default)
+            {
+                Engines.Add(engine);
+                return Task.FromResult((long)Engines.Count);
+            }
+
+            public Task UpdateAsync(AIEngine engine, CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;
             }

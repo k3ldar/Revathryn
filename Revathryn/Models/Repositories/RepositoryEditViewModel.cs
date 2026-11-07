@@ -33,6 +33,12 @@ namespace Revathryn.Models.Repositories
         [Range(1, int.MaxValue, ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.MaxContextRequestsRangeMessage))]
         public int MaxContextRequests { get; set; } = DefaultMaxContextRequests;
 
+        /// <summary>Identifier of the AI engine used for this repository's reviews, or null to use the system default.</summary>
+        public long? AIEngineId { get; set; }
+
+        /// <summary>AI engines available for selection, including disabled engines.</summary>
+        public IReadOnlyList<AIEngine> AvailableEngines { get; set; } = [];
+
         /// <summary>Creates a form model from a persisted repository.</summary>
         public static RepositoryEditViewModel FromRepository(Repository repository)
         {
@@ -44,7 +50,8 @@ namespace Revathryn.Models.Repositories
                 LocalPath = repository.LocalPath,
                 Enabled = repository.Enabled,
                 AutomaticReviewEnabled = repository.AutomaticReviewEnabled,
-                MaxContextRequests = repository.MaxContextRequests
+                MaxContextRequests = repository.MaxContextRequests,
+                AIEngineId = repository.AIEngineId
             };
         }
 
@@ -59,7 +66,8 @@ namespace Revathryn.Models.Repositories
                 LocalPath = LocalPath?.Trim() ?? string.Empty,
                 Enabled = Enabled,
                 AutomaticReviewEnabled = AutomaticReviewEnabled,
-                MaxContextRequests = MaxContextRequests
+                MaxContextRequests = MaxContextRequests,
+                AIEngineId = AIEngineId
             };
         }
     }

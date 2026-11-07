@@ -16,14 +16,18 @@ namespace Revathryn.Engine.Reliability
         private readonly IQueueRepository _queueRepository;
         private readonly IAIEngineRepository _aiEngineRepository;
         private readonly IFindingRepository _findingRepository;
+        private readonly IRepositoryRepository _repositoryRepository;
+        private readonly IProcessingGate _processingGate;
 
         /// <summary>Initialises a new health service.</summary>
-        public HealthService(IDatabaseContext databaseContext, IQueueRepository queueRepository, IAIEngineRepository aiEngineRepository, IFindingRepository findingRepository)
+        public HealthService(IDatabaseContext databaseContext, IQueueRepository queueRepository, IAIEngineRepository aiEngineRepository, IFindingRepository findingRepository, IRepositoryRepository repositoryRepository, IProcessingGate processingGate)
         {
             _databaseContext = databaseContext;
             _queueRepository = queueRepository;
             _aiEngineRepository = aiEngineRepository;
             _findingRepository = findingRepository;
+            _repositoryRepository = repositoryRepository;
+            _processingGate = processingGate;
         }
 
         /// <summary>Evaluates readiness: whether the application can perform work.</summary>
@@ -34,7 +38,9 @@ namespace Revathryn.Engine.Reliability
                 await CheckDatabaseConnectivityAsync(cancellationToken).ConfigureAwait(false),
                 await CheckBackgroundProcessingAsync(cancellationToken).ConfigureAwait(false),
                 await CheckAnalyserAvailabilityAsync(cancellationToken).ConfigureAwait(false),
-                await CheckReviewProcessingAsync(cancellationToken).ConfigureAwait(false)
+                await CheckRepositoryAnalyserAsync(cancellationToken).ConfigureAwait(false),
+                await CheckReviewProcessingAsync(cancellationToken).ConfigureAwait(false),
+                CheckProcessingPause()
             ];
 
             return new HealthReport
@@ -100,6 +106,50 @@ namespace Revathryn.Engine.Reliability
             }
         }
 
+        private async Task<HealthCheckResult> CheckRepositoryAnalyserAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                IReadOnlyList<Repository> repositories = await _repositoryRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
+                IReadOnlyList<AIEngine> engines = await _aiEngineRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
+
+                Dictionary<long, AIEngine> enginesById = [];
+                foreach (AIEngine engine in engines)
+                {
+                    enginesById[engine.Id] = engine;
+                }
+
+                List<string> problems = [];
+                foreach (Repository repository in repositories)
+                {
+                    if (!repository.AIEngineId.HasValue)
+                    {
+                        continue;
+                    }
+
+                    if (!enginesById.TryGetValue(repository.AIEngineId.Value, out AIEngine engine))
+                    {
+                        problems.Add(string.Format(Strings.HealthRepositoryAnalyserMissing, repository.Name));
+                    }
+                    else if (!engine.Enabled)
+                    {
+                        problems.Add(string.Format(Strings.HealthRepositoryAnalyserDisabled, repository.Name, engine.Name));
+                    }
+                }
+
+                if (problems.Count > 0)
+                {
+                    return CreateCheck(RepositoryAnalyserCheck, HealthStatus.Degraded, null, string.Join(ListSeparator, problems));
+                }
+
+                return CreateCheck(RepositoryAnalyserCheck, HealthStatus.Healthy, DateTime.UtcNow, Strings.HealthRepositoryAnalyserHealthy);
+            }
+            catch (Exception ex)
+            {
+                return CreateCheck(RepositoryAnalyserCheck, HealthStatus.Unavailable, null, string.Format(Strings.HealthRepositoryAnalyserUnavailable, ex.Message));
+            }
+        }
+
         private async Task<HealthCheckResult> CheckReviewProcessingAsync(CancellationToken cancellationToken)
         {
             try
@@ -118,6 +168,16 @@ namespace Revathryn.Engine.Reliability
             {
                 return CreateCheck(ReviewProcessingCheck, HealthStatus.Unavailable, null, string.Format(Strings.HealthReviewProcessingUnavailable, ex.Message));
             }
+        }
+
+        private HealthCheckResult CheckProcessingPause()
+        {
+            if (_processingGate.IsPaused)
+            {
+                return CreateCheck(ProcessingPauseCheck, HealthStatus.Unavailable, null, string.Format(Strings.HealthProcessingPaused, _processingGate.Reason));
+            }
+
+            return CreateCheck(ProcessingPauseCheck, HealthStatus.Healthy, DateTime.UtcNow, Strings.HealthProcessingActive);
         }
 
         private static HealthCheckResult CreateCheck(string name, HealthStatus status, DateTime? lastSuccessfulUtc, string detail)
