@@ -304,6 +304,65 @@ namespace Revathryn.Tests
         }
 
         [TestMethod]
+        public async Task ToggleReviewType_EnablesReviewTypeAndRedirects()
+        {
+            FakeReviewTypeRepository reviewTypeRepository = new();
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 7, RepositoryId = 4, Enabled = false });
+
+            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), reviewTypeRepository, out _);
+
+            IActionResult result = await controller.ToggleReviewType(4, 7, true, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(RepositoryController.Details), redirect.ActionName);
+            Assert.AreEqual(4L, redirect.RouteValues["id"]);
+            Assert.IsTrue(reviewTypeRepository.ReviewTypes[0].Enabled);
+            Assert.AreEqual(Revathryn.Resources.Strings.ReviewTypeEnabledMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public async Task ToggleReviewType_DisablesReviewTypeAndRedirects()
+        {
+            FakeReviewTypeRepository reviewTypeRepository = new();
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 8, RepositoryId = 4, Enabled = true });
+
+            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), reviewTypeRepository, out _);
+
+            IActionResult result = await controller.ToggleReviewType(4, 8, false, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(RepositoryController.Details), redirect.ActionName);
+            Assert.AreEqual(4L, redirect.RouteValues["id"]);
+            Assert.IsFalse(reviewTypeRepository.ReviewTypes[0].Enabled);
+            Assert.AreEqual(Revathryn.Resources.Strings.ReviewTypeDisabledMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public async Task ToggleReviewType_NotFoundWhenReviewTypeMissing()
+        {
+            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), new FakeReviewTypeRepository(), out _);
+
+            IActionResult result = await controller.ToggleReviewType(4, 999, true, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task ToggleReviewType_NotFoundWhenReviewTypeBelongsToAnotherRepository()
+        {
+            FakeReviewTypeRepository reviewTypeRepository = new();
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 9, RepositoryId = 5, Enabled = true });
+
+            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), reviewTypeRepository, out _);
+
+            IActionResult result = await controller.ToggleReviewType(4, 9, false, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
         public async Task Scan_NotFoundWhenMissing()
         {
             RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), new FakeReviewTypeRepository(), out _);
@@ -569,6 +628,13 @@ namespace Revathryn.Tests
 
             public Task UpdateAsync(ReviewType reviewType, CancellationToken cancellationToken = default)
             {
+                int index = ReviewTypes.FindIndex(item => item.Id == reviewType.Id);
+
+                if (index >= 0)
+                {
+                    ReviewTypes[index] = reviewType;
+                }
+
                 return Task.CompletedTask;
             }
 

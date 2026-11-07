@@ -1634,4 +1634,16 @@
 			<data name="SeverityRuleDeleteConfirmation" xml:space="preserve">
 			  <value>Delete severity rule '{0}'?</value>
 			</data>
+			<data name="EnableButton" xml:space="preserve">
+			  <value>Enable</value>
+			</data>
+			<data name="DisableButton" xml:space="preserve">
+			  <value>Disable</value>
+			</data>
+			<data name="ReviewTypeEnabledMessage" xml:space="preserve">
+			  <value>Review type enabled.</value>
+			</data>
+			<data name="ReviewTypeDisabledMessage" xml:space="preserve">
+			  <value>Review type disabled.</value>
+			</data>
 			</root>

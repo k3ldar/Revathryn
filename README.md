@@ -31,55 +31,95 @@ The underlying philosophy is straightforward:
 
 ## Core Capabilities
 
-Revathryn is being developed around several complementary capabilities.
+Revathryn is built around several complementary, largely implemented capabilities.
 
 ### Repository Management
 
 Repository discovery and management form the foundation of the platform.
 
-This includes:
+Implemented capabilities include:
 
-- Repository scanning and discovery.
-- File identification and fingerprinting.
-- Incremental change detection.
-- Efficient processing of modified or newly discovered files.
-- Maintaining an understanding of repository structure.
+- Registering and managing repositories, including their local paths and operational state.
+- Repository scanning with configurable options, progress tracking and persisted scan records.
+- File identification and content fingerprinting for efficient change detection.
+- Manifest-based incremental scanning, so only new or modified files are reprocessed.
+- Git-ignore and glob matching to focus scanning on relevant files.
+- Project discovery within repositories.
+- Maintaining a structured understanding of repository contents, files and projects.
 
 ### Code Analysis
 
 A modular analysis architecture allows specialised analysers to inspect repository contents.
 
-The initial focus includes C# analysis, with an architecture intended to support additional languages and analysis capabilities over time.
+Implemented capabilities include:
 
-### Analysis and Issue Management
+- A Roslyn-based C# analyser that maps code symbols such as methods, properties, fields, indexers, operators and constructors into a structured model.
+- Symbol indexing and querying for navigating code structure.
+- Architecture analysis summarising repository structure.
+- AI-assisted review engines that apply configured prompts to repository contents (currently via OpenAI-compatible APIs).
+- An extensible analyser and analysis-engine contract so additional languages can be introduced over time.
+
+### Review and Prompt Pipeline
+
+Reviews orchestrate analysis and AI-driven inspection into repeatable workflows.
+
+Implemented capabilities include:
+
+- Per-repository review types with seeded defaults.
+- Scheduled and queued review processing driven by a dedicated background worker.
+- Prompt management with immutable versioning and statistics.
+- Prompt optimisation and prompt test-run workflows, each with its own background worker.
+- Token usage tracking for AI review operations.
+
+### Issue Management
 
 Analysis results are consolidated into actionable findings.
 
-The platform is designed to distinguish between the execution of analysis and the persistence of its outcomes, avoiding unnecessary historical records of individual processing operations.
+Implemented capabilities include:
+
+- Findings persisted with category, severity and status.
+- Reconciliation of analysis outcomes so findings reflect the current state of the code.
+- Browsing and inspecting findings through the web interface.
+- Issue validation workflows that re-check findings against repository context, driven by a background worker.
+- Duplicate detection to consolidate equivalent findings.
+- Configurable severity rules that override how findings are classified.
+
+### GitHub Integration
+
+A GitHub webhook integration lets Revathryn react to repository events.
+
+Implemented capabilities include:
+
+- A webhook endpoint with request signature validation.
+- Support for a broad range of GitHub events, including push, pull request, issues, comments, workflow runs, deployments and more.
+- A queued webhook processing pipeline.
 
 ### Administration and Dashboard
 
-A central administration interface will provide visibility and control over the platform.
+A central web interface provides visibility and control over the platform.
 
-This includes:
+Implemented capabilities include:
 
+- An operational dashboard with live status of repositories, findings and processing.
 - Repository management.
-- Analysis configuration.
-- Processing and queue visibility.
-- Issue and findings management.
-- Platform health and operational status.
+- Review engine and AI engine configuration.
+- Review type and severity rule management.
+- AI review usage and token tracking.
+- Issue validation review.
+- System health and uptime monitoring.
 
 ### Reliability and Recovery
 
 Reliable operation is a fundamental part of the architecture.
 
-Planned capabilities include:
+Implemented capabilities include:
 
-- Retry handling.
-- Recovery from interrupted processing.
-- Monitoring and diagnostics.
-- Operational health visibility.
-- Resilient background processing.
+- Retry handling with exponential backoff.
+- Recovery from interrupted processing on startup.
+- A processing gate with pause and revalidation.
+- Health checks and readiness reporting.
+- Operational diagnostics and logging.
+- Resilient background processing through hosted worker services.
 
 ---
 
@@ -115,15 +155,28 @@ Persist meaningful outcomes and information rather than creating unnecessary ope
 
 ## Technology
 
-The initial development is centred around:
+The platform is implemented in C# on .NET 10.
 
-- C#
-- .NET
-- Modular analysis components
-- Repository and file fingerprinting
-- A web-based administration and dashboard interface
+- ASP.NET Core MVC web application with Razor views.
+- SQLite persistence via Microsoft.Data.Sqlite.
+- Roslyn (Microsoft.CodeAnalysis.CSharp) for C# code analysis and symbol indexing.
+- OpenAI-compatible API integration for AI-assisted review.
+- PluginManager for extensibility.
+- Hosted background services for review, issue validation, duplicate detection, prompt optimisation and prompt test runs.
+- MSTest for the unit test suites.
 
-Specific implementation details and technology choices will evolve as the architecture develops.
+The solution is organised into focused projects:
+
+- **Revathryn** — the ASP.NET Core web application, controllers, views and worker services.
+- **Revathryn.Contracts** — interfaces, models and enums shared across the platform.
+- **Revathryn.Engine** — core services for scanning, issue management, review orchestration and reliability.
+- **Revathryn.Review** — C# analysis and AI review engines.
+- **Revathryn.Data** — SQLite persistence implementations.
+- **Revathryn.Resources** — user-facing strings.
+- **Revathryn.Models** — shared view models.
+- Test projects for Contracts, Engine, Review, Data and the web application.
+
+The initial language focus is C#, with the architecture intended to support additional languages and analysis capabilities over time.
 
 ---
 

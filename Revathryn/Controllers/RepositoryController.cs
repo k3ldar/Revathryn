@@ -241,6 +241,27 @@ namespace Revathryn.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        /// <summary>Toggles whether a review type is active for the repository.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleReviewType(long id, long reviewTypeId, bool enabled, CancellationToken cancellationToken)
+        {
+            ReviewType reviewType = await _reviewTypeRepository.GetByIdAsync(reviewTypeId, cancellationToken);
+
+            if (reviewType is null || reviewType.RepositoryId != id)
+            {
+                return NotFound();
+            }
+
+            reviewType.Enabled = enabled;
+            reviewType.LastModifiedDate = DateTime.UtcNow;
+
+            await _reviewTypeRepository.UpdateAsync(reviewType, cancellationToken);
+
+            TempData[Consts.SuccessMessageTempDataKey] = enabled ? Strings.ReviewTypeEnabledMessage : Strings.ReviewTypeDisabledMessage;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         private async Task PopulateEngineOptionsAsync(RepositoryEditViewModel model, CancellationToken cancellationToken)
         {
             model.AvailableEngines = await _aiEngineRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);

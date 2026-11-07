@@ -1563,6 +1563,24 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Enable.
+        /// </summary>
+        public static string EnableButton {
+            get {
+                return ResourceManager.GetString("EnableButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Disable.
+        /// </summary>
+        public static string DisableButton {
+            get {
+                return ResourceManager.GetString("DisableButton", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Back to repositories.
         /// </summary>
         public static string BackToRepositoriesButton {
@@ -2072,6 +2090,24 @@ namespace Revathryn.Resources {
         public static string ReviewTypeDeletedMessage {
             get {
                 return ResourceManager.GetString("ReviewTypeDeletedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review type enabled..
+        /// </summary>
+        public static string ReviewTypeEnabledMessage {
+            get {
+                return ResourceManager.GetString("ReviewTypeEnabledMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Review type disabled..
+        /// </summary>
+        public static string ReviewTypeDisabledMessage {
+            get {
+                return ResourceManager.GetString("ReviewTypeDisabledMessage", resourceCulture);
             }
         }
 

@@ -109,14 +109,29 @@ else
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <span class="fw-semibold">@reviewType.Name</span>
 
-                    @if (reviewType.Enabled)
-                    {
-                        <span class="badge bg-success">@Strings.EnabledLabel</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">@Strings.RepositoryDisabled</span>
-                    }
+                    <div class="d-flex align-items-center gap-2">
+                        @if (reviewType.Enabled)
+                        {
+                            <span class="badge bg-success">@Strings.EnabledLabel</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@Strings.RepositoryDisabled</span>
+                        }
+
+                        <form asp-action="ToggleReviewType" asp-route-id="@Model.Repository.Id" method="post" class="d-inline">
+                            <input type="hidden" name="reviewTypeId" value="@reviewType.Id" />
+
+                            @if (reviewType.Enabled)
+                            {
+                                <button type="submit" name="enabled" value="false" class="btn btn-outline-secondary btn-sm">@Strings.DisableButton</button>
+                            }
+                            else
+                            {
+                                <button type="submit" name="enabled" value="true" class="btn btn-outline-success btn-sm">@Strings.EnableButton</button>
+                            }
+                        </form>
+                    </div>
                 </div>
 
                 @if (!string.IsNullOrWhiteSpace(reviewType.Description))
