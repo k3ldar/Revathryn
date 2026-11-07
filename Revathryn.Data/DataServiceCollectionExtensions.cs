@@ -44,6 +44,8 @@ namespace Revathryn.Data
             services.AddTransient<IFindingReconciler, FindingReconciler>();
             services.AddTransient<IQueueRepository, QueueRepository>();
             services.AddTransient<IAIEngineRepository, AIEngineRepository>();
+            services.AddTransient<IRepoFileArchitectureRepository, RepoFileArchitectureRepository>();
+            services.AddTransient<IArchitectureAnalysisFailureRepository, ArchitectureAnalysisFailureRepository>();
             services.AddTransient<ISeverityRuleRepository, SeverityRuleRepository>();
             services.AddTransient<IReviewUsageRepository, ReviewUsageRepository>();
             services.AddTransient<IAISettingsRepository, AISettingsRepository>();

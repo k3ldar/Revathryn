@@ -2305,7 +2305,8 @@ namespace Revathryn.Engine.Tests
             FakeFindingRepository findings = null,
             FakeReviewOutcomeStore outcomes = null,
             FakeReviewUsageRepository usageRepository = null,
-            FakeReviewContextProvider contextProvider = null)
+            FakeReviewContextProvider contextProvider = null,
+            IArchitectureSummaryService architectureSummaryService = null)
         {
             return new ReviewProcessor(
                 new ReviewQueue(queue),
@@ -2322,6 +2323,7 @@ namespace Revathryn.Engine.Tests
                 new FakeDuplicateDetectionQueue(),
                 new IssueSettingsProvider(),
                 new SeverityRuleEngine(new SeverityRuleProvider()),
+                architectureSummaryService ?? new FakeArchitectureSummaryService(),
                 options);
         }
 
@@ -2372,6 +2374,19 @@ namespace Revathryn.Engine.Tests
                 ReviewResponse response = CallCount < Responses.Count ? Responses[CallCount] : Response;
                 CallCount++;
                 return Task.FromResult(response);
+            }
+        }
+
+        private sealed class FakeArchitectureSummaryService : IArchitectureSummaryService
+        {
+            public string Summary { get; set; } = string.Empty;
+
+            public int CallCount { get; private set; }
+
+            public Task<string> GetOrCreateAsync(RepoFile file, string fileContent, string language, CancellationToken cancellationToken = default)
+            {
+                CallCount++;
+                return Task.FromResult(Summary);
             }
         }
 

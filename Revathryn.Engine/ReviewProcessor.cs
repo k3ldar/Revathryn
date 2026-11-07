@@ -38,6 +38,7 @@ namespace Revathryn.Engine
         private readonly IDuplicateDetectionQueue _duplicateDetectionQueue;
         private readonly IIssueSettingsProvider _issueSettingsProvider;
         private readonly ISeverityRuleEngine _severityRuleEngine;
+        private readonly IArchitectureSummaryService _architectureSummaryService;
         private readonly ResilienceOptions _resilienceOptions;
 
         /// <summary>Initialises a new processor.</summary>
@@ -56,6 +57,7 @@ namespace Revathryn.Engine
             IDuplicateDetectionQueue duplicateDetectionQueue,
             IIssueSettingsProvider issueSettingsProvider,
             ISeverityRuleEngine severityRuleEngine,
+            IArchitectureSummaryService architectureSummaryService,
             ResilienceOptions resilienceOptions)
         {
             _reviewQueue = reviewQueue;
@@ -72,6 +74,7 @@ namespace Revathryn.Engine
             _duplicateDetectionQueue = duplicateDetectionQueue;
             _issueSettingsProvider = issueSettingsProvider;
             _severityRuleEngine = severityRuleEngine;
+            _architectureSummaryService = architectureSummaryService;
             _resilienceOptions = resilienceOptions;
         }
 
@@ -148,6 +151,10 @@ namespace Revathryn.Engine
                 FileContent = fileContent,
                 Prompt = BuildPrompt(reviewType, resolvedPrompts)
             };
+
+            request.ArchitectureSummary = await _architectureSummaryService
+                .GetOrCreateAsync(file, fileContent, request.Language, cancellationToken)
+                .ConfigureAwait(false);
 
             int maxContextRequests = repository.MaxContextRequests > 0 ? repository.MaxContextRequests : Consts.DefaultMaxContextRequests;
             int contextIterations = 0;

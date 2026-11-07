@@ -58,6 +58,11 @@
         <label asp-for="IsDefault" class="form-check-label">@Strings.IsDefaultLabel</label>
     </div>
 
+    <div class="form-check mb-3">
+        <input asp-for="UseArchitecturePass" class="form-check-input" />
+        <label asp-for="UseArchitecturePass" class="form-check-label">@Strings.UseArchitecturePassLabel</label>
+    </div>
+
     <input asp-for="Id" type="hidden" />
 
     <div class="d-flex gap-2">

@@ -31,5 +31,8 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Whether this engine is the default when none is specified.</summary>
         public bool IsDefault { get; set; }
+
+        /// <summary>Whether reviews using this engine are primed with a cached descriptive structure summary.</summary>
+        public bool UseArchitecturePass { get; set; }
     }
 }

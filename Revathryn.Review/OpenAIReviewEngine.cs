@@ -34,6 +34,9 @@ namespace Revathryn.Review
         private const string FileContentHeader = "File content:";
         private const string AdditionalContextHeader = "Additional context:";
         private const string RequestedContextHeader = "Requested context:";
+        private const string PromptArchitectureSummary = "Please provide a summary of the architecture of the code in the file content.";
+        private const int PromptPosition1 = 1;
+        private const int PromptPosition2 = 2;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -139,8 +142,15 @@ namespace Revathryn.Review
             List<OpenAIMessage> messages =
             [
                 new OpenAIMessage { Role = SystemRole, Content = request.Prompt ?? string.Empty },
-                new OpenAIMessage { Role = UserRole, Content = BuildUserContent(request) }
             ];
+
+            if (!string.IsNullOrWhiteSpace(request.ArchitectureSummary))
+            {
+                messages.Insert(PromptPosition1, new OpenAIMessage { Role = UserRole, Content = PromptArchitectureSummary });
+                messages.Insert(PromptPosition2, new OpenAIMessage { Role = AssistantRole, Content = request.ArchitectureSummary });
+            }
+
+            messages.Add(new OpenAIMessage { Role = UserRole, Content = BuildUserContent(request) });
 
             if (request.ContextRounds is not null)
             {
@@ -342,6 +352,16 @@ namespace Revathryn.Review
         private static string ExtractJsonContent(string content)
         {
             string trimmed = content.Trim();
+
+            if (trimmed.EndsWith(CodeFence, StringComparison.Ordinal))
+            {
+                int closingFence = trimmed.LastIndexOf(CodeFence, StringComparison.Ordinal);
+
+                if (closingFence > 0)
+                {
+                    trimmed = trimmed[..closingFence].TrimEnd();
+                }
+            }
 
             if (!trimmed.StartsWith(CodeFence, StringComparison.Ordinal))
             {

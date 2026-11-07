@@ -61,6 +61,7 @@ namespace Revathryn.Engine
             services.AddSingleton<IPromptTestService, PromptTestService>();
             services.AddSingleton<IPromptManagementService, PromptManagementService>();
             services.AddSingleton<IPromptStatisticsService, PromptStatisticsService>();
+            services.AddSingleton<IArchitectureSummaryService, ArchitectureSummaryService>();
 
             return services;
         }

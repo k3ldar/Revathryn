@@ -58,6 +58,19 @@ namespace Revathryn.Engine
             **Final instruction: For every reported issue, quote the exact line(s) of code that demonstrate the defect. A signature alone is not evidence of a runtime, resource, or concurrency defect; quote the statement or expression that exhibits the problem. If no such line exists, the issue is speculative and must not be reported. It is expected and correct that most review type criteria will not apply to a given artifact. Returning no finding for an inapplicable criterion is the correct outcome, not an omission.**
             """;
 
+        /// <summary>Free-text descriptive prompt used for the cached per-file architecture pass.</summary>
+        public const string ArchitecturePassPrompt = """
+            Complete a structured descriptive pass of the supplied file.
+            Your goal is understanding, not review: produce a neutral, accurate summary of the file's structure and behaviour so that a later reviewer can reference it.
+            Do NOT report defects, risks, opinions, improvements or recommendations.
+            Cover:
+            1. The file's purpose and role.
+            2. Its public and internal surface: types, members and functions with a brief note on what each does.
+            3. Key data flow, dependencies and control flow within the file.
+            4. Any notable design decisions visible in the code (for example constructor chaining or overloads) described neutrally as structure, not as issues.
+            Be concise but complete. Respond with plain text, not JSON.
+            """;
+
         /// <summary>Implementation-specific instructions appended to every review prompt.</summary>
         internal const string ReviewInstructions = """
             Respond with a single JSON object using exactly this shape:

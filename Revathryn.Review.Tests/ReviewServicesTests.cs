@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 
 using Revathryn.Contracts;
+using Revathryn.Contracts.Analysis;
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
@@ -312,6 +313,245 @@ namespace Revathryn.Review.Tests
             Assert.AreEqual(35, response.Usage.CompletionTokens);
             Assert.AreEqual(165, response.Usage.TotalTokens);
             Assert.AreEqual(62, response.Usage.CachedTokens);
+        }
+
+        [TestMethod]
+        public async Task OpenAIReviewEngine_ClosingCodeFenceOnly_ReturnsResults()
+        {
+            // Arrange
+            AIEngine configuredEngine = new()
+            {
+                Id = 1,
+                Name = "OpenAI",
+                Provider = AIProvider.OpenAI,
+                Endpoint = "https://example.test/v1",
+                Model = "test-model",
+                SecretKeyName = "test-secret",
+                Enabled = true,
+                IsDefault = true
+            };
+
+            string completionBody = """
+                {
+                  "choices": [
+                    {
+                      "message": {
+                        "content": "{\n  \"results\": [],\n  \"contextRequests\": []\n}\n```"
+                      }
+                    }
+                  ],
+                  "usage": {
+                    "prompt_tokens": 120,
+                    "completion_tokens": 30,
+                    "total_tokens": 150,
+                    "prompt_tokens_details": { "cached_tokens": 60 }
+                  }
+                }
+                """;
+
+            StubHttpMessageHandler handler = new(HttpStatusCode.OK, completionBody, "application/json");
+            HttpClient httpClient = new(handler);
+
+            OpenAIReviewEngine engine = new(
+                new FakeAIEngineRepository(configuredEngine),
+                new FakeSecretsProvider("api-key"),
+                httpClient,
+                new FakeOperationalDiagnostics());
+
+            ReviewRequest request = new()
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                ReviewTypeId = 1,
+                Language = "CSharp",
+                FileContent = "class Program { }",
+                Prompt = "Review this file."
+            };
+
+            // Act
+            ReviewResponse response = await engine.ReviewAsync(request, TestContext.CancellationToken);
+
+            // Assert
+            Assert.IsTrue(response.Success);
+            Assert.IsEmpty(response.Error);
+            Assert.HasCount(0, response.Results);
+            Assert.AreEqual(1, handler.RequestCount);
+        }
+
+        [TestMethod]
+        public async Task OpenAIReviewEngine_FullyFencedJsonResponse_ReturnsResults()
+        {
+            // Arrange
+            AIEngine configuredEngine = new()
+            {
+                Id = 1,
+                Name = "OpenAI",
+                Provider = AIProvider.OpenAI,
+                Endpoint = "https://example.test/v1",
+                Model = "test-model",
+                SecretKeyName = "test-secret",
+                Enabled = true,
+                IsDefault = true
+            };
+
+            string completionBody = """
+                {
+                  "choices": [
+                    {
+                      "message": {
+                        "content": "```json\n{\"results\":[{\"fingerprint\":\"fp-1\",\"severity\":\"High\",\"title\":\"Title\",\"description\":\"Description\",\"suggestedFix\":\"Fix\"}],\"contextRequests\":[]}\n```"
+                      }
+                    }
+                  ],
+                  "usage": {
+                    "prompt_tokens": 120,
+                    "completion_tokens": 30,
+                    "total_tokens": 150,
+                    "prompt_tokens_details": { "cached_tokens": 60 }
+                  }
+                }
+                """;
+
+            StubHttpMessageHandler handler = new(HttpStatusCode.OK, completionBody, "application/json");
+            HttpClient httpClient = new(handler);
+
+            OpenAIReviewEngine engine = new(
+                new FakeAIEngineRepository(configuredEngine),
+                new FakeSecretsProvider("api-key"),
+                httpClient,
+                new FakeOperationalDiagnostics());
+
+            ReviewRequest request = new()
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                ReviewTypeId = 1,
+                Language = "CSharp",
+                FileContent = "class Program { }",
+                Prompt = "Review this file."
+            };
+
+            // Act
+            ReviewResponse response = await engine.ReviewAsync(request, TestContext.CancellationToken);
+
+            // Assert
+            Assert.IsTrue(response.Success);
+            Assert.IsEmpty(response.Error);
+            Assert.HasCount(1, response.Results);
+            Assert.AreEqual("fp-1", response.Results[0].Fingerprint);
+            Assert.AreEqual(1, handler.RequestCount);
+        }
+
+        [TestMethod]
+        public async Task ArchitectureAnalysisEngine_DisabledEngine_ReturnsSkipped()
+        {
+            // Arrange
+            AIEngine configuredEngine = new()
+            {
+                Id = 1,
+                Name = "OpenAI",
+                Provider = AIProvider.OpenAI,
+                Endpoint = "https://example.test/v1",
+                Model = "test-model",
+                SecretKeyName = "test-secret",
+                Enabled = true,
+                IsDefault = true,
+                UseArchitecturePass = false
+            };
+
+            StubHttpMessageHandler handler = new([]);
+            HttpClient httpClient = new(handler);
+
+            ArchitectureAnalysisEngine engine = new(
+                new FakeAIEngineRepository(configuredEngine),
+                new OpenAICompletionClient(new FakeSecretsProvider("api-key"), httpClient, new FakeOperationalDiagnostics()));
+
+            ArchitectureAnalysisRequest request = new()
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                Language = "CSharp",
+                FileContent = "class Program { }",
+                Prompt = "Summarise this file."
+            };
+
+            // Act
+            ArchitectureAnalysisResponse response = await engine.AnalyseStructureAsync(request, TestContext.CancellationToken);
+
+            // Assert
+            Assert.IsTrue(response.Success);
+            Assert.IsTrue(response.Skipped);
+            Assert.AreEqual(0, handler.RequestCount);
+            Assert.AreEqual(1, response.EngineId);
+            Assert.AreEqual("OpenAI", response.EngineName);
+        }
+
+        [TestMethod]
+        public async Task ArchitectureAnalysisEngine_EnabledEngine_ReturnsFreeTextSummary()
+        {
+            // Arrange
+            AIEngine configuredEngine = new()
+            {
+                Id = 1,
+                Name = "OpenAI",
+                Provider = AIProvider.OpenAI,
+                Endpoint = "https://example.test/v1",
+                Model = "test-model",
+                SecretKeyName = "test-secret",
+                Enabled = true,
+                IsDefault = true,
+                UseArchitecturePass = true
+            };
+
+            string completionBody = """
+                {
+                  "choices": [
+                    {
+                      "message": {
+                        "content": "This file declares a single Program class."
+                      }
+                    }
+                  ],
+                  "usage": {
+                    "prompt_tokens": 20,
+                    "completion_tokens": 10,
+                    "total_tokens": 30
+                  }
+                }
+                """;
+
+            StubHttpMessageHandler handler = new(HttpStatusCode.OK, completionBody, "application/json");
+            HttpClient httpClient = new(handler);
+
+            ArchitectureAnalysisEngine engine = new(
+                new FakeAIEngineRepository(configuredEngine),
+                new OpenAICompletionClient(new FakeSecretsProvider("api-key"), httpClient, new FakeOperationalDiagnostics()));
+
+            ArchitectureAnalysisRequest request = new()
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                Language = "CSharp",
+                FileContent = "class Program { }",
+                Prompt = "Summarise this file."
+            };
+
+            // Act
+            ArchitectureAnalysisResponse response = await engine.AnalyseStructureAsync(request, TestContext.CancellationToken);
+
+            // Assert
+            Assert.IsTrue(response.Success);
+            Assert.IsFalse(response.Skipped);
+            Assert.AreEqual("This file declares a single Program class.", response.Summary);
+            Assert.AreEqual(1, response.EngineId);
+            Assert.AreEqual("OpenAI", response.EngineName);
+            Assert.AreEqual("test-model", response.EngineModel);
+            Assert.AreEqual(1, handler.RequestCount);
+
+            using (JsonDocument document = JsonDocument.Parse(handler.RequestBodies[0]))
+            {
+                Assert.IsFalse(document.RootElement.TryGetProperty("response_format", out _));
+            }
         }
 
         [TestMethod]

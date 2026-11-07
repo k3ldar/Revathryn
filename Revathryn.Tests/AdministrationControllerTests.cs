@@ -981,7 +981,8 @@ namespace Revathryn.Tests
             FakeAISettingsRepository aiSettingsRepository = null,
             IIssueSettingsProvider issueSettingsProvider = null,
             ISeverityRuleRepository severityRuleRepository = null,
-            ISeverityRuleProvider severityRuleProvider = null)
+            ISeverityRuleProvider severityRuleProvider = null,
+            IArchitectureAnalysisFailureRepository architectureAnalysisFailureRepository = null)
         {
             DefaultHttpContext httpContext = new();
 
@@ -996,7 +997,8 @@ namespace Revathryn.Tests
                 repositoryService ?? new FakeRepositoryService(),
                 issueSettingsProvider ?? new IssueSettingsProvider(),
                 severityRuleRepository ?? new FakeSeverityRuleRepository(),
-                severityRuleProvider ?? new SeverityRuleProvider())
+                severityRuleProvider ?? new SeverityRuleProvider(),
+                architectureAnalysisFailureRepository ?? new FakeArchitectureAnalysisFailureRepository())
             {
                 ControllerContext = new ControllerContext(actionContext),
                 Url = new FakeUrlHelper(actionContext),
@@ -1004,6 +1006,27 @@ namespace Revathryn.Tests
             };
 
             return controller;
+        }
+
+        private sealed class FakeArchitectureAnalysisFailureRepository : IArchitectureAnalysisFailureRepository
+        {
+            public List<ArchitectureAnalysisFailure> Failures { get; } = [];
+
+            public Task<long> AddAsync(ArchitectureAnalysisFailure failure, CancellationToken cancellationToken = default)
+            {
+                Failures.Add(failure);
+                return Task.FromResult((long)Failures.Count);
+            }
+
+            public Task<IReadOnlyList<ArchitectureAnalysisFailure>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ArchitectureAnalysisFailure>>(Failures);
+            }
+
+            public Task<ArchitectureAnalysisFailure> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<ArchitectureAnalysisFailure>(null);
+            }
         }
 
         private sealed class FakeSeverityRuleRepository : ISeverityRuleRepository

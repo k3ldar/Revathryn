@@ -26,5 +26,8 @@ namespace Revathryn.Contracts.Review
 
         /// <summary>Requested context rounds, each supplied to the AI as a separate follow-up message.</summary>
         public List<ReviewContextRound> ContextRounds { get; set; } = [];
+
+        /// <summary>Pre-computed descriptive structure summary priming the review. Empty when unavailable.</summary>
+        public string ArchitectureSummary { get; set; } = string.Empty;
     }
 }

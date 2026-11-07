@@ -1914,6 +1914,15 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Prime reviews with a cached file summary.
+        /// </summary>
+        public static string UseArchitecturePassLabel {
+            get {
+                return ResourceManager.GetString("UseArchitecturePassLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to No AI engines have been configured..
         /// </summary>
         public static string NoEnginesMessage {
@@ -2375,6 +2384,79 @@ namespace Revathryn.Resources {
 
 
         /// <summary>
+        ///   Looks up a localized string similar to File summary failures.
+        /// </summary>
+        public static string ArchitectureAnalysisFailuresTitle {
+            get {
+                return ResourceManager.GetString("ArchitectureAnalysisFailuresTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Failed file summary passes are logged here with their full context for diagnosis. Reviews fall back to a single pass when a summary cannot be produced..
+        /// </summary>
+        public static string ArchitectureAnalysisFailuresNotice {
+            get {
+                return ResourceManager.GetString("ArchitectureAnalysisFailuresNotice", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No file summary failures have been recorded..
+        /// </summary>
+        public static string ArchitectureAnalysisFailuresEmpty {
+            get {
+                return ResourceManager.GetString("ArchitectureAnalysisFailuresEmpty", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to File summary failure details.
+        /// </summary>
+        public static string ArchitectureAnalysisFailureDetailsTitle {
+            get {
+                return ResourceManager.GetString("ArchitectureAnalysisFailureDetailsTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to System prompt.
+        /// </summary>
+        public static string ArchitectureAnalysisFailureSystemPromptLabel {
+            get {
+                return ResourceManager.GetString("ArchitectureAnalysisFailureSystemPromptLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to File content.
+        /// </summary>
+        public static string ArchitectureAnalysisFailureFileContentLabel {
+            get {
+                return ResourceManager.GetString("ArchitectureAnalysisFailureFileContentLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Raw provider response.
+        /// </summary>
+        public static string ArchitectureAnalysisFailureRawResponseLabel {
+            get {
+                return ResourceManager.GetString("ArchitectureAnalysisFailureRawResponseLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Back to file summary failures.
+        /// </summary>
+        public static string ArchitectureAnalysisFailureBackToList {
+            get {
+                return ResourceManager.GetString("ArchitectureAnalysisFailureBackToList", resourceCulture);
+            }
+        }
+
+
+        /// <summary>
         ///   Looks up a localized string similar to Browse issues.
         /// </summary>
         public static string BrowseIssuesTitle {
@@ -2686,6 +2768,15 @@ namespace Revathryn.Resources {
         public static string LanguageLabel {
             get {
                 return ResourceManager.GetString("LanguageLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Error.
+        /// </summary>
+        public static string ErrorLabel {
+            get {
+                return ResourceManager.GetString("ErrorLabel", resourceCulture);
             }
         }
 

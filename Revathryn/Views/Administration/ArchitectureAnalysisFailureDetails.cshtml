@@ -1,0 +1,81 @@
+@using Revathryn.Resources
+@model Revathryn.Contracts.Models.ArchitectureAnalysisFailure
+@{
+    ViewData["Title"] = Strings.ArchitectureAnalysisFailureDetailsTitle;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@Strings.ArchitectureAnalysisFailureDetailsTitle</h1>
+    <a asp-controller="Administration" asp-action="ArchitectureAnalysisFailures" class="btn btn-outline-secondary">@Strings.ArchitectureAnalysisFailureBackToList</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-5">@Strings.FileLabel</dt>
+                    <dd class="col-7 text-break">@Model.FilePath</dd>
+
+                    <dt class="col-5">@Strings.LanguageLabel</dt>
+                    <dd class="col-7">@Model.Language</dd>
+
+                    <dt class="col-5">@Strings.EngineNameLabel</dt>
+                    <dd class="col-7">@Model.EngineName · @Model.EngineModel</dd>
+
+                    <dt class="col-5">@Strings.CompletedLabel</dt>
+                    <dd class="col-7">@Model.CreatedUtc.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-8">
+        <div class="card h-100">
+            <div class="card-header">@Strings.ErrorLabel</div>
+            <div class="card-body">
+                <pre class="mb-0 text-break" style="white-space: pre-wrap;">@Model.Error</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="accordion mb-4" id="failureContextAccordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="systemPromptHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#systemPromptCollapse" aria-expanded="false" aria-controls="systemPromptCollapse">
+                @Strings.ArchitectureAnalysisFailureSystemPromptLabel
+            </button>
+        </h2>
+        <div id="systemPromptCollapse" class="accordion-collapse collapse" aria-labelledby="systemPromptHeading" data-bs-parent="#failureContextAccordion">
+            <div class="accordion-body">
+                <pre class="mb-0 text-break" style="white-space: pre-wrap;">@Model.SystemPrompt</pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="fileContentHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fileContentCollapse" aria-expanded="false" aria-controls="fileContentCollapse">
+                @Strings.ArchitectureAnalysisFailureFileContentLabel
+            </button>
+        </h2>
+        <div id="fileContentCollapse" class="accordion-collapse collapse" aria-labelledby="fileContentHeading" data-bs-parent="#failureContextAccordion">
+            <div class="accordion-body">
+                <pre class="mb-0 text-break" style="white-space: pre-wrap;">@Model.FileContent</pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="rawResponseHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#rawResponseCollapse" aria-expanded="false" aria-controls="rawResponseCollapse">
+                @Strings.ArchitectureAnalysisFailureRawResponseLabel
+            </button>
+        </h2>
+        <div id="rawResponseCollapse" class="accordion-collapse collapse" aria-labelledby="rawResponseHeading" data-bs-parent="#failureContextAccordion">
+            <div class="accordion-body">
+                <pre class="mb-0 text-break" style="white-space: pre-wrap;">@Model.RawResponse</pre>
+            </div>
+        </div>
+    </div>
+</div>

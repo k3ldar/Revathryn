@@ -1,0 +1,41 @@
+@using Revathryn.Resources
+@model Revathryn.Models.Administration.ArchitectureAnalysisFailureListViewModel
+@{
+    ViewData["Title"] = Strings.ArchitectureAnalysisFailuresTitle;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@Strings.ArchitectureAnalysisFailuresTitle</h1>
+    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary">@Strings.DashboardTitle</a>
+</div>
+
+<div class="alert alert-info">@Strings.ArchitectureAnalysisFailuresNotice</div>
+
+@if (Model.Failures.Count == 0)
+{
+    <div class="alert alert-secondary">@Strings.ArchitectureAnalysisFailuresEmpty</div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (Revathryn.Contracts.Models.ArchitectureAnalysisFailure failure in Model.Failures)
+        {
+            <a asp-controller="Administration" asp-action="ArchitectureAnalysisFailureDetails" asp-route-id="@failure.Id" class="list-group-item list-group-item-action">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <span class="fw-semibold">@failure.FilePath</span>
+                            <span class="badge bg-secondary">@failure.Language</span>
+                        </div>
+                        <div class="text-muted small">
+                            @failure.EngineName · @failure.EngineModel
+                        </div>
+                    </div>
+                    <div class="text-muted small text-end">
+                        @failure.CreatedUtc.ToString("yyyy-MM-dd HH:mm 'UTC'")
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+}

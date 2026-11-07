@@ -9,7 +9,7 @@ namespace Revathryn.Data
     /// <summary>SQLite implementation of <see cref="IAIEngineRepository"/>.</summary>
     public sealed class AIEngineRepository : SqliteRepositoryBase, IAIEngineRepository
     {
-        private const string SelectColumns = "Id, Name, Provider, Endpoint, Model, SecretKeyName, Enabled, IsDefault, MaxTokens";
+        private const string SelectColumns = "Id, Name, Provider, Endpoint, Model, SecretKeyName, Enabled, IsDefault, MaxTokens, UseArchitecturePass";
 
         /// <summary>Initialises a new repository.</summary>
         public AIEngineRepository(SqliteConnectionFactory connectionFactory)
@@ -90,8 +90,8 @@ namespace Revathryn.Data
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO AIEngines (Name, Provider, Endpoint, Model, SecretKeyName, Enabled, IsDefault, MaxTokens)
-                VALUES (@Name, @Provider, @Endpoint, @Model, @SecretKeyName, @Enabled, @IsDefault, @MaxTokens);
+                INSERT INTO AIEngines (Name, Provider, Endpoint, Model, SecretKeyName, Enabled, IsDefault, MaxTokens, UseArchitecturePass)
+                VALUES (@Name, @Provider, @Endpoint, @Model, @SecretKeyName, @Enabled, @IsDefault, @MaxTokens, @UseArchitecturePass);
                 SELECT last_insert_rowid();
                 """;
             AddParameters(command, engine);
@@ -114,7 +114,8 @@ namespace Revathryn.Data
                     SecretKeyName = @SecretKeyName,
                     Enabled = @Enabled,
                     IsDefault = @IsDefault,
-                    MaxTokens = @MaxTokens
+                    MaxTokens = @MaxTokens,
+                    UseArchitecturePass = @UseArchitecturePass
                 WHERE Id = @Id;
                 """;
             AddParameters(command, engine);
@@ -144,6 +145,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@Enabled", engine.Enabled);
             command.Parameters.AddWithValue("@IsDefault", engine.IsDefault);
             command.Parameters.AddWithValue("@MaxTokens", engine.MaxTokens);
+            command.Parameters.AddWithValue("@UseArchitecturePass", engine.UseArchitecturePass);
         }
 
         private static AIEngine MapAIEngine(SqliteDataReader reader)
@@ -158,7 +160,8 @@ namespace Revathryn.Data
                 SecretKeyName = reader.GetString(5),
                 Enabled = reader.GetBoolean(6),
                 IsDefault = reader.GetBoolean(7),
-                MaxTokens = reader.GetInt32(8)
+                MaxTokens = reader.GetInt32(8),
+                UseArchitecturePass = reader.GetBoolean(9)
             };
         }
     }

@@ -44,6 +44,11 @@ else
                             {
                                 <span class="badge bg-primary">@Strings.IsDefaultLabel</span>
                             }
+
+                            @if (engine.UseArchitecturePass)
+                            {
+                                <span class="badge bg-info">@Strings.UseArchitecturePassLabel</span>
+                            }
                         </div>
 
                         <div class="text-muted small">@engine.Provider · @engine.Model</div>

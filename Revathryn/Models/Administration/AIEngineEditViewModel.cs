@@ -39,6 +39,9 @@ namespace Revathryn.Models.Administration
         /// <summary>Whether this engine is the default when none is specified.</summary>
         public bool IsDefault { get; set; }
 
+        /// <summary>Whether reviews using this engine are primed with a cached descriptive structure summary.</summary>
+        public bool UseArchitecturePass { get; set; }
+
         /// <summary>Creates a form model from a persisted engine.</summary>
         public static AIEngineEditViewModel FromEngine(AIEngine engine)
         {
@@ -52,7 +55,8 @@ namespace Revathryn.Models.Administration
                 MaxTokens = engine.MaxTokens,
                 SecretKeyName = engine.SecretKeyName,
                 Enabled = engine.Enabled,
-                IsDefault = engine.IsDefault
+                IsDefault = engine.IsDefault,
+                UseArchitecturePass = engine.UseArchitecturePass
             };
         }
 
@@ -69,7 +73,8 @@ namespace Revathryn.Models.Administration
                 MaxTokens = MaxTokens,
                 SecretKeyName = SecretKeyName?.Trim() ?? string.Empty,
                 Enabled = Enabled,
-                IsDefault = IsDefault
+                IsDefault = IsDefault,
+                UseArchitecturePass = UseArchitecturePass
             };
         }
     }

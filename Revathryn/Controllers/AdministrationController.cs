@@ -23,6 +23,7 @@ namespace Revathryn.Controllers
         private readonly IIssueSettingsProvider _issueSettingsProvider;
         private readonly ISeverityRuleRepository _severityRuleRepository;
         private readonly ISeverityRuleProvider _severityRuleProvider;
+        private readonly IArchitectureAnalysisFailureRepository _architectureAnalysisFailureRepository;
 
         /// <summary>Initialises a new administration controller.</summary>
         public AdministrationController(
@@ -34,7 +35,8 @@ namespace Revathryn.Controllers
             IRepositoryService repositoryService,
             IIssueSettingsProvider issueSettingsProvider,
             ISeverityRuleRepository severityRuleRepository,
-            ISeverityRuleProvider severityRuleProvider)
+            ISeverityRuleProvider severityRuleProvider,
+            IArchitectureAnalysisFailureRepository architectureAnalysisFailureRepository)
         {
             _aiSettingsRepository = aiSettingsRepository;
             _aiEngineRepository = aiEngineRepository;
@@ -45,6 +47,7 @@ namespace Revathryn.Controllers
             _issueSettingsProvider = issueSettingsProvider;
             _severityRuleRepository = severityRuleRepository;
             _severityRuleProvider = severityRuleProvider;
+            _architectureAnalysisFailureRepository = architectureAnalysisFailureRepository;
         }
 
         /// <summary>Renders the independent review engine configuration, separate from the detection engines.</summary>
@@ -333,6 +336,32 @@ namespace Revathryn.Controllers
                 Summary = summary,
                 UsageRecords = usageRecords
             });
+        }
+
+        /// <summary>Lists recorded file summary failures.</summary>
+        [HttpGet]
+        public async Task<IActionResult> ArchitectureAnalysisFailures(CancellationToken cancellationToken)
+        {
+            IReadOnlyList<ArchitectureAnalysisFailure> failures = await _architectureAnalysisFailureRepository.GetAllAsync(cancellationToken);
+
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.ArchitectureAnalysisFailuresTitle);
+
+            return View(Consts.ArchitectureAnalysisFailureViewName, new ArchitectureAnalysisFailureListViewModel { Failures = failures });
+        }
+
+        /// <summary>Renders the full context window for a single file summary failure.</summary>
+        [HttpGet]
+        public async Task<IActionResult> ArchitectureAnalysisFailureDetails(long id, CancellationToken cancellationToken)
+        {
+            ArchitectureAnalysisFailure failure = await _architectureAnalysisFailureRepository.GetByIdAsync(id, cancellationToken);
+
+            if (failure is null)
+            {
+                return NotFound();
+            }
+
+            ViewData[Consts.BreadcrumbsViewDataKey] = BuildArchitectureAnalysisFailureDetailsBreadcrumbs();
+            return View(failure);
         }
 
         /// <summary>Lists review types, optionally filtered to a single repository.</summary>
@@ -674,6 +703,17 @@ namespace Revathryn.Controllers
                 new() { Title = Strings.AdministrationTitle },
                 new() { Title = Strings.SeverityRulesLabel, Url = Url.Action(nameof(SeverityRules)) },
                 new() { Title = activeTitle, IsActive = true }
+            };
+        }
+
+        private List<BreadcrumbItem> BuildArchitectureAnalysisFailureDetailsBreadcrumbs()
+        {
+            return new List<BreadcrumbItem>
+            {
+                new() { Title = Strings.DashboardTitle, Url = Url.Action(nameof(DashboardController.Index), Consts.DashboardControllerName) },
+                new() { Title = Strings.AdministrationTitle },
+                new() { Title = Strings.ArchitectureAnalysisFailuresTitle, Url = Url.Action(nameof(ArchitectureAnalysisFailures)) },
+                new() { Title = Strings.ArchitectureAnalysisFailureDetailsTitle, IsActive = true }
             };
         }
 

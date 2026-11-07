@@ -420,6 +420,13 @@
         public const string PromptProposalKeySystemPrompt = "systemPrompt";
         public const string PromptProposalKeyReviewPrompt = "reviewPrompt";
 
+        // Architecture pass.
+        public const string ArchitectureSummaryServiceComponent = "ArchitectureSummaryService";
+        public const string ArchitectureAnalysisOperation = "AnalyseStructure";
+        public const string GetArchitectureOperation = "GetOrCreate";
+        public const string ArchitectureAnalysisVersion = "1.0";
+        public const string ArchitectureAnalysisFailureViewName = "ArchitectureAnalysisFailures";
+
         // Severity override rule configuration.
         public const string SeverityRuleFormViewName = "SeverityRuleForm";
         public const int MinimumSeverityRuleOrder = 0;

@@ -55,7 +55,9 @@ namespace Revathryn.Data
                 SqliteDatabaseSchema.CreatePrompts,
                 SqliteDatabaseSchema.CreatePromptOptimisations,
                 SqliteDatabaseSchema.CreatePromptVersions,
-                SqliteDatabaseSchema.CreatePromptTestRuns);
+                SqliteDatabaseSchema.CreatePromptTestRuns,
+                SqliteDatabaseSchema.CreateRepoFileArchitectures,
+                SqliteDatabaseSchema.CreateArchitectureAnalysisFailures);
 
             command.ExecuteNonQuery();
 
@@ -94,6 +96,7 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Findings", "ResolvedUtc", "TEXT NULL");
             EnsureColumn(connection, "Findings", "ResolvedReviewSha256", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "AIEngines", "MaxTokens", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxTokens);
+            EnsureColumn(connection, "AIEngines", "UseArchitecturePass", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(connection, "AISettings", "IssueSimilarityEnabled", "INTEGER NOT NULL DEFAULT 1");
             EnsureColumn(connection, "AISettings", "IssueSimilarityThreshold", "REAL NOT NULL DEFAULT " + Consts.DefaultIssueSimilarityThreshold);
             EnsureColumn(connection, "AISettings", "IssueSimilarityMinimumTokenLength", "INTEGER NOT NULL DEFAULT " + Consts.DefaultIssueSimilarityMinimumTokenLength);

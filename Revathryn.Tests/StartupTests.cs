@@ -39,6 +39,7 @@ namespace Revathryn.Tests
             Assert.IsNotNull(provider.GetRequiredService<IReviewProcessor>());
             Assert.IsNotNull(provider.GetRequiredService<ICSharpAnalysisEngine>());
             Assert.IsNotNull(provider.GetRequiredService<IAIReviewEngine>());
+            Assert.IsNotNull(provider.GetRequiredService<IArchitectureAnalysisEngine>());
             Assert.IsNotNull(provider.GetRequiredService<IReviewContextProvider>());
             Assert.IsNotNull(provider.GetRequiredService<IBackupService>());
         }

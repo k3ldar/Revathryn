@@ -175,7 +175,8 @@ namespace Revathryn.Data
                 SecretKeyName TEXT NOT NULL DEFAULT '',
                 MaxTokens INTEGER NOT NULL DEFAULT {Consts.DefaultAIMaxTokens},
                 Enabled INTEGER NOT NULL DEFAULT 1,
-                IsDefault INTEGER NOT NULL DEFAULT 0
+                IsDefault INTEGER NOT NULL DEFAULT 0,
+                UseArchitecturePass INTEGER NOT NULL DEFAULT 0
             );
             """;
 
@@ -456,6 +457,45 @@ namespace Revathryn.Data
             );
             """;
 
+        /// <summary>Creates the cached per-file architecture summary table.</summary>
+        internal const string CreateRepoFileArchitectures = """
+            CREATE TABLE IF NOT EXISTS RepoFileArchitectures (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                RepositoryId INTEGER NOT NULL,
+                RepoFileId INTEGER NOT NULL,
+                Sha256 TEXT NOT NULL,
+                Summary TEXT NOT NULL DEFAULT '',
+                EngineName TEXT NOT NULL DEFAULT '',
+                EngineModel TEXT NOT NULL DEFAULT '',
+                AnalysisVersion TEXT NOT NULL DEFAULT '',
+                CreatedUtc TEXT NOT NULL,
+                CONSTRAINT UQ_RepoFileArchitectures_RepoFile UNIQUE (RepoFileId),
+                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
+                FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE
+            );
+            """;
+
+        /// <summary>Creates the immutable architecture pass failure table.</summary>
+        internal const string CreateArchitectureAnalysisFailures = """
+            CREATE TABLE IF NOT EXISTS ArchitectureAnalysisFailures (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                RepositoryId INTEGER NOT NULL,
+                RepoFileId INTEGER NULL,
+                FilePath TEXT NOT NULL DEFAULT '',
+                Language TEXT NOT NULL DEFAULT '',
+                Sha256 TEXT NOT NULL DEFAULT '',
+                SystemPrompt TEXT NOT NULL DEFAULT '',
+                FileContent TEXT NOT NULL DEFAULT '',
+                Error TEXT NOT NULL DEFAULT '',
+                RawResponse TEXT NOT NULL DEFAULT '',
+                EngineName TEXT NOT NULL DEFAULT '',
+                EngineModel TEXT NOT NULL DEFAULT '',
+                CreatedUtc TEXT NOT NULL,
+                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
+                FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE SET NULL
+            );
+            """;
+
         /// <summary>Creates the non-unique query indexes.</summary>
         internal static readonly string[] CreateIndexes =
         [
@@ -500,7 +540,11 @@ namespace Revathryn.Data
             "CREATE INDEX IF NOT EXISTS IX_PromptTestRuns_PromptVersionId ON PromptTestRuns (PromptVersionId, CreatedUtc DESC);",
             "CREATE INDEX IF NOT EXISTS IX_PromptTestRuns_Status ON PromptTestRuns (Status, NextAttemptUtc);",
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_PromptTestRuns_ActiveVersionIssue ON PromptTestRuns (PromptVersionId, OriginalIssueId) WHERE Status IN (0, 1) AND OriginalIssueId IS NOT NULL;",
-            "CREATE INDEX IF NOT EXISTS IX_SeverityRules_Order ON SeverityRules (RuleOrder, Id);"
+            "CREATE INDEX IF NOT EXISTS IX_SeverityRules_Order ON SeverityRules (RuleOrder, Id);",
+            "CREATE INDEX IF NOT EXISTS IX_RepoFileArchitectures_RepositoryId ON RepoFileArchitectures (RepositoryId);",
+            "CREATE INDEX IF NOT EXISTS IX_RepoFileArchitectures_Sha256 ON RepoFileArchitectures (Sha256);",
+            "CREATE INDEX IF NOT EXISTS IX_ArchitectureAnalysisFailures_RepositoryId ON ArchitectureAnalysisFailures (RepositoryId);",
+            "CREATE INDEX IF NOT EXISTS IX_ArchitectureAnalysisFailures_CreatedUtc ON ArchitectureAnalysisFailures (CreatedUtc DESC);"
         ];
     }
 }
