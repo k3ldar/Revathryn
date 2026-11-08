@@ -1,0 +1,22 @@
+@model Revathryn.Website.Models.ErrorViewModel
+@{
+    string message = Model.StatusCode switch
+    {
+        StatusCodes.Status404NotFound => "The page you were looking for could not be found.",
+        StatusCodes.Status500InternalServerError => "An unexpected error occurred while processing your request.",
+        _ => "An error occurred while processing your request."
+    };
+    string heading = Model.StatusCode == StatusCodes.Status404NotFound ? "Page not found" : "Something went wrong";
+}
+<section class="page-hero">
+    <div class="container text-center">
+        <div class="error-code">@Model.StatusCode</div>
+        <h1>@heading</h1>
+        <p class="page-lead mx-auto">@message</p>
+        <a class="btn btn-accent mt-3" asp-controller="Home" asp-action="Index">Return home</a>
+        @if (Model.ShowRequestId)
+        {
+            <p class="section-note mt-4">Request ID: <code>@Model.RequestId</code></p>
+        }
+    </div>
+</section>

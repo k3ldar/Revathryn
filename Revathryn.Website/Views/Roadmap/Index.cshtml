@@ -1,0 +1,50 @@
+@model Revathryn.Website.Models.RoadmapData
+
+<section class="page-hero">
+    <div class="container">
+        <h1>Roadmap</h1>
+        <p class="page-lead">The Revathryn development direction and progress, organised by capability area.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="roadmap-notice" role="note">
+            <p>This roadmap represents current intentions and priorities and may change as the project develops.</p>
+        </div>
+
+        <div class="roadmap-legend" aria-label="Roadmap status legend">
+            <span class="status-badge status-completed">Completed</span>
+            <span class="status-badge status-inprogress">In Progress</span>
+            <span class="status-badge status-planned">Planned</span>
+            <span class="status-badge status-consideration">Under Consideration</span>
+        </div>
+
+        @foreach (Revathryn.Website.Models.RoadmapCategory category in Model.Categories)
+        {
+            <section class="roadmap-category" aria-labelledby="category-@category.Name">
+                <h2 id="category-@category.Name">@category.Name</h2>
+                <div class="row g-4">
+                    @foreach (Revathryn.Website.Models.RoadmapItem item in category.Items)
+                    {
+                        <div class="col-md-6 col-lg-4">
+                            <article class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                        <h3 class="roadmap-item-title mb-0">@item.Title</h3>
+                                        <span class="status-badge @item.Status.GetCssClass()">@item.Status.GetDisplayName()</span>
+                                    </div>
+                                    <p class="roadmap-item-description">@item.Description</p>
+                                    @if (!string.IsNullOrWhiteSpace(item.Milestone))
+                                    {
+                                        <span class="milestone mt-auto">@item.Milestone</span>
+                                    }
+                                </div>
+                            </article>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</section>

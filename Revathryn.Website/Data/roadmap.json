@@ -1,0 +1,178 @@
+{
+  "categories": [
+    {
+      "name": "Foundation",
+      "items": [
+        {
+          "title": "Core architecture",
+          "description": "A modular, extensible architecture with clear boundaries between repository discovery, analysis, issue management and operations.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Repository management",
+          "description": "Registering and managing repositories, including their local paths and operational state.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Repository scanning and discovery",
+          "description": "Configurable repository scanning with progress tracking and persisted scan records.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "File fingerprinting",
+          "description": "Content fingerprinting and manifest-based incremental scanning for efficient change detection.",
+          "status": "Completed",
+          "milestone": ""
+        }
+      ]
+    },
+    {
+      "name": "Analysis and Review",
+      "items": [
+        {
+          "title": "Review engine architecture",
+          "description": "An extensible analyser and analysis-engine contract for introducing new languages and review types.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Language-specific analysers",
+          "description": "A Roslyn-based C# analyser maps code symbols into a structured model. C# is the initial language focus.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "AI-powered code review",
+          "description": "AI-assisted review engines apply configured prompts to repository contents via OpenAI-compatible APIs.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Structured issue generation",
+          "description": "Findings are persisted with category, severity and status, and reconciled against the current state of the code.",
+          "status": "Completed",
+          "milestone": ""
+        }
+      ]
+    },
+    {
+      "name": "Issue Management",
+      "items": [
+        {
+          "title": "Issue browsing and filtering",
+          "description": "Browse and inspect findings through the web interface.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Issue details and review context",
+          "description": "Inspect the reasoning and context behind each finding.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Priority-based presentation",
+          "description": "Findings are classified and presented with severity and priority, with configurable severity rules.",
+          "status": "Completed",
+          "milestone": ""
+        }
+      ]
+    },
+    {
+      "name": "Validation",
+      "items": [
+        {
+          "title": "Independent AI issue validation",
+          "description": "A separate validation workflow re-checks findings against repository context.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Review engine separation",
+          "description": "Review and validation responsibilities are separated into distinct workflows.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Validation tooling",
+          "description": "Background workers drive validation, duplicate detection and reconciliation.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Human confirmation of resolved issues",
+          "description": "Explicit human confirmation of resolved findings is being considered for a future phase.",
+          "status": "UnderConsideration",
+          "milestone": ""
+        }
+      ]
+    },
+    {
+      "name": "Platform and Operations",
+      "items": [
+        {
+          "title": "Administration dashboard",
+          "description": "An operational dashboard with live status of repositories, findings and processing.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "System health monitoring",
+          "description": "Health checks, readiness reporting and uptime monitoring.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Reliability and recovery",
+          "description": "Recovery from interrupted processing on startup with resilient background workers.",
+          "status": "Completed",
+          "milestone": ""
+        },
+        {
+          "title": "Retry handling and operational visibility",
+          "description": "Retry handling with exponential backoff, processing gates and operational diagnostics.",
+          "status": "Completed",
+          "milestone": ""
+        }
+      ]
+    },
+    {
+      "name": "Future Capabilities",
+      "items": [
+        {
+          "title": "Additional review types",
+          "description": "Introduce new review types for additional engineering concerns.",
+          "status": "Planned",
+          "milestone": ""
+        },
+        {
+          "title": "Missing unit test detection",
+          "description": "Detect source modules that lack corresponding tests.",
+          "status": "UnderConsideration",
+          "milestone": ""
+        },
+        {
+          "title": "AI-assisted test generation",
+          "description": "Generate test cases with AI assistance where a gap is identified.",
+          "status": "UnderConsideration",
+          "milestone": ""
+        },
+        {
+          "title": "Additional language analysers",
+          "description": "Extend analysis beyond C# to additional languages.",
+          "status": "Planned",
+          "milestone": ""
+        },
+        {
+          "title": "Expanded validation capabilities",
+          "description": "Broaden independent validation across more finding types and contexts.",
+          "status": "Planned",
+          "milestone": ""
+        }
+      ]
+    }
+  ]
+}

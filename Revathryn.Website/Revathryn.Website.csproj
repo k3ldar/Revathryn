@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>$(TargetFramework)</TargetFramework>
+    <Nullable>$(Nullable)</Nullable>
+    <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

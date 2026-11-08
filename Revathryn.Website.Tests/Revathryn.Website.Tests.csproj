@@ -1,0 +1,15 @@
+<Project Sdk="MSTest.Sdk/4.2.3">
+
+  <PropertyGroup>
+    <TargetFramework>$(TargetFramework)</TargetFramework>
+    <Nullable>$(Nullable)</Nullable>
+    <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
+    <UseVSTest>true</UseVSTest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Revathryn.Website\Revathryn.Website.csproj" />
+  </ItemGroup>
+
+</Project>

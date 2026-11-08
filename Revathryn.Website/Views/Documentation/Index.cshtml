@@ -1,0 +1,81 @@
+@using Revathryn.Website.Models
+@inject WebsiteSettings Site
+
+<section class="page-hero">
+    <div class="container">
+        <h1>Documentation</h1>
+        <p class="page-lead">Revathryn's documentation currently lives in the GitHub repository.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <p class="section-lead mb-4">The links below direct you to the relevant documentation in the repository.</p>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <a class="card doc-topic h-100 d-block" href="@Site.DocumentationUrl" target="_blank" rel="noopener">
+                    <div class="card-body">
+                        <h2 class="doc-topic-title">Getting started</h2>
+                        <p class="doc-topic-description">An introduction to Revathryn and how to get up and running.</p>
+                        <span class="doc-topic-cta">View documentation &rarr;</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <a class="card doc-topic h-100 d-block" href="@Site.DocumentationUrl" target="_blank" rel="noopener">
+                    <div class="card-body">
+                        <h2 class="doc-topic-title">Installation</h2>
+                        <p class="doc-topic-description">Requirements and steps for installing and running Revathryn.</p>
+                        <span class="doc-topic-cta">View documentation &rarr;</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <a class="card doc-topic h-100 d-block" href="@Site.DocumentationUrl" target="_blank" rel="noopener">
+                    <div class="card-body">
+                        <h2 class="doc-topic-title">Configuration</h2>
+                        <p class="doc-topic-description">Configuring the platform, analysis engines and AI integrations.</p>
+                        <span class="doc-topic-cta">View documentation &rarr;</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <a class="card doc-topic h-100 d-block" href="@Site.DocumentationUrl" target="_blank" rel="noopener">
+                    <div class="card-body">
+                        <h2 class="doc-topic-title">Repository setup</h2>
+                        <p class="doc-topic-description">Registering repositories and running scans and analysis.</p>
+                        <span class="doc-topic-cta">View documentation &rarr;</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <a class="card doc-topic h-100 d-block" href="@Site.DocumentationUrl" target="_blank" rel="noopener">
+                    <div class="card-body">
+                        <h2 class="doc-topic-title">Review engines</h2>
+                        <p class="doc-topic-description">How review engines work and how they are configured.</p>
+                        <span class="doc-topic-cta">View documentation &rarr;</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <a class="card doc-topic h-100 d-block" href="@Site.DocumentationUrl" target="_blank" rel="noopener">
+                    <div class="card-body">
+                        <h2 class="doc-topic-title">Issue management</h2>
+                        <p class="doc-topic-description">Working with findings, severity and validation workflows.</p>
+                        <span class="doc-topic-cta">View documentation &rarr;</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <a class="card doc-topic h-100 d-block" href="@Site.DocumentationUrl" target="_blank" rel="noopener">
+                    <div class="card-body">
+                        <h2 class="doc-topic-title">Contributing</h2>
+                        <p class="doc-topic-description">How to contribute to Revathryn as the project matures.</p>
+                        <span class="doc-topic-cta">View documentation &rarr;</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <p class="section-note">Documentation will be hosted directly on this website in a future phase if required.</p>
+    </div>
+</section>

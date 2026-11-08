@@ -1,0 +1,217 @@
+@using Revathryn.Website.Models
+@inject WebsiteSettings Site
+
+<section class="hero">
+    <div class="container hero-content text-center">
+        <span class="eyebrow">Revathryn</span>
+        <h1>Understand your codebase. Discover what needs attention.</h1>
+        <p class="hero-lead">@Site.WebsiteDescription</p>
+        <div class="hero-actions">
+            @if (!string.IsNullOrWhiteSpace(Site.GitHubRepositoryUrl))
+            {
+                <a class="btn btn-accent btn-lg" href="@Site.GitHubRepositoryUrl" target="_blank" rel="noopener">View on GitHub</a>
+            }
+            <a class="btn btn-outline-accent btn-lg" asp-controller="Roadmap" asp-action="Index">Explore the roadmap</a>
+        </div>
+    </div>
+</section>
+
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-heading">
+            <h2>Focused analysis, structured findings</h2>
+            <p class="section-lead">Revathryn analyses software repositories using specialised review engines. These engines inspect code, identify potential issues and produce structured findings that developers can investigate.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body">
+                        <h3 class="capability-title">Repository understanding</h3>
+                        <p class="capability-description">Discover repository structure, files and projects so analysis operates on a solid foundation.</p>
+                    </div>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body">
+                        <h3 class="capability-title">Structured findings</h3>
+                        <p class="capability-description">Analysis outcomes are consolidated into actionable issues with severity, context and supporting reasoning.</p>
+                    </div>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body">
+                        <h3 class="capability-title">Engineering insight</h3>
+                        <p class="capability-description">The goal is useful engineering insight, not simply a large volume of AI commentary.</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-heading">
+            <h2>Key capabilities</h2>
+            <p class="section-lead">Revathryn is built around a set of complementary capabilities. The roadmap distinguishes what is implemented today from what is planned.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h3 class="capability-title mb-0">Repository analysis</h3>
+                            <span class="status-badge status-completed">Implemented</span>
+                        </div>
+                        <p class="capability-description">Scan repositories, discover source files and track file fingerprints to support incremental analysis.</p>
+                        <ul class="capability-highlights">
+                            <li>Repository scanning</li>
+                            <li>Source discovery</li>
+                            <li>File fingerprints</li>
+                            <li>Incremental analysis</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h3 class="capability-title mb-0">AI-assisted code review</h3>
+                            <span class="status-badge status-completed">Implemented</span>
+                        </div>
+                        <p class="capability-description">Analyse source code, identify potential defects and design concerns, and produce structured issues with supporting context.</p>
+                        <ul class="capability-highlights">
+                            <li>Source analysis</li>
+                            <li>Defect identification</li>
+                            <li>Design concerns</li>
+                            <li>Supporting context</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h3 class="capability-title mb-0">Specialised review engines</h3>
+                            <span class="status-badge status-completed">Implemented</span>
+                        </div>
+                        <p class="capability-description">Different review types for different engineering concerns, with language-specific analysis and separated responsibilities.</p>
+                        <ul class="capability-highlights">
+                            <li>Review types</li>
+                            <li>Language-specific analysis</li>
+                            <li>Separated responsibilities</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h3 class="capability-title mb-0">Issue management</h3>
+                            <span class="status-badge status-completed">Implemented</span>
+                        </div>
+                        <p class="capability-description">Browse findings, review severity and priority, and inspect the reasoning and context behind each finding.</p>
+                        <ul class="capability-highlights">
+                            <li>Browse findings</li>
+                            <li>Severity and priority</li>
+                            <li>Reasoning and context</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h3 class="capability-title mb-0">Independent AI validation</h3>
+                            <span class="status-badge status-completed">Implemented</span>
+                        </div>
+                        <p class="capability-description">A separate review process validates previously identified issues to add confidence before accepting findings or fixes.</p>
+                        <ul class="capability-highlights">
+                            <li>Separate validation</li>
+                            <li>Re-check findings</li>
+                            <li>Additional confidence</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <article class="card capability-card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h3 class="capability-title mb-0">More to come</h3>
+                            <span class="status-badge status-planned">Planned</span>
+                        </div>
+                        <p class="capability-description">Additional review types, language analysers and validation capabilities are planned for future phases.</p>
+                        <div class="mt-auto pt-3">
+                            <a class="btn btn-outline-accent btn-sm" asp-controller="Roadmap" asp-action="Index">View the roadmap</a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-heading">
+            <h2>How it works</h2>
+            <p class="section-lead">From repository to actionable findings in a repeatable pipeline.</p>
+        </div>
+        <ol class="workflow">
+            <li class="workflow-step">
+                <div class="workflow-step-body">
+                    <span class="workflow-step-title">Repository</span>
+                    <span class="workflow-step-description">A repository is registered and made available for analysis.</span>
+                </div>
+            </li>
+            <li class="workflow-step">
+                <div class="workflow-step-body">
+                    <span class="workflow-step-title">Discovery</span>
+                    <span class="workflow-step-description">Source files are discovered and fingerprinted for efficient change detection.</span>
+                </div>
+            </li>
+            <li class="workflow-step">
+                <div class="workflow-step-body">
+                    <span class="workflow-step-title">Review Engines</span>
+                    <span class="workflow-step-description">Specialised engines inspect code for defects and design concerns.</span>
+                </div>
+            </li>
+            <li class="workflow-step">
+                <div class="workflow-step-body">
+                    <span class="workflow-step-title">Issues</span>
+                    <span class="workflow-step-description">Findings are consolidated into structured issues with context.</span>
+                </div>
+            </li>
+            <li class="workflow-step">
+                <div class="workflow-step-body">
+                    <span class="workflow-step-title">Developer Investigation</span>
+                    <span class="workflow-step-description">Developers review, investigate and resolve findings.</span>
+                </div>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <h2>Open source</h2>
+                <p class="section-lead mb-0">Revathryn is an open-source project. Explore the source code, report bugs, suggest improvements and contribute to development.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                @if (!string.IsNullOrWhiteSpace(Site.GitHubRepositoryUrl))
+                {
+                    <a class="btn btn-accent btn-lg" href="@Site.GitHubRepositoryUrl" target="_blank" rel="noopener">View on GitHub</a>
+                }
+            </div>
+        </div>
+    </div>
+</section>
