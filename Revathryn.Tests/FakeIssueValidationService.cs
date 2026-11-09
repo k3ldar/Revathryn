@@ -13,13 +13,19 @@ namespace Revathryn.Tests
 
         public IssueValidationRequestResult RequestResult { get; set; } = new();
 
+        public IssueValidationRequestResult AutomaticRequestResult { get; set; } = new();
+
         public IssueValidationRequestResult RetryResult { get; set; } = new();
 
         public long LastRequestedFindingId { get; private set; }
 
+        public long LastAutomaticRequestedFindingId { get; private set; }
+
         public long LastRetriedValidationId { get; private set; }
 
         public int RequestCallCount { get; private set; }
+
+        public int AutomaticRequestCallCount { get; private set; }
 
         public int RetryCallCount { get; private set; }
 
@@ -28,6 +34,13 @@ namespace Revathryn.Tests
             RequestCallCount++;
             LastRequestedFindingId = findingId;
             return Task.FromResult(RequestResult);
+        }
+
+        public Task<IssueValidationRequestResult> RequestAutomaticAsync(long findingId, CancellationToken cancellationToken = default)
+        {
+            AutomaticRequestCallCount++;
+            LastAutomaticRequestedFindingId = findingId;
+            return Task.FromResult(AutomaticRequestResult);
         }
 
         public Task<IssueValidationRequestResult> RetryAsync(long validationId, CancellationToken cancellationToken = default)

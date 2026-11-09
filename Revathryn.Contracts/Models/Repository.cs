@@ -1,3 +1,5 @@
+using Revathryn.Contracts.Enums;
+
 namespace Revathryn.Contracts.Models
 {
     /// <summary>A registered local repository under review.</summary>
@@ -26,6 +28,12 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Maximum number of context requests permitted per review.</summary>
         public int MaxContextRequests { get; set; }
+
+        /// <summary>Minimum severity at which a newly created finding is automatically re-reviewed.</summary>
+        public FindingSeverity AutoReviewMinimumSeverity { get; set; }
+
+        /// <summary>Required review AI confidence, as a percentage between 0 and 100, before its recommendation is applied.</summary>
+        public int AutoReviewConfidenceThreshold { get; set; }
 
         /// <summary>Identifier of the AI engine used for this repository's reviews, or null to use the system default.</summary>
         public long? AIEngineId { get; set; }

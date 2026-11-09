@@ -2161,6 +2161,208 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
+        public async Task ReviewProcessor_EnqueuesAutoReReview_WhenFindingSeverityMeetsThreshold()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true, AutomaticReviewEnabled = true, AutoReviewMinimumSeverity = FindingSeverity.High });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    Priority = 100,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new()
+                {
+                    Response = new ReviewResponse
+                    {
+                        Success = true,
+                        Results = [new ReviewResult { Severity = FindingSeverity.High, Title = "Missing null check", Description = "Value can be null." }]
+                    }
+                };
+                FakeIssueValidationService issueValidationService = new();
+                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, issueValidationService: issueValidationService);
+
+                bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.IsTrue(processed);
+                Assert.HasCount(1, issueValidationService.AutomaticRequests);
+                Assert.HasCount(0, issueValidationService.ManualRequests);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task ReviewProcessor_DoesNotEnqueueAutoReReview_WhenFindingSeverityIsBelowThreshold()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true, AutomaticReviewEnabled = true, AutoReviewMinimumSeverity = FindingSeverity.Critical });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    Priority = 100,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new()
+                {
+                    Response = new ReviewResponse
+                    {
+                        Success = true,
+                        Results = [new ReviewResult { Severity = FindingSeverity.High, Title = "Missing null check", Description = "Value can be null." }]
+                    }
+                };
+                FakeIssueValidationService issueValidationService = new();
+                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, issueValidationService: issueValidationService);
+
+                _ = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.HasCount(0, issueValidationService.AutomaticRequests);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task ReviewProcessor_DoesNotEnqueueAutoReReview_WhenRepositoryIsDisabled()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = false, AutoReviewMinimumSeverity = FindingSeverity.High });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    Priority = 100,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new()
+                {
+                    Response = new ReviewResponse
+                    {
+                        Success = true,
+                        Results = [new ReviewResult { Severity = FindingSeverity.High, Title = "Missing null check", Description = "Value can be null." }]
+                    }
+                };
+                FakeIssueValidationService issueValidationService = new();
+                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, issueValidationService: issueValidationService);
+
+                _ = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.HasCount(0, issueValidationService.AutomaticRequests);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task ReviewProcessor_DoesNotEnqueueAutoReReview_WhenAutomaticReviewIsDisabled()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true, AutomaticReviewEnabled = false, AutoReviewMinimumSeverity = FindingSeverity.High });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    Priority = 100,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new()
+                {
+                    Response = new ReviewResponse
+                    {
+                        Success = true,
+                        Results = [new ReviewResult { Severity = FindingSeverity.High, Title = "Missing null check", Description = "Value can be null." }]
+                    }
+                };
+                FakeIssueValidationService issueValidationService = new();
+                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, issueValidationService: issueValidationService);
+
+                _ = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.HasCount(0, issueValidationService.AutomaticRequests);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
         public async Task ReviewProcessor_MissingArchitectureSummary_SkipsReviewWithoutPersistingOutcome()
         {
             string root = CreateTempDirectory();
@@ -2483,7 +2685,8 @@ namespace Revathryn.Engine.Tests
             FakeReviewUsageRepository usageRepository = null,
             FakeReviewContextProvider contextProvider = null,
             IArchitectureSummaryService architectureSummaryService = null,
-            IProcessingGate processingGate = null)
+            IProcessingGate processingGate = null,
+            FakeIssueValidationService issueValidationService = null)
         {
             return new ReviewProcessor(
                 new ReviewQueue(queue),
@@ -2499,10 +2702,60 @@ namespace Revathryn.Engine.Tests
                 usageRepository ?? new FakeReviewUsageRepository(),
                 new FakeDuplicateDetectionQueue(),
                 new IssueSettingsProvider(),
+                issueValidationService ?? new FakeIssueValidationService(),
                 new SeverityRuleEngine(new SeverityRuleProvider()),
                 architectureSummaryService ?? new FakeArchitectureSummaryService(),
                 processingGate ?? new ProcessingGate(),
                 options);
+        }
+
+        private sealed class FakeIssueValidationService : IIssueValidationService
+        {
+            public List<long> AutomaticRequests { get; } = [];
+
+            public List<long> ManualRequests { get; } = [];
+
+            public Task<IssueValidationRequestResult> RequestAsync(long findingId, CancellationToken cancellationToken = default)
+            {
+                ManualRequests.Add(findingId);
+                return Task.FromResult(new IssueValidationRequestResult { Created = true });
+            }
+
+            public Task<IssueValidationRequestResult> RequestAutomaticAsync(long findingId, CancellationToken cancellationToken = default)
+            {
+                AutomaticRequests.Add(findingId);
+                return Task.FromResult(new IssueValidationRequestResult { Created = true });
+            }
+
+            public Task<IssueValidationRequestResult> RetryAsync(long validationId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new IssueValidationRequestResult());
+            }
+
+            public Task<IssueValidation> GetByIdAsync(long validationId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IssueValidation>(null);
+            }
+
+            public Task<IReadOnlyList<IssueValidation>> GetByFindingAsync(long findingId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<IssueValidation>>([]);
+            }
+
+            public Task<IssueValidation> GetLatestAsync(long findingId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IssueValidation>(null);
+            }
+
+            public Task<IssueValidation> GetActiveAsync(long findingId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IssueValidation>(null);
+            }
+
+            public Task<IReadOnlyDictionary<long, IssueValidation>> GetLatestCompletedAsync(IReadOnlyCollection<long> findingIds, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyDictionary<long, IssueValidation>>(new Dictionary<long, IssueValidation>());
+            }
         }
 
         private sealed class FakeDuplicateDetectionQueue : IDuplicateDetectionQueue
@@ -2574,6 +2827,13 @@ namespace Revathryn.Engine.Tests
 
             public Task PersistAsync(ReviewOutcome outcome, CancellationToken cancellationToken = default)
             {
+                long nextId = 1;
+
+                foreach (Finding finding in outcome.Findings ?? [])
+                {
+                    finding.Id = nextId++;
+                }
+
                 Outcomes.Add(outcome);
                 return Task.CompletedTask;
             }

@@ -38,7 +38,13 @@ namespace Revathryn.Engine
         /// <summary>Queues a validation, or returns the one already in progress.</summary>
         public Task<IssueValidationRequestResult> RequestAsync(long findingId, CancellationToken cancellationToken = default)
         {
-            return QueueAsync(findingId, null, cancellationToken);
+            return QueueAsync(findingId, null, false, cancellationToken);
+        }
+
+        /// <summary>Queues an automatic validation on behalf of the re-review pipeline, or returns the one already in progress.</summary>
+        public Task<IssueValidationRequestResult> RequestAutomaticAsync(long findingId, CancellationToken cancellationToken = default)
+        {
+            return QueueAsync(findingId, null, true, cancellationToken);
         }
 
         /// <summary>Queues a new validation that retries a failed one. The failed record is left intact.</summary>
@@ -51,7 +57,7 @@ namespace Revathryn.Engine
                 return Rejected(IssueValidationRejection.NotRetryable, Strings.ValidationNotRetryable);
             }
 
-            return await QueueAsync(failed.FindingId, failed.Id, cancellationToken).ConfigureAwait(false);
+            return await QueueAsync(failed.FindingId, failed.Id, false, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>Returns a validation by id, or null.</summary>
@@ -84,7 +90,7 @@ namespace Revathryn.Engine
             return _validationRepository.GetLatestCompletedByFindingsAsync(findingIds, cancellationToken);
         }
 
-        private async Task<IssueValidationRequestResult> QueueAsync(long findingId, long? retryOfValidationId, CancellationToken cancellationToken)
+        private async Task<IssueValidationRequestResult> QueueAsync(long findingId, long? retryOfValidationId, bool isAutomatic, CancellationToken cancellationToken)
         {
             Finding finding = await _findingRepository.GetByIdAsync(findingId, cancellationToken).ConfigureAwait(false);
 
@@ -125,6 +131,7 @@ namespace Revathryn.Engine
                 RepositoryId = finding.RepositoryId,
                 Status = IssueValidationStatus.Pending,
                 RetryOfValidationId = retryOfValidationId,
+                IsAutomatic = isAutomatic,
                 CreatedUtc = DateTime.UtcNow,
                 OriginalSeverity = finding.Severity,
                 OriginalTitle = finding.Title,

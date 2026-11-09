@@ -1664,4 +1664,19 @@
 			<data name="ResubmitUnavailableMessage" xml:space="preserve">
 			  <value>This issue cannot be re-submitted for review because its file or review type is no longer available.</value>
 			</data>
+			<data name="AutoReviewMinimumSeverityLabel" xml:space="preserve">
+			  <value>Auto re-review minimum severity</value>
+			</data>
+			<data name="AutoReviewConfidenceThresholdLabel" xml:space="preserve">
+			  <value>Auto re-review confidence threshold (%)</value>
+			</data>
+			<data name="AutoReviewConfidenceThresholdRangeMessage" xml:space="preserve">
+			  <value>Confidence threshold must be between 0 and 100.</value>
+			</data>
+			<data name="AutoReReviewFindingDeletedLog" xml:space="preserve">
+			  <value>Auto re-review deleted finding {0} as a non-issue.</value>
+			</data>
+			<data name="AutoReReviewSeverityDowngradedLog" xml:space="preserve">
+			  <value>Auto re-review downgraded finding {0} from {1} to {2}.</value>
+			</data>
 			</root>

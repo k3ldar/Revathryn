@@ -23,6 +23,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>The failed validation this record retries, when applicable.</summary>
         public long? RetryOfValidationId { get; set; }
 
+        /// <summary>Whether this validation was queued automatically by the re-review pipeline.</summary>
+        public bool IsAutomatic { get; set; }
+
         /// <summary>Number of execution attempts made.</summary>
         public int AttemptCount { get; set; }
 

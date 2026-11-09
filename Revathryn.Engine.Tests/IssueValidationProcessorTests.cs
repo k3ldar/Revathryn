@@ -364,6 +364,140 @@ namespace Revathryn.Engine.Tests
             Assert.IsNull(stored.LeasedUntilUtc);
         }
 
+        [TestMethod]
+        public async Task ProcessNextAsync_AutomaticDisagreedAboveConfidence_DeletesFinding()
+        {
+            using ValidationTestFixture fixture = new();
+            RecordingDiagnostics diagnostics = new();
+            long validationId = await QueueAutomaticAsync(fixture, confidenceThreshold: 80);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(IssueValidationVerdict.Disagreed, 0.91, FindingSeverity.Info));
+
+            _ = await CreateProcessor(fixture, engine, diagnostics: diagnostics).ProcessNextAsync(TestContext.CancellationToken);
+
+            Assert.IsNull(await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken));
+            Assert.Contains(string.Format(Strings.AutoReReviewFindingDeletedLog, findingId), diagnostics.Messages);
+        }
+
+        [TestMethod]
+        public async Task ProcessNextAsync_AutomaticDisagreedNonInfoAboveConfidence_DowngradesFinding()
+        {
+            using ValidationTestFixture fixture = new();
+            RecordingDiagnostics diagnostics = new();
+            long validationId = await QueueAutomaticAsync(fixture, confidenceThreshold: 80);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(IssueValidationVerdict.Disagreed, 0.91, FindingSeverity.Medium));
+
+            _ = await CreateProcessor(fixture, engine, diagnostics: diagnostics).ProcessNextAsync(TestContext.CancellationToken);
+
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+            Assert.IsNotNull(finding);
+            Assert.AreEqual(FindingSeverity.Medium, finding.Severity);
+            Assert.Contains(string.Format(Strings.AutoReReviewSeverityDowngradedLog, findingId, FindingSeverity.High, FindingSeverity.Medium), diagnostics.Messages);
+        }
+
+        [TestMethod]
+        public async Task ProcessNextAsync_AutomaticPartiallyAgreedAboveConfidence_DowngradesFinding()
+        {
+            using ValidationTestFixture fixture = new();
+            RecordingDiagnostics diagnostics = new();
+            long validationId = await QueueAutomaticAsync(fixture, confidenceThreshold: 80);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(IssueValidationVerdict.PartiallyAgreed));
+
+            _ = await CreateProcessor(fixture, engine, diagnostics: diagnostics).ProcessNextAsync(TestContext.CancellationToken);
+
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+            Assert.AreEqual(FindingSeverity.Medium, finding.Severity);
+            Assert.Contains(string.Format(Strings.AutoReReviewSeverityDowngradedLog, findingId, FindingSeverity.High, FindingSeverity.Medium), diagnostics.Messages);
+        }
+
+        [TestMethod]
+        [DataRow(IssueValidationVerdict.Agreed)]
+        [DataRow(IssueValidationVerdict.Inconclusive)]
+        public async Task ProcessNextAsync_AutomaticAgreedOrInconclusive_DoesNothing(IssueValidationVerdict verdict)
+        {
+            using ValidationTestFixture fixture = new();
+            long validationId = await QueueAutomaticAsync(fixture, confidenceThreshold: 80);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(verdict));
+
+            _ = await CreateProcessor(fixture, engine).ProcessNextAsync(TestContext.CancellationToken);
+
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+            Assert.AreEqual(FindingSeverity.High, finding.Severity);
+        }
+
+        [TestMethod]
+        public async Task ProcessNextAsync_AutomaticBelowConfidence_DoesNothing()
+        {
+            using ValidationTestFixture fixture = new();
+            long validationId = await QueueAutomaticAsync(fixture, confidenceThreshold: 95);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(IssueValidationVerdict.PartiallyAgreed));
+
+            _ = await CreateProcessor(fixture, engine).ProcessNextAsync(TestContext.CancellationToken);
+
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+            Assert.AreEqual(FindingSeverity.High, finding.Severity);
+        }
+
+        [TestMethod]
+        public async Task ProcessNextAsync_AutomaticNullConfidence_DoesNothing()
+        {
+            using ValidationTestFixture fixture = new();
+            long validationId = await QueueAutomaticAsync(fixture, confidenceThreshold: 80);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(IssueValidationVerdict.PartiallyAgreed, confidence: null));
+
+            _ = await CreateProcessor(fixture, engine).ProcessNextAsync(TestContext.CancellationToken);
+
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+            Assert.AreEqual(FindingSeverity.High, finding.Severity);
+        }
+
+        [TestMethod]
+        public async Task ProcessNextAsync_AutomaticRecommendationNotLower_DoesNothing()
+        {
+            using ValidationTestFixture fixture = new();
+            long validationId = await QueueAutomaticAsync(fixture, confidenceThreshold: 80);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(IssueValidationVerdict.PartiallyAgreed, recommendedSeverity: FindingSeverity.Critical));
+
+            _ = await CreateProcessor(fixture, engine).ProcessNextAsync(TestContext.CancellationToken);
+
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+            Assert.AreEqual(FindingSeverity.High, finding.Severity);
+        }
+
+        [TestMethod]
+        public async Task ProcessNextAsync_ManualValidation_DoesNothing()
+        {
+            using ValidationTestFixture fixture = new();
+            long validationId = await QueueAsync(fixture);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(IssueValidationVerdict.PartiallyAgreed));
+
+            _ = await CreateProcessor(fixture, engine).ProcessNextAsync(TestContext.CancellationToken);
+
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+            Assert.AreEqual(FindingSeverity.High, finding.Severity);
+        }
+
+        [TestMethod]
+        public async Task ProcessNextAsync_AutomaticConfidenceAtMaximumThreshold_Applies()
+        {
+            using ValidationTestFixture fixture = new();
+            long validationId = await QueueAutomaticAsync(fixture, confidenceThreshold: 100);
+            long findingId = await FindingIdAsync(fixture, validationId);
+            ScriptedValidationEngine engine = new ScriptedValidationEngine().Returns(CreateSuccess(IssueValidationVerdict.PartiallyAgreed, confidence: 1.0));
+
+            _ = await CreateProcessor(fixture, engine).ProcessNextAsync(TestContext.CancellationToken);
+
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+            Assert.AreEqual(FindingSeverity.Medium, finding.Severity);
+        }
+
         private static IssueValidationProcessor CreateProcessor(ValidationTestFixture fixture, IIssueValidationEngine engine, TestRetryPolicy policy = null, RecordingDiagnostics diagnostics = null)
         {
             IssueValidationContextBuilder builder = new(fixture.Repositories, fixture.Files, fixture.ReviewTypes, fixture.Contexts);
@@ -371,6 +505,7 @@ namespace Revathryn.Engine.Tests
             return new IssueValidationProcessor(
                 fixture.Validations,
                 fixture.Findings,
+                fixture.Repositories,
                 fixture.Settings,
                 builder,
                 engine,
@@ -423,6 +558,53 @@ namespace Revathryn.Engine.Tests
                 TestContext.CancellationToken);
         }
 
+        private async Task<long> QueueAutomaticAsync(ValidationTestFixture fixture, int confidenceThreshold)
+        {
+            await fixture.InitialiseAsync(OriginalContent, OriginalSha, TestContext.CancellationToken);
+
+            long contextId = await fixture.AddContextAsync(
+                new AIReviewContext
+                {
+                    Sha256 = OriginalSha,
+                    FilePath = ValidationTestFixture.SourcePath,
+                    Language = "csharp",
+                    FileContent = OriginalContent,
+                    ReviewInstructions = "ORIGINAL-SYSTEM-PROMPT",
+                    ReviewPrompt = "ORIGINAL-REVIEW-PROMPT",
+                    ReviewDefinitionVersion = "7",
+                    EngineName = "Detector",
+                    EngineProvider = "OpenAI",
+                    EngineModel = "detect-model",
+                    RequestedContextKeys = []
+                },
+                TestContext.CancellationToken);
+
+            long findingId = await fixture.AddFindingAsync(contextId, TestContext.CancellationToken);
+            Finding finding = await fixture.Findings.GetByIdAsync(findingId, TestContext.CancellationToken);
+
+            Repository repository = await fixture.Repositories.GetByIdAsync(fixture.RepositoryId, TestContext.CancellationToken);
+            repository.Enabled = true;
+            repository.AutoReviewConfidenceThreshold = confidenceThreshold;
+            await fixture.Repositories.UpdateAsync(repository, TestContext.CancellationToken);
+
+            await fixture.SaveEnabledSettingsAsync(TestContext.CancellationToken);
+
+            return await fixture.Validations.TryAddAsync(
+                new IssueValidation
+                {
+                    FindingId = finding.Id,
+                    RepositoryId = finding.RepositoryId,
+                    Status = IssueValidationStatus.Pending,
+                    IsAutomatic = true,
+                    CreatedUtc = DateTime.UtcNow,
+                    OriginalSeverity = finding.Severity,
+                    OriginalTitle = finding.Title,
+                    OriginalDescription = finding.Description,
+                    OriginalSuggestedFix = finding.SuggestedFix
+                },
+                TestContext.CancellationToken);
+        }
+
         private async Task<long> FindingIdAsync(ValidationTestFixture fixture, long validationId)
         {
             IssueValidation validation = await fixture.Validations.GetByIdAsync(validationId, TestContext.CancellationToken);
@@ -446,14 +628,19 @@ namespace Revathryn.Engine.Tests
 
         private static IssueValidationEngineResult CreateSuccess(IssueValidationVerdict verdict)
         {
+            return CreateSuccess(verdict, 0.91, FindingSeverity.Medium);
+        }
+
+        private static IssueValidationEngineResult CreateSuccess(IssueValidationVerdict verdict, double? confidence = 0.91, FindingSeverity? recommendedSeverity = FindingSeverity.Medium)
+        {
             return new IssueValidationEngineResult
             {
                 Success = true,
                 Verdict = verdict,
-                Confidence = 0.91,
+                Confidence = confidence,
                 Summary = "Valid but overstated.",
                 Reasoning = "Narrower path than reported.",
-                RecommendedSeverity = FindingSeverity.Medium,
+                RecommendedSeverity = recommendedSeverity,
                 SeverityReasoning = "Limited path.",
                 Evidence = [new IssueValidationEvidence { File = ValidationTestFixture.SourcePath, LineStart = 1, LineEnd = 2, Explanation = "Accessed without a check." }],
                 Suggestions = ["Narrow the original issue description."],

@@ -19,7 +19,7 @@ namespace Revathryn.Data
             "Provider, Model, EngineConfigSnapshotJson, PromptVersion, SystemPrompt, UserPrompt, ContextReferenceJson, " +
             "OriginalSeverity, OriginalTitle, OriginalDescription, OriginalSuggestedFix, " +
             "Verdict, Confidence, Summary, Reasoning, RecommendedSeverity, SeverityReasoning, EvidenceJson, SuggestionsJson, LimitationsJson, " +
-            "RawResponse, ErrorMessage, FailureClassification, PromptTokens, CompletionTokens, TotalTokens";
+            "RawResponse, ErrorMessage, FailureClassification, PromptTokens, CompletionTokens, TotalTokens, IsAutomatic";
 
         // Same ordinals as SelectColumns, with the large diagnostic columns omitted.
         private const string SummaryColumns =
@@ -27,7 +27,7 @@ namespace Revathryn.Data
             "Provider, Model, '' AS EngineConfigSnapshotJson, PromptVersion, '' AS SystemPrompt, '' AS UserPrompt, '' AS ContextReferenceJson, " +
             "OriginalSeverity, OriginalTitle, '' AS OriginalDescription, '' AS OriginalSuggestedFix, " +
             "Verdict, Confidence, Summary, '' AS Reasoning, RecommendedSeverity, '' AS SeverityReasoning, '' AS EvidenceJson, '' AS SuggestionsJson, '' AS LimitationsJson, " +
-            "'' AS RawResponse, '' AS ErrorMessage, FailureClassification, PromptTokens, CompletionTokens, TotalTokens";
+            "'' AS RawResponse, '' AS ErrorMessage, FailureClassification, PromptTokens, CompletionTokens, TotalTokens, IsAutomatic";
 
         /// <summary>Initialises a new repository.</summary>
         public IssueValidationRepository(SqliteConnectionFactory connectionFactory)
@@ -45,10 +45,10 @@ namespace Revathryn.Data
             command.CommandText = """
                 INSERT INTO IssueValidations (
                     FindingId, RepositoryId, Status, RetryOfValidationId, AttemptCount, CreatedUtc, Provider, Model,
-                    OriginalSeverity, OriginalTitle, OriginalDescription, OriginalSuggestedFix)
+                    OriginalSeverity, OriginalTitle, OriginalDescription, OriginalSuggestedFix, IsAutomatic)
                 VALUES (
                     @FindingId, @RepositoryId, @Status, @RetryOfValidationId, 0, @CreatedUtc, @Provider, @Model,
-                    @OriginalSeverity, @OriginalTitle, @OriginalDescription, @OriginalSuggestedFix);
+                    @OriginalSeverity, @OriginalTitle, @OriginalDescription, @OriginalSuggestedFix, @IsAutomatic);
                 SELECT last_insert_rowid();
                 """;
             command.Parameters.AddWithValue("@FindingId", validation.FindingId);
@@ -62,6 +62,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@OriginalTitle", validation.OriginalTitle ?? string.Empty);
             command.Parameters.AddWithValue("@OriginalDescription", validation.OriginalDescription ?? string.Empty);
             command.Parameters.AddWithValue("@OriginalSuggestedFix", validation.OriginalSuggestedFix ?? string.Empty);
+            command.Parameters.AddWithValue("@IsAutomatic", validation.IsAutomatic ? 1 : 0);
 
             try
             {
@@ -450,7 +451,8 @@ namespace Revathryn.Data
                 FailureClassification = reader.IsDBNull(33) ? null : (FailureCategory)reader.GetInt32(33),
                 PromptTokens = reader.GetInt32(34),
                 CompletionTokens = reader.GetInt32(35),
-                TotalTokens = reader.GetInt32(36)
+                TotalTokens = reader.GetInt32(36),
+                IsAutomatic = reader.GetBoolean(37)
             };
         }
     }

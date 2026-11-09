@@ -11,6 +11,12 @@ namespace Revathryn.Contracts.Services
         /// </summary>
         Task<IssueValidationRequestResult> RequestAsync(long findingId, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Queues an automatic validation for the finding on behalf of the re-review pipeline. When one is
+        /// already pending or running, that validation is returned and no duplicate is created.
+        /// </summary>
+        Task<IssueValidationRequestResult> RequestAutomaticAsync(long findingId, CancellationToken cancellationToken = default);
+
         /// <summary>Queues a new validation that retries a failed one. The failed record is left intact.</summary>
         Task<IssueValidationRequestResult> RetryAsync(long validationId, CancellationToken cancellationToken = default);
 
