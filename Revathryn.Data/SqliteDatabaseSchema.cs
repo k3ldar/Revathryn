@@ -6,7 +6,7 @@ namespace Revathryn.Data
     internal static class SqliteDatabaseSchema
     {
         /// <summary>Creates the Repositories table.</summary>
-        internal const string CreateRepositories = """
+        internal static readonly string CreateRepositories = $"""
             CREATE TABLE IF NOT EXISTS Repositories (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Name TEXT NOT NULL,
@@ -16,6 +16,8 @@ namespace Revathryn.Data
                 Enabled INTEGER NOT NULL DEFAULT 0,
                 AutomaticReviewEnabled INTEGER NOT NULL DEFAULT 0,
                 MaxContextRequests INTEGER NOT NULL DEFAULT 0,
+                AutoReviewMinimumSeverity INTEGER NOT NULL DEFAULT {Consts.DefaultAutoReviewMinimumSeverity},
+                AutoReviewConfidenceThreshold INTEGER NOT NULL DEFAULT {Consts.DefaultAutoReviewConfidenceThreshold},
                 AIEngineId INTEGER NULL,
                 ScanOptions TEXT NOT NULL DEFAULT '',
                 LastSuccessfulScanDate TEXT NULL,
@@ -314,6 +316,7 @@ namespace Revathryn.Data
                 RepositoryId INTEGER NOT NULL,
                 Status INTEGER NOT NULL DEFAULT 0,
                 RetryOfValidationId INTEGER NULL,
+                IsAutomatic INTEGER NOT NULL DEFAULT 0,
                 AttemptCount INTEGER NOT NULL DEFAULT 0,
                 CreatedUtc TEXT NOT NULL,
                 StartedUtc TEXT NULL,

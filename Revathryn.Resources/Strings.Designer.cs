@@ -3496,6 +3496,28 @@ namespace Revathryn.Resources {
 
         public static string SeverityRuleDeleteConfirmation { get { return ResourceManager.GetString("SeverityRuleDeleteConfirmation", resourceCulture); } }
 
+        public static string ResubmitForReviewButton { get { return ResourceManager.GetString("ResubmitForReviewButton", resourceCulture); } }
+
+        public static string ResubmitForReviewDescription { get { return ResourceManager.GetString("ResubmitForReviewDescription", resourceCulture); } }
+
+        public static string ResubmitQueuedMessage { get { return ResourceManager.GetString("ResubmitQueuedMessage", resourceCulture); } }
+
+        public static string ResubmitAlreadyQueuedMessage { get { return ResourceManager.GetString("ResubmitAlreadyQueuedMessage", resourceCulture); } }
+
+        public static string ResubmitNotQueuedMessage { get { return ResourceManager.GetString("ResubmitNotQueuedMessage", resourceCulture); } }
+
+        public static string ResubmitUnavailableMessage { get { return ResourceManager.GetString("ResubmitUnavailableMessage", resourceCulture); } }
+
+        public static string AutoReviewMinimumSeverityLabel { get { return ResourceManager.GetString("AutoReviewMinimumSeverityLabel", resourceCulture); } }
+
+        public static string AutoReviewConfidenceThresholdLabel { get { return ResourceManager.GetString("AutoReviewConfidenceThresholdLabel", resourceCulture); } }
+
+        public static string AutoReviewConfidenceThresholdRangeMessage { get { return ResourceManager.GetString("AutoReviewConfidenceThresholdRangeMessage", resourceCulture); } }
+
+        public static string AutoReReviewFindingDeletedLog { get { return ResourceManager.GetString("AutoReReviewFindingDeletedLog", resourceCulture); } }
+
+        public static string AutoReReviewSeverityDowngradedLog { get { return ResourceManager.GetString("AutoReReviewSeverityDowngradedLog", resourceCulture); } }
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>

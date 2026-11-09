@@ -65,8 +65,8 @@ namespace Revathryn.Engine
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                await _queue
-                    .ReleaseForRetryAsync(claimed.Id, DateTime.UtcNow, string.Empty, CancellationToken.None)
+                _ = await _queue
+                    .ReleaseForRetryAsync(claimed.Id, claimed.AttemptCount, DateTime.UtcNow, string.Empty, CancellationToken.None)
                     .ConfigureAwait(false);
                 throw;
             }
@@ -142,7 +142,7 @@ namespace Revathryn.Engine
                     string.Format(Strings.DuplicateDetectionNoMatchLog, claimed.Id, finding.Id));
             }
 
-            await _queue.CompleteAsync(claimed.Id, CancellationToken.None).ConfigureAwait(false);
+            _ = await _queue.CompleteAsync(claimed.Id, claimed.AttemptCount, CancellationToken.None).ConfigureAwait(false);
         }
 
         private async Task HandleUnexpectedAsync(DuplicateDetectionQueueItem claimed, Exception exception)
@@ -161,8 +161,8 @@ namespace Revathryn.Engine
 
             if (decision.ShouldRetry)
             {
-                await _queue
-                    .ReleaseForRetryAsync(claimed.Id, DateTime.UtcNow.Add(decision.Delay), message, CancellationToken.None)
+                _ = await _queue
+                    .ReleaseForRetryAsync(claimed.Id, claimed.AttemptCount, DateTime.UtcNow.Add(decision.Delay), message, CancellationToken.None)
                     .ConfigureAwait(false);
                 return;
             }
@@ -174,7 +174,7 @@ namespace Revathryn.Engine
         {
             string safeMessage = string.IsNullOrWhiteSpace(message) ? Strings.UnknownReviewError : message;
 
-            await _queue.FailAsync(claimed.Id, safeMessage, CancellationToken.None).ConfigureAwait(false);
+            _ = await _queue.FailAsync(claimed.Id, claimed.AttemptCount, safeMessage, CancellationToken.None).ConfigureAwait(false);
 
             _diagnostics.Log(
                 OperationalLogLevel.Error,

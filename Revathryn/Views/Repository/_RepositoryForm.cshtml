@@ -1,5 +1,6 @@
 @using Revathryn.Resources
 @using Revathryn.Contracts.Models
+@using Revathryn.Contracts.Enums
 @model Revathryn.Models.Repositories.RepositoryEditViewModel
 @{
     string formAction = ViewData["FormAction"] as string ?? "Create";
@@ -31,6 +32,24 @@
         <label asp-for="MaxContextRequests" class="form-label">@Strings.MaxContextRequestsLabel</label>
         <input asp-for="MaxContextRequests" class="form-control" type="number" min="1" required />
         <span asp-validation-for="MaxContextRequests" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AutoReviewMinimumSeverity" class="form-label">@Strings.AutoReviewMinimumSeverityLabel</label>
+        <select asp-for="AutoReviewMinimumSeverity" class="form-select">
+            <option value="@FindingSeverity.Info">@Strings.SeverityInfo</option>
+            <option value="@FindingSeverity.Low">@Strings.SeverityLow</option>
+            <option value="@FindingSeverity.Medium">@Strings.SeverityMedium</option>
+            <option value="@FindingSeverity.High">@Strings.SeverityHigh</option>
+            <option value="@FindingSeverity.Critical">@Strings.SeverityCritical</option>
+        </select>
+        <span asp-validation-for="AutoReviewMinimumSeverity" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AutoReviewConfidenceThreshold" class="form-label">@Strings.AutoReviewConfidenceThresholdLabel</label>
+        <input asp-for="AutoReviewConfidenceThreshold" class="form-control" type="number" min="0" max="100" required />
+        <span asp-validation-for="AutoReviewConfidenceThreshold" class="text-danger"></span>
     </div>
 
     <div class="form-check mb-3">

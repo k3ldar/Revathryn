@@ -20,6 +20,7 @@ namespace Revathryn.Engine
     {
         private readonly IIssueValidationRepository _validationRepository;
         private readonly IFindingRepository _findingRepository;
+        private readonly IRepositoryRepository _repositoryRepository;
         private readonly IReviewEngineSettingsRepository _settingsRepository;
         private readonly IIssueValidationContextBuilder _contextBuilder;
         private readonly IIssueValidationEngine _validationEngine;
@@ -31,6 +32,7 @@ namespace Revathryn.Engine
         public IssueValidationProcessor(
             IIssueValidationRepository validationRepository,
             IFindingRepository findingRepository,
+            IRepositoryRepository repositoryRepository,
             IReviewEngineSettingsRepository settingsRepository,
             IIssueValidationContextBuilder contextBuilder,
             IIssueValidationEngine validationEngine,
@@ -40,6 +42,7 @@ namespace Revathryn.Engine
         {
             _validationRepository = validationRepository;
             _findingRepository = findingRepository;
+            _repositoryRepository = repositoryRepository;
             _settingsRepository = settingsRepository;
             _contextBuilder = contextBuilder;
             _validationEngine = validationEngine;
@@ -160,6 +163,74 @@ namespace Revathryn.Engine
                 Consts.IssueValidationProcessorComponent,
                 Consts.ProcessValidationOperation,
                 string.Format(Strings.ValidationCompletedLog, claimed.Id, claimed.FindingId, result.Verdict));
+
+            await ApplyAutomaticRecommendationAsync(claimed).ConfigureAwait(false);
+        }
+
+        private async Task ApplyAutomaticRecommendationAsync(IssueValidation claimed)
+        {
+            if (!claimed.IsAutomatic)
+            {
+                return;
+            }
+
+            Repository repository = await _repositoryRepository.GetByIdAsync(claimed.RepositoryId, CancellationToken.None).ConfigureAwait(false);
+
+            if (repository is null || !repository.Enabled)
+            {
+                return;
+            }
+
+            if (claimed.Verdict is IssueValidationVerdict.Agreed or IssueValidationVerdict.Inconclusive or null)
+            {
+                return;
+            }
+
+            if (claimed.Confidence is null)
+            {
+                return;
+            }
+
+            double confidencePercent = claimed.Confidence.Value * Consts.AutoReviewConfidencePercentageScale;
+
+            if (confidencePercent < repository.AutoReviewConfidenceThreshold)
+            {
+                return;
+            }
+
+            if (claimed.Verdict is IssueValidationVerdict.Disagreed && claimed.RecommendedSeverity is FindingSeverity.Info)
+            {
+                await _findingRepository.DeleteAsync(claimed.FindingId, CancellationToken.None).ConfigureAwait(false);
+
+                _diagnostics.Log(
+                    OperationalLogLevel.Information,
+                    Consts.IssueValidationProcessorComponent,
+                    Consts.CompleteOperation,
+                    string.Format(Strings.AutoReReviewFindingDeletedLog, claimed.FindingId));
+                return;
+            }
+
+            if (claimed.RecommendedSeverity is not { } recommendedSeverity)
+            {
+                return;
+            }
+
+            Finding finding = await _findingRepository.GetByIdAsync(claimed.FindingId, CancellationToken.None).ConfigureAwait(false);
+
+            if (finding is null || recommendedSeverity >= finding.Severity)
+            {
+                return;
+            }
+
+            finding.Severity = recommendedSeverity;
+            finding.LastModifiedDate = DateTime.UtcNow;
+            await _findingRepository.UpdateAsync(finding, CancellationToken.None).ConfigureAwait(false);
+
+            _diagnostics.Log(
+                OperationalLogLevel.Information,
+                Consts.IssueValidationProcessorComponent,
+                Consts.CompleteOperation,
+                string.Format(Strings.AutoReReviewSeverityDowngradedLog, claimed.FindingId, claimed.OriginalSeverity, recommendedSeverity));
         }
 
         private async Task HandleEngineFailureAsync(IssueValidation claimed, IssueValidationEngineResult result, int maxAttempts)

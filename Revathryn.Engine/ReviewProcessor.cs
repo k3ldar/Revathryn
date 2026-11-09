@@ -37,6 +37,7 @@ namespace Revathryn.Engine
         private readonly IReviewUsageRepository _reviewUsageRepository;
         private readonly IDuplicateDetectionQueue _duplicateDetectionQueue;
         private readonly IIssueSettingsProvider _issueSettingsProvider;
+        private readonly IIssueValidationService _issueValidationService;
         private readonly ISeverityRuleEngine _severityRuleEngine;
         private readonly IArchitectureSummaryService _architectureSummaryService;
         private readonly IProcessingGate _processingGate;
@@ -57,6 +58,7 @@ namespace Revathryn.Engine
             IReviewUsageRepository reviewUsageRepository,
             IDuplicateDetectionQueue duplicateDetectionQueue,
             IIssueSettingsProvider issueSettingsProvider,
+            IIssueValidationService issueValidationService,
             ISeverityRuleEngine severityRuleEngine,
             IArchitectureSummaryService architectureSummaryService,
             IProcessingGate processingGate,
@@ -75,6 +77,7 @@ namespace Revathryn.Engine
             _reviewUsageRepository = reviewUsageRepository;
             _duplicateDetectionQueue = duplicateDetectionQueue;
             _issueSettingsProvider = issueSettingsProvider;
+            _issueValidationService = issueValidationService;
             _severityRuleEngine = severityRuleEngine;
             _architectureSummaryService = architectureSummaryService;
             _processingGate = processingGate;
@@ -342,6 +345,33 @@ namespace Revathryn.Engine
                             .ConfigureAwait(false);
                     }
                 }
+            }
+
+            await EnqueueAutoReReviewsAsync(item, findings, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task EnqueueAutoReReviewsAsync(QueueItem item, IReadOnlyList<Finding> findings, CancellationToken cancellationToken)
+        {
+            Repository repository = await _repositoryRepository.GetByIdAsync(item.RepositoryId, cancellationToken).ConfigureAwait(false);
+
+            if (repository is null || !repository.Enabled || !repository.AutomaticReviewEnabled)
+            {
+                return;
+            }
+
+            foreach (Finding finding in findings)
+            {
+                if (finding.Id <= 0 || finding.Category is not FindingCategory.CodeIssue)
+                {
+                    continue;
+                }
+
+                if (finding.Severity < repository.AutoReviewMinimumSeverity)
+                {
+                    continue;
+                }
+
+                await _issueValidationService.RequestAutomaticAsync(finding.Id, cancellationToken).ConfigureAwait(false);
             }
         }
 

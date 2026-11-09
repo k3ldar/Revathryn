@@ -78,6 +78,8 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Repositories", "ScanOptions", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "Repositories", "LastSuccessfulScanDate", "TEXT NULL");
             EnsureColumn(connection, "Repositories", "AIEngineId", "INTEGER NULL");
+            EnsureColumn(connection, "Repositories", "AutoReviewMinimumSeverity", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAutoReviewMinimumSeverity);
+            EnsureColumn(connection, "Repositories", "AutoReviewConfidenceThreshold", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAutoReviewConfidenceThreshold);
             EnsureColumn(connection, "RepoFiles", "IsRemoved", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(connection, "RepoFiles", "ProjectPath", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "RepositoryScans", "RenamedFiles", "INTEGER NOT NULL DEFAULT 0");
@@ -112,6 +114,7 @@ namespace Revathryn.Data
             EnsureColumn(connection, "ReviewContexts", "RequestedContextKeysJson", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "ReviewContexts", "SystemPromptVersionId", "INTEGER NULL");
             EnsureColumn(connection, "ReviewContexts", "ReviewPromptVersionId", "INTEGER NULL");
+            EnsureColumn(connection, "IssueValidations", "IsAutomatic", "INTEGER NOT NULL DEFAULT 0");
         }
 
         private static void EnsureColumn(SqliteConnection connection, string table, string column, string definition)

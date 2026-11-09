@@ -1646,4 +1646,37 @@
 			<data name="ReviewTypeDisabledMessage" xml:space="preserve">
 			  <value>Review type disabled.</value>
 			</data>
+			<data name="ResubmitForReviewButton" xml:space="preserve">
+			  <value>Resubmit for review</value>
+			</data>
+			<data name="ResubmitForReviewDescription" xml:space="preserve">
+			  <value>Re-run the review for this file using its review type to check whether the outcome changes.</value>
+			</data>
+			<data name="ResubmitQueuedMessage" xml:space="preserve">
+			  <value>File '{0}' re-queued for review using '{1}'.</value>
+			</data>
+			<data name="ResubmitAlreadyQueuedMessage" xml:space="preserve">
+			  <value>A review for file '{0}' using '{1}' is already queued.</value>
+			</data>
+			<data name="ResubmitNotQueuedMessage" xml:space="preserve">
+			  <value>File '{0}' could not be re-queued for review using '{1}'. The review type may be disabled or the file may have changed.</value>
+			</data>
+			<data name="ResubmitUnavailableMessage" xml:space="preserve">
+			  <value>This issue cannot be re-submitted for review because its file or review type is no longer available.</value>
+			</data>
+			<data name="AutoReviewMinimumSeverityLabel" xml:space="preserve">
+			  <value>Auto re-review minimum severity</value>
+			</data>
+			<data name="AutoReviewConfidenceThresholdLabel" xml:space="preserve">
+			  <value>Auto re-review confidence threshold (%)</value>
+			</data>
+			<data name="AutoReviewConfidenceThresholdRangeMessage" xml:space="preserve">
+			  <value>Confidence threshold must be between 0 and 100.</value>
+			</data>
+			<data name="AutoReReviewFindingDeletedLog" xml:space="preserve">
+			  <value>Auto re-review deleted finding {0} as a non-issue.</value>
+			</data>
+			<data name="AutoReReviewSeverityDowngradedLog" xml:space="preserve">
+			  <value>Auto re-review downgraded finding {0} from {1} to {2}.</value>
+			</data>
 			</root>

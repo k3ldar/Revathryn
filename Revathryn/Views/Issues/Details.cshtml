@@ -77,7 +77,20 @@
                     <button type="submit" class="btn btn-outline-danger">@Strings.DeleteButton</button>
                 </form>
             </div>
+            @if (Model.Finding.RepoFileId.HasValue && Model.Finding.ReviewTypeId.HasValue)
+            {
+                <div class="col-12 col-md-auto">
+                    <form method="post" asp-action="ResubmitForReview" asp-all-route-data="@PostStateRoute()">
+                        <input type="hidden" name="id" value="@Model.Finding.Id" />
+                        <button type="submit" class="btn btn-outline-primary">@Strings.ResubmitForReviewButton</button>
+                    </form>
+                </div>
+            }
         </div>
+        @if (Model.Finding.RepoFileId.HasValue && Model.Finding.ReviewTypeId.HasValue)
+        {
+            <p class="text-muted small mt-3 mb-0">@Strings.ResubmitForReviewDescription</p>
+        }
     </div>
 </div>
 

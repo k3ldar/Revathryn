@@ -135,7 +135,7 @@ namespace Revathryn.Engine.Tests
                 }, TestContext.CancellationToken);
 
                 Assert.AreNotEqual(0, registered.Id);
-                Assert.HasCount(27, reviewTypes.Added);
+                Assert.HasCount(28, reviewTypes.Added);
                 Assert.IsTrue(reviewTypes.Added.All(t => !string.IsNullOrEmpty(t.Key)));
                 Assert.IsTrue(reviewTypes.Added.All(t => t.Enabled));
             }
@@ -155,9 +155,9 @@ namespace Revathryn.Engine.Tests
 
             int inserted = await seeder.SeedAsync(1, TestContext.CancellationToken);
 
-            Assert.AreEqual(26, inserted);
+            Assert.AreEqual(27, inserted);
             Assert.DoesNotContain(t => t.Key == "security", reviewTypes.Added);
-            Assert.HasCount(27, await reviewTypes.GetByRepositoryAsync(1, TestContext.CancellationToken));
+            Assert.HasCount(28, await reviewTypes.GetByRepositoryAsync(1, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -169,9 +169,9 @@ namespace Revathryn.Engine.Tests
             int firstSeed = await seeder.SeedAsync(1, TestContext.CancellationToken);
             int secondSeed = await seeder.SeedAsync(1, TestContext.CancellationToken);
 
-            Assert.AreEqual(27, firstSeed);
+            Assert.AreEqual(28, firstSeed);
             Assert.AreEqual(0, secondSeed);
-            Assert.HasCount(27, await reviewTypes.GetByRepositoryAsync(1, TestContext.CancellationToken));
+            Assert.HasCount(28, await reviewTypes.GetByRepositoryAsync(1, TestContext.CancellationToken));
         }
 
         private static string CreateTempDirectory()

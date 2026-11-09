@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
+using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
 
 using static Revathryn.Contracts.Consts;
@@ -33,6 +34,13 @@ namespace Revathryn.Models.Repositories
         [Range(1, int.MaxValue, ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.MaxContextRequestsRangeMessage))]
         public int MaxContextRequests { get; set; } = DefaultMaxContextRequests;
 
+        /// <summary>Minimum severity at which a newly created finding is automatically re-reviewed.</summary>
+        public FindingSeverity AutoReviewMinimumSeverity { get; set; } = (FindingSeverity)DefaultAutoReviewMinimumSeverity;
+
+        /// <summary>Required review AI confidence, as a percentage between 0 and 100, before its recommendation is applied.</summary>
+        [Range(MinimumAutoReviewConfidenceThreshold, MaximumAutoReviewConfidenceThreshold, ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.AutoReviewConfidenceThresholdRangeMessage))]
+        public int AutoReviewConfidenceThreshold { get; set; } = DefaultAutoReviewConfidenceThreshold;
+
         /// <summary>Identifier of the AI engine used for this repository's reviews, or null to use the system default.</summary>
         public long? AIEngineId { get; set; }
 
@@ -51,6 +59,8 @@ namespace Revathryn.Models.Repositories
                 Enabled = repository.Enabled,
                 AutomaticReviewEnabled = repository.AutomaticReviewEnabled,
                 MaxContextRequests = repository.MaxContextRequests,
+                AutoReviewMinimumSeverity = repository.AutoReviewMinimumSeverity,
+                AutoReviewConfidenceThreshold = repository.AutoReviewConfidenceThreshold,
                 AIEngineId = repository.AIEngineId
             };
         }
@@ -67,6 +77,8 @@ namespace Revathryn.Models.Repositories
                 Enabled = Enabled,
                 AutomaticReviewEnabled = AutomaticReviewEnabled,
                 MaxContextRequests = MaxContextRequests,
+                AutoReviewMinimumSeverity = AutoReviewMinimumSeverity,
+                AutoReviewConfidenceThreshold = AutoReviewConfidenceThreshold,
                 AIEngineId = AIEngineId
             };
         }

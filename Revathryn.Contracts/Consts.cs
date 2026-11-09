@@ -160,6 +160,13 @@
         public const int MinimumRepositoryId = 1;
         public const int DefaultMaxContextRequests = 3;
         public const int MaxContextItemsPerRequest = 10;
+
+        // Automatic re-review thresholds for repositories.
+        public const int DefaultAutoReviewMinimumSeverity = (int)Revathryn.Contracts.Enums.FindingSeverity.High;
+        public const int MinimumAutoReviewConfidenceThreshold = 0;
+        public const int MaximumAutoReviewConfidenceThreshold = 100;
+        public const int DefaultAutoReviewConfidenceThreshold = 0;
+        public const double AutoReviewConfidencePercentageScale = 100.0;
         public const int MaxContextItemContentLength = 4000;
         public const string ContextKeySymbols = "symbols";
         public const string ContextKeyDependencies = "dependencies";

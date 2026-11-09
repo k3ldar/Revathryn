@@ -1,8 +1,12 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 using Microsoft.AspNetCore.Mvc;
 
 using Revathryn.Contracts;
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
+using Revathryn.Contracts.Orchestration;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Services;
 using Revathryn.Models;
@@ -23,6 +27,14 @@ namespace Revathryn.Controllers
         private readonly IIssueValidationService _validationService;
         private readonly IReviewEngineConfigurationService _reviewEngineConfiguration;
         private readonly IIssueSettingsProvider _issueSettingsProvider;
+        private readonly IReviewScheduler _reviewScheduler;
+
+        private static readonly JsonSerializerOptions ExportJsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter() }
+        };
 
         /// <summary>Initialises a new issues controller.</summary>
         public IssuesController(
@@ -33,7 +45,8 @@ namespace Revathryn.Controllers
             IReviewContextRepository reviewContextRepository,
             IIssueValidationService validationService,
             IReviewEngineConfigurationService reviewEngineConfiguration,
-            IIssueSettingsProvider issueSettingsProvider)
+            IIssueSettingsProvider issueSettingsProvider,
+            IReviewScheduler reviewScheduler)
         {
             _repositoryService = repositoryService;
             _repositoryFileService = repositoryFileService;
@@ -43,6 +56,7 @@ namespace Revathryn.Controllers
             _validationService = validationService;
             _reviewEngineConfiguration = reviewEngineConfiguration;
             _issueSettingsProvider = issueSettingsProvider;
+            _reviewScheduler = reviewScheduler;
         }
 
         /// <summary>Renders repository selection for issue browsing.</summary>
@@ -159,6 +173,67 @@ namespace Revathryn.Controllers
             };
 
             return View(model);
+        }
+
+        /// <summary>Exports every issue for a repository as JSON, including review context and the latest validation.</summary>
+        public async Task<IActionResult> Export(long id, CancellationToken cancellationToken)
+        {
+            Repository repository = await _repositoryService.GetAsync(id, cancellationToken);
+
+            if (repository is null)
+            {
+                return NotFound();
+            }
+
+            IReadOnlyList<Finding> findings = await _findingRepository.GetByRepositoryAsync(id, cancellationToken);
+            IReadOnlyList<ReviewType> reviewTypes = await _reviewTypeRepository.GetByRepositoryAsync(id, cancellationToken);
+            IReadOnlyList<RepoFile> files = await _repositoryFileService.GetFilesAsync(id, cancellationToken);
+
+            Dictionary<long, string> reviewTypeNames = [];
+            foreach (ReviewType reviewType in reviewTypes)
+            {
+                reviewTypeNames[reviewType.Id] = reviewType.Name;
+            }
+
+            Dictionary<long, string> filePaths = [];
+            foreach (RepoFile file in files)
+            {
+                filePaths[file.Id] = file.RelativePath;
+            }
+
+            IReadOnlyDictionary<long, IssueValidation> validations = await _validationService.GetLatestCompletedAsync(
+                [.. findings.Select(finding => finding.Id)],
+                cancellationToken);
+
+            List<IssueExportItemViewModel> items = [];
+            foreach (Finding finding in findings.OrderByDescending(finding => finding.Id))
+            {
+                reviewTypeNames.TryGetValue(finding.ReviewTypeId.GetValueOrDefault(), out string reviewTypeName);
+                filePaths.TryGetValue(finding.RepoFileId.GetValueOrDefault(), out string filePath);
+                validations.TryGetValue(finding.Id, out IssueValidation validation);
+
+                AIReviewContext context = finding.ReviewContextId.HasValue
+                    ? await _reviewContextRepository.GetByIdAsync(finding.ReviewContextId.Value, cancellationToken)
+                    : null;
+
+                items.Add(new IssueExportItemViewModel
+                {
+                    Finding = finding,
+                    ReviewTypeName = reviewTypeName ?? string.Empty,
+                    FileRelativePath = filePath ?? string.Empty,
+                    Context = context,
+                    LatestValidation = validation is null ? null : IssueValidationDto.FromModel(validation, isLatest: true)
+                });
+            }
+
+            IssueExportViewModel model = new()
+            {
+                Repository = repository,
+                ExportedUtc = DateTime.UtcNow,
+                Issues = items
+            };
+
+            return new JsonResult(model, ExportJsonOptions);
         }
 
         /// <summary>Renders complete details for a single issue, including original AI review context.</summary>
@@ -298,6 +373,60 @@ namespace Revathryn.Controllers
             return RedirectToAction(
                 nameof(List),
                 BuildListRedirectValues(browseRepositoryId, page, pageSize, severity, reviewTypeId, search, sort, descending));
+        }
+
+        /// <summary>Re-queues the finding's file for review by its originating review type.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResubmitForReview(
+            long id,
+            long? repositoryId,
+            int? page,
+            int? pageSize,
+            FindingSeverity? severity,
+            long? reviewTypeId,
+            string search,
+            FindingSortField? sort,
+            bool? descending,
+            CancellationToken cancellationToken)
+        {
+            Finding finding = await _findingRepository.GetByIdAsync(id, cancellationToken);
+
+            if (finding is null)
+            {
+                return NotFound();
+            }
+
+            long browseRepositoryId = repositoryId ?? finding.RepositoryId;
+
+            if (!finding.RepoFileId.HasValue || !finding.ReviewTypeId.HasValue)
+            {
+                TempData[Consts.ErrorMessageTempDataKey] = Strings.ResubmitUnavailableMessage;
+                return RedirectToAction(
+                    nameof(Details),
+                    BuildDetailsRedirectValues(id, browseRepositoryId, page, pageSize, severity, reviewTypeId, search, sort, descending));
+            }
+
+            string filePath = await ResolveFilePathAsync(finding.RepoFileId, cancellationToken);
+            string reviewTypeName = await ResolveReviewTypeNameAsync(finding.ReviewTypeId, cancellationToken);
+            ReviewScheduleResult result = await _reviewScheduler.RequeueFileAsync(finding.RepoFileId.Value, finding.ReviewTypeId.Value, cancellationToken);
+
+            if (result.Added > 0)
+            {
+                TempData[Consts.SuccessMessageTempDataKey] = string.Format(Strings.ResubmitQueuedMessage, filePath, reviewTypeName);
+            }
+            else if (result.DuplicatesSkipped > 0)
+            {
+                TempData[Consts.SuccessMessageTempDataKey] = string.Format(Strings.ResubmitAlreadyQueuedMessage, filePath, reviewTypeName);
+            }
+            else
+            {
+                TempData[Consts.ErrorMessageTempDataKey] = string.Format(Strings.ResubmitNotQueuedMessage, filePath, reviewTypeName);
+            }
+
+            return RedirectToAction(
+                nameof(Details),
+                BuildDetailsRedirectValues(id, browseRepositoryId, page, pageSize, severity, reviewTypeId, search, sort, descending));
         }
 
         private async Task<IssueValidationPanelViewModel> BuildValidationPanelAsync(Finding finding, long? validationId, CancellationToken cancellationToken)
