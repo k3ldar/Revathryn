@@ -49,7 +49,7 @@ namespace Revathryn.Data.Tests
 
             long first = await database.EnqueueAsync(findingId, TestContext.CancellationToken);
             DuplicateDetectionQueueItem claimed = await database.Queue.ClaimNextAsync(DateTime.UtcNow, TimeSpan.FromMinutes(1), TestContext.CancellationToken);
-            await database.Queue.CompleteAsync(claimed.Id, TestContext.CancellationToken);
+            _ = await database.Queue.CompleteAsync(claimed.Id, claimed.AttemptCount, TestContext.CancellationToken);
 
             long second = await database.EnqueueAsync(findingId, TestContext.CancellationToken);
 
@@ -107,7 +107,7 @@ namespace Revathryn.Data.Tests
             long queueId = await database.EnqueueAsync(findingId, TestContext.CancellationToken);
             DuplicateDetectionQueueItem claimed = await database.Queue.ClaimNextAsync(DateTime.UtcNow, TimeSpan.FromMinutes(1), TestContext.CancellationToken);
 
-            await database.Queue.CompleteAsync(claimed.Id, TestContext.CancellationToken);
+            _ = await database.Queue.CompleteAsync(claimed.Id, claimed.AttemptCount, TestContext.CancellationToken);
 
             (int status, string lastError) = await database.GetQueueRowAsync(queueId, TestContext.CancellationToken);
             DuplicateDetectionQueueItem next = await database.Queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TimeSpan.FromMinutes(1), TestContext.CancellationToken);
@@ -124,7 +124,7 @@ namespace Revathryn.Data.Tests
             long queueId = await database.EnqueueAsync(findingId, TestContext.CancellationToken);
             DuplicateDetectionQueueItem claimed = await database.Queue.ClaimNextAsync(DateTime.UtcNow, TimeSpan.FromMinutes(1), TestContext.CancellationToken);
 
-            await database.Queue.FailAsync(claimed.Id, "boom", TestContext.CancellationToken);
+            _ = await database.Queue.FailAsync(claimed.Id, claimed.AttemptCount, "boom", TestContext.CancellationToken);
 
             (int status, string lastError) = await database.GetQueueRowAsync(queueId, TestContext.CancellationToken);
             DuplicateDetectionQueueItem next = await database.Queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TimeSpan.FromMinutes(1), TestContext.CancellationToken);
@@ -143,7 +143,7 @@ namespace Revathryn.Data.Tests
             DuplicateDetectionQueueItem claimed = await database.Queue.ClaimNextAsync(now, TimeSpan.FromMinutes(1), TestContext.CancellationToken);
             DateTime nextAttempt = now.AddMinutes(5);
 
-            await database.Queue.ReleaseForRetryAsync(claimed.Id, nextAttempt, "retry later", TestContext.CancellationToken);
+            _ = await database.Queue.ReleaseForRetryAsync(claimed.Id, claimed.AttemptCount, nextAttempt, "retry later", TestContext.CancellationToken);
 
             (int status, string lastError) = await database.GetQueueRowAsync(queueId, TestContext.CancellationToken);
             DuplicateDetectionQueueItem beforeDue = await database.Queue.ClaimNextAsync(now.AddMinutes(1), TimeSpan.FromMinutes(1), TestContext.CancellationToken);
@@ -153,6 +153,62 @@ namespace Revathryn.Data.Tests
             Assert.IsNull(beforeDue);
             Assert.IsNotNull(afterDue);
             Assert.AreEqual(queueId, afterDue.Id);
+        }
+
+        [TestMethod]
+        public async Task CompleteAsync_WithStaleAttempt_ReturnsFalseAndLeavesItemRunning()
+        {
+            using DuplicateDetectionTestDatabase database = new();
+            long findingId = await database.AddFindingAsync(TestContext.CancellationToken);
+            long queueId = await database.EnqueueAsync(findingId, TestContext.CancellationToken);
+            DateTime now = DateTime.UtcNow;
+
+            DuplicateDetectionQueueItem first = await database.Queue.ClaimNextAsync(now, TimeSpan.FromSeconds(-1), TestContext.CancellationToken);
+            _ = await database.Queue.ClaimNextAsync(now.AddSeconds(1), TimeSpan.FromMinutes(1), TestContext.CancellationToken);
+
+            bool completed = await database.Queue.CompleteAsync(first.Id, first.AttemptCount, TestContext.CancellationToken);
+
+            (int status, string lastError) = await database.GetQueueRowAsync(queueId, TestContext.CancellationToken);
+            Assert.IsFalse(completed);
+            Assert.AreEqual((int)DuplicateDetectionStatus.Running, status);
+        }
+
+        [TestMethod]
+        public async Task FailAsync_WithStaleAttempt_ReturnsFalseAndLeavesItemRunning()
+        {
+            using DuplicateDetectionTestDatabase database = new();
+            long findingId = await database.AddFindingAsync(TestContext.CancellationToken);
+            long queueId = await database.EnqueueAsync(findingId, TestContext.CancellationToken);
+            DateTime now = DateTime.UtcNow;
+
+            DuplicateDetectionQueueItem first = await database.Queue.ClaimNextAsync(now, TimeSpan.FromSeconds(-1), TestContext.CancellationToken);
+            _ = await database.Queue.ClaimNextAsync(now.AddSeconds(1), TimeSpan.FromMinutes(1), TestContext.CancellationToken);
+
+            bool failed = await database.Queue.FailAsync(first.Id, first.AttemptCount, "boom", TestContext.CancellationToken);
+
+            (int status, string lastError) = await database.GetQueueRowAsync(queueId, TestContext.CancellationToken);
+            Assert.IsFalse(failed);
+            Assert.AreEqual((int)DuplicateDetectionStatus.Running, status);
+            Assert.AreEqual(string.Empty, lastError);
+        }
+
+        [TestMethod]
+        public async Task ReleaseForRetryAsync_WithStaleAttempt_ReturnsFalseAndLeavesItemRunning()
+        {
+            using DuplicateDetectionTestDatabase database = new();
+            long findingId = await database.AddFindingAsync(TestContext.CancellationToken);
+            long queueId = await database.EnqueueAsync(findingId, TestContext.CancellationToken);
+            DateTime now = DateTime.UtcNow;
+
+            DuplicateDetectionQueueItem first = await database.Queue.ClaimNextAsync(now, TimeSpan.FromSeconds(-1), TestContext.CancellationToken);
+            _ = await database.Queue.ClaimNextAsync(now.AddSeconds(1), TimeSpan.FromMinutes(1), TestContext.CancellationToken);
+
+            bool released = await database.Queue.ReleaseForRetryAsync(first.Id, first.AttemptCount, now.AddMinutes(5), "retry", TestContext.CancellationToken);
+
+            (int status, string lastError) = await database.GetQueueRowAsync(queueId, TestContext.CancellationToken);
+            Assert.IsFalse(released);
+            Assert.AreEqual((int)DuplicateDetectionStatus.Running, status);
+            Assert.AreEqual(string.Empty, lastError);
         }
 
         private sealed class DuplicateDetectionTestDatabase : IDisposable

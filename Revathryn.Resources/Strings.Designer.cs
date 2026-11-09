@@ -3496,6 +3496,18 @@ namespace Revathryn.Resources {
 
         public static string SeverityRuleDeleteConfirmation { get { return ResourceManager.GetString("SeverityRuleDeleteConfirmation", resourceCulture); } }
 
+        public static string ResubmitForReviewButton { get { return ResourceManager.GetString("ResubmitForReviewButton", resourceCulture); } }
+
+        public static string ResubmitForReviewDescription { get { return ResourceManager.GetString("ResubmitForReviewDescription", resourceCulture); } }
+
+        public static string ResubmitQueuedMessage { get { return ResourceManager.GetString("ResubmitQueuedMessage", resourceCulture); } }
+
+        public static string ResubmitAlreadyQueuedMessage { get { return ResourceManager.GetString("ResubmitAlreadyQueuedMessage", resourceCulture); } }
+
+        public static string ResubmitNotQueuedMessage { get { return ResourceManager.GetString("ResubmitNotQueuedMessage", resourceCulture); } }
+
+        public static string ResubmitUnavailableMessage { get { return ResourceManager.GetString("ResubmitUnavailableMessage", resourceCulture); } }
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>

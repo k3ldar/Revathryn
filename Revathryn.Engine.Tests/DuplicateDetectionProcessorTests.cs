@@ -297,52 +297,56 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult(item);
             }
 
-            public Task CompleteAsync(long id, CancellationToken cancellationToken = default)
+            public Task<bool> CompleteAsync(long id, int attemptCount, CancellationToken cancellationToken = default)
             {
-                SetStatus(id, DuplicateDetectionStatus.Completed);
-                return Task.CompletedTask;
+                return Task.FromResult(TryTransition(id, attemptCount, DuplicateDetectionStatus.Completed));
             }
 
-            public Task FailAsync(long id, string errorMessage, CancellationToken cancellationToken = default)
+            public Task<bool> FailAsync(long id, int attemptCount, string errorMessage, CancellationToken cancellationToken = default)
             {
                 DuplicateDetectionQueueItem item = _items.FirstOrDefault(i => i.Id == id);
 
-                if (item is not null)
+                if (item is null || item.Status != DuplicateDetectionStatus.Running || item.AttemptCount != attemptCount)
                 {
-                    item.Status = DuplicateDetectionStatus.Failed;
-                    item.NextAttemptUtc = null;
-                    item.LeasedUntilUtc = null;
-                    item.LastError = errorMessage ?? string.Empty;
+                    return Task.FromResult(false);
                 }
 
-                return Task.CompletedTask;
+                item.Status = DuplicateDetectionStatus.Failed;
+                item.NextAttemptUtc = null;
+                item.LeasedUntilUtc = null;
+                item.LastError = errorMessage ?? string.Empty;
+                return Task.FromResult(true);
             }
 
-            public Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string errorMessage, CancellationToken cancellationToken = default)
+            public Task<bool> ReleaseForRetryAsync(long id, int attemptCount, DateTime nextAttemptUtc, string errorMessage, CancellationToken cancellationToken = default)
             {
                 DuplicateDetectionQueueItem item = _items.FirstOrDefault(i => i.Id == id);
 
-                if (item is not null)
+                if (item is null || item.Status != DuplicateDetectionStatus.Running || item.AttemptCount != attemptCount)
                 {
-                    item.Status = DuplicateDetectionStatus.Pending;
-                    item.NextAttemptUtc = nextAttemptUtc;
-                    item.LeasedUntilUtc = null;
-                    item.LastError = errorMessage ?? string.Empty;
+                    return Task.FromResult(false);
                 }
 
-                return Task.CompletedTask;
+                item.Status = DuplicateDetectionStatus.Pending;
+                item.NextAttemptUtc = nextAttemptUtc;
+                item.LeasedUntilUtc = null;
+                item.LastError = errorMessage ?? string.Empty;
+                return Task.FromResult(true);
             }
 
-            private void SetStatus(long id, DuplicateDetectionStatus status)
+            private bool TryTransition(long id, int attemptCount, DuplicateDetectionStatus status)
             {
                 DuplicateDetectionQueueItem item = _items.FirstOrDefault(i => i.Id == id);
 
-                if (item is not null)
+                if (item is null || item.Status != DuplicateDetectionStatus.Running || item.AttemptCount != attemptCount)
                 {
-                    item.Status = status;
-                    item.NextAttemptUtc = null;
-                    item.LeasedUntilUtc = null;
+                    return false;
                 }
+
+                item.Status = status;
+                item.NextAttemptUtc = null;
+                item.LeasedUntilUtc = null;
+                return true;
             }
         }
 

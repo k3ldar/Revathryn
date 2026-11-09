@@ -11,6 +11,9 @@ namespace Revathryn.Contracts.Orchestration
         /// <summary>Enqueues review work for a single file based on applicable review types.</summary>
         Task<ReviewScheduleResult> ScheduleFileAsync(long repoFileId, CancellationToken cancellationToken = default);
 
+        /// <summary>Requeues a single file for a specific review type, forcing re-review even when its analysis is current.</summary>
+        Task<ReviewScheduleResult> RequeueFileAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default);
+
         /// <summary>Returns the enabled review types that apply to the file, respecting disabled links.</summary>
         Task<IReadOnlyList<ReviewType>> GetApplicableReviewTypesAsync(RepoFile file, CancellationToken cancellationToken = default);
 

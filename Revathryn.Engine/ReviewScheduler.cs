@@ -80,6 +80,57 @@ namespace Revathryn.Engine
             return await ScheduleForFileAsync(file.RepositoryId, file, reviewTypes, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>Requeues a single file for a specific review type, forcing re-review even when its analysis is current.</summary>
+        public async Task<ReviewScheduleResult> RequeueFileAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
+        {
+            ReviewScheduleResult result = new();
+            RepoFile file = await _fileRepository.GetByIdAsync(repoFileId, cancellationToken).ConfigureAwait(false);
+
+            if (file is null || file.IsExcluded || file.IsRemoved)
+            {
+                return result;
+            }
+
+            ReviewType reviewType = await _reviewTypeRepository.GetByIdAsync(reviewTypeId, cancellationToken).ConfigureAwait(false);
+
+            if (reviewType is null || !reviewType.Enabled || reviewType.RepositoryId != file.RepositoryId)
+            {
+                return result;
+            }
+
+            if (!AppliesToFile(reviewType, file))
+            {
+                return result;
+            }
+
+            ReviewLink link = await _reviewLinkRepository.GetAsync(file.Id, reviewType.Id, cancellationToken).ConfigureAwait(false);
+
+            if (link is not null && !link.Enabled)
+            {
+                return result;
+            }
+
+            QueueItem item = new()
+            {
+                RepositoryId = file.RepositoryId,
+                RepoFileId = file.Id,
+                ReviewTypeId = reviewType.Id,
+                Priority = link?.PriorityOverride ?? reviewType.DefaultPriority,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            if (await _reviewQueue.EnqueueAsync(item, cancellationToken).ConfigureAwait(false))
+            {
+                result.Added++;
+            }
+            else
+            {
+                result.DuplicatesSkipped++;
+            }
+
+            return result;
+        }
+
         /// <summary>Returns the enabled review types that apply to the file, respecting disabled links.</summary>
         public async Task<IReadOnlyList<ReviewType>> GetApplicableReviewTypesAsync(RepoFile file, CancellationToken cancellationToken = default)
         {

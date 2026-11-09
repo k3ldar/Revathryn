@@ -663,6 +663,11 @@ namespace Revathryn.Tests
                 return Task.FromResult(new ReviewScheduleResult());
             }
 
+            public Task<ReviewScheduleResult> RequeueFileAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new ReviewScheduleResult());
+            }
+
             public Task<IReadOnlyList<ReviewType>> GetApplicableReviewTypesAsync(RepoFile file, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(ApplicableResolver(file));

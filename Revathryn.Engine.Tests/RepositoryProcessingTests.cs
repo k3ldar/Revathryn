@@ -784,6 +784,70 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
+        public async Task ReviewScheduler_RequeueFileAsync_ForcesReviewWhenAnalysisIsCurrent()
+        {
+            SchedulerHarness harness = new();
+            harness.SeedRepository();
+            harness.SeedFile(1, "src/A.cs", "cs", "h1");
+            harness.SeedReviewType(1, "cs", "v1");
+            harness.SeedAnalysis(1, 1, "h1", "v1");
+
+            ReviewScheduleResult result = await harness.Scheduler.RequeueFileAsync(1, 1, TestContext.CancellationToken);
+
+            Assert.AreEqual(1, result.Added);
+            Assert.AreEqual(0, result.DuplicatesSkipped);
+
+            IReadOnlyList<QueueItem> pending = await harness.Queue.GetPendingAsync(TestContext.CancellationToken);
+            Assert.HasCount(1, pending);
+            Assert.AreEqual(1L, pending[0].RepoFileId);
+            Assert.AreEqual(1L, pending[0].ReviewTypeId);
+        }
+
+        [TestMethod]
+        public async Task ReviewScheduler_RequeueFileAsync_AppliesLinkPriorityOverride()
+        {
+            SchedulerHarness harness = new();
+            harness.SeedRepository();
+            harness.SeedFile(1, "src/A.cs", "cs", "h1");
+            harness.SeedReviewType(1, "cs", "v1", priority: 10);
+            harness.Links.Add(new ReviewLink { RepoFileId = 1, ReviewTypeId = 1, Enabled = true, PriorityOverride = 500 });
+
+            _ = await harness.Scheduler.RequeueFileAsync(1, 1, TestContext.CancellationToken);
+
+            IReadOnlyList<QueueItem> pending = await harness.Queue.GetPendingAsync(TestContext.CancellationToken);
+            Assert.HasCount(1, pending);
+            Assert.AreEqual(500, pending[0].Priority);
+        }
+
+        [TestMethod]
+        public async Task ReviewScheduler_RequeueFileAsync_DoesNotEnqueueDisabledReviewType()
+        {
+            SchedulerHarness harness = new();
+            harness.SeedRepository();
+            harness.SeedFile(1, "src/A.cs", "cs", "h1");
+            harness.SeedReviewType(1, "cs", "v1", enabled: false);
+
+            ReviewScheduleResult result = await harness.Scheduler.RequeueFileAsync(1, 1, TestContext.CancellationToken);
+
+            Assert.AreEqual(0, result.Added);
+            Assert.AreEqual(0, await harness.Queue.CountAsync(TestContext.CancellationToken));
+        }
+
+        [TestMethod]
+        public async Task ReviewScheduler_RequeueFileAsync_DoesNotEnqueueRemovedFile()
+        {
+            SchedulerHarness harness = new();
+            harness.SeedRepository();
+            harness.SeedFile(1, "src/A.cs", "cs", "h1", isRemoved: true);
+            harness.SeedReviewType(1, "cs", "v1");
+
+            ReviewScheduleResult result = await harness.Scheduler.RequeueFileAsync(1, 1, TestContext.CancellationToken);
+
+            Assert.AreEqual(0, result.Added);
+            Assert.AreEqual(0, await harness.Queue.CountAsync(TestContext.CancellationToken));
+        }
+
+        [TestMethod]
         public async Task RepositoryProcessor_AddedFile_IncrementsNewFiles()
         {
             string root = CreateTempDirectory();
@@ -2456,19 +2520,19 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult<DuplicateDetectionQueueItem>(null);
             }
 
-            public Task CompleteAsync(long id, CancellationToken cancellationToken = default)
+            public Task<bool> CompleteAsync(long id, int attemptCount, CancellationToken cancellationToken = default)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
 
-            public Task FailAsync(long id, string errorMessage, CancellationToken cancellationToken = default)
+            public Task<bool> FailAsync(long id, int attemptCount, string errorMessage, CancellationToken cancellationToken = default)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
 
-            public Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string errorMessage, CancellationToken cancellationToken = default)
+            public Task<bool> ReleaseForRetryAsync(long id, int attemptCount, DateTime nextAttemptUtc, string errorMessage, CancellationToken cancellationToken = default)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
         }
 

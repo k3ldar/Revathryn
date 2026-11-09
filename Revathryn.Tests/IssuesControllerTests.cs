@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Revathryn.Contracts;
 using Revathryn.Contracts.Enums;
 using Revathryn.Contracts.Models;
+using Revathryn.Contracts.Orchestration;
 using Revathryn.Contracts.Persistence;
 using Revathryn.Contracts.Services;
 using Revathryn.Controllers;
@@ -308,6 +309,89 @@ namespace Revathryn.Tests
         }
 
         [TestMethod]
+        public async Task Export_ReturnsNotFoundWhenRepositoryMissing()
+        {
+            IssuesController controller = CreateController();
+
+            IActionResult result = await controller.Export(99, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task Export_ReturnsAllIssuesForRepositoryAsJson()
+        {
+            Repository repository = new() { Id = 1, Name = "Repo" };
+
+            FakeRepositoryService repositories = new();
+            repositories.Repositories.Add(repository);
+
+            Finding older = new() { Id = 1, RepositoryId = 1, ReviewTypeId = 10, RepoFileId = 20, Title = "Older" };
+            Finding newer = new() { Id = 2, RepositoryId = 1, ReviewTypeId = 11, RepoFileId = 21, Title = "Newer" };
+
+            FakeFindingRepository findings = new();
+            findings.Findings.AddRange([older, newer]);
+
+            FakeRepositoryFileService files = new();
+            files.Files.AddRange(
+            [
+                new RepoFile { Id = 20, RepositoryId = 1, RelativePath = @"src\A.cs" },
+                new RepoFile { Id = 21, RepositoryId = 1, RelativePath = @"src\B.cs" }
+            ]);
+
+            FakeReviewTypeRepository reviewTypes = new();
+            reviewTypes.ReviewTypes.AddRange(
+            [
+                new ReviewType { Id = 10, RepositoryId = 1, Name = "TypeA" },
+                new ReviewType { Id = 11, RepositoryId = 1, Name = "TypeB" }
+            ]);
+
+            FakeIssueValidationService validations = new();
+            validations.Validations.Add(new IssueValidation
+            {
+                Id = 100,
+                FindingId = 2,
+                RepositoryId = 1,
+                Status = IssueValidationStatus.Completed,
+                Verdict = IssueValidationVerdict.Agreed,
+                Confidence = 0.9,
+                Summary = "Agreed"
+            });
+
+            IssuesController controller = CreateController(
+                repositories: repositories,
+                files: files,
+                findings: findings,
+                reviewTypes: reviewTypes,
+                validations: validations);
+
+            IActionResult result = await controller.Export(1, TestContext.CancellationToken);
+
+            JsonResult jsonResult = result as JsonResult;
+            Assert.IsNotNull(jsonResult);
+
+            IssueExportViewModel model = jsonResult.Value as IssueExportViewModel;
+            Assert.IsNotNull(model);
+            Assert.AreSame(repository, model.Repository);
+            Assert.HasCount(2, model.Issues);
+
+            IssueExportItemViewModel newest = model.Issues[0];
+            Assert.AreEqual(2L, newest.Finding.Id);
+            Assert.AreEqual("TypeB", newest.ReviewTypeName);
+            Assert.AreEqual(@"src\B.cs", newest.FileRelativePath);
+            Assert.IsNull(newest.Context);
+            Assert.IsNotNull(newest.LatestValidation);
+            Assert.AreEqual("Agreed", newest.LatestValidation.Verdict);
+            Assert.AreEqual(0.9, newest.LatestValidation.Confidence.Value);
+
+            IssueExportItemViewModel oldest = model.Issues[1];
+            Assert.AreEqual(1L, oldest.Finding.Id);
+            Assert.AreEqual("TypeA", oldest.ReviewTypeName);
+            Assert.AreEqual(@"src\A.cs", oldest.FileRelativePath);
+            Assert.IsNull(oldest.LatestValidation);
+        }
+
+        [TestMethod]
         public async Task UpdateSeverity_ReturnsNotFoundWhenFindingMissing()
         {
             IssuesController controller = CreateController();
@@ -374,6 +458,151 @@ namespace Revathryn.Tests
             Assert.AreEqual(Revathryn.Resources.Strings.FindingDeletedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
         }
 
+        [TestMethod]
+        public async Task ResubmitForReview_ReturnsNotFoundWhenFindingMissing()
+        {
+            IssuesController controller = CreateController();
+
+            IActionResult result = await controller.ResubmitForReview(99, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task ResubmitForReview_ReturnsErrorWhenFileOrReviewTypeMissing()
+        {
+            Finding finding = new() { Id = 42, RepositoryId = 1, RepoFileId = null, ReviewTypeId = null };
+
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            IssuesController controller = CreateController(findings: findings);
+
+            IActionResult result = await controller.ResubmitForReview(42, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(IssuesController.Details), redirect.ActionName);
+            Assert.AreEqual(42L, redirect.RouteValues["id"]);
+
+            Assert.AreEqual(Revathryn.Resources.Strings.ResubmitUnavailableMessage, controller.TempData[Consts.ErrorMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public async Task ResubmitForReview_QueuesFileAndRedirectsToDetails()
+        {
+            RepoFile file = new() { Id = 10, RepositoryId = 1, RelativePath = "src/Service.cs" };
+            ReviewType reviewType = new() { Id = 100, RepositoryId = 1, Name = "C# Review" };
+            Finding finding = new() { Id = 42, RepositoryId = 1, RepoFileId = 10, ReviewTypeId = 100 };
+
+            FakeRepositoryFileService files = new();
+            files.Files.Add(file);
+
+            FakeReviewTypeRepository reviewTypes = new();
+            reviewTypes.ReviewTypes.Add(reviewType);
+
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            FakeReviewScheduler reviewScheduler = new()
+            {
+                RequeueResult = new ReviewScheduleResult { Added = 1 }
+            };
+
+            IssuesController controller = CreateController(
+                files: files,
+                reviewTypes: reviewTypes,
+                findings: findings,
+                reviewScheduler: reviewScheduler);
+
+            IActionResult result = await controller.ResubmitForReview(42, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(IssuesController.Details), redirect.ActionName);
+            Assert.AreEqual(42L, redirect.RouteValues["id"]);
+
+            Assert.AreEqual(10L, reviewScheduler.RequeuedRepoFileId);
+            Assert.AreEqual(100L, reviewScheduler.RequeuedReviewTypeId);
+
+            string expected = string.Format(Revathryn.Resources.Strings.ResubmitQueuedMessage, "src/Service.cs", "C# Review");
+            Assert.AreEqual(expected, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public async Task ResubmitForReview_ReportsAlreadyQueuedWhenDuplicate()
+        {
+            RepoFile file = new() { Id = 10, RepositoryId = 1, RelativePath = "src/Service.cs" };
+            ReviewType reviewType = new() { Id = 100, RepositoryId = 1, Name = "C# Review" };
+            Finding finding = new() { Id = 42, RepositoryId = 1, RepoFileId = 10, ReviewTypeId = 100 };
+
+            FakeRepositoryFileService files = new();
+            files.Files.Add(file);
+
+            FakeReviewTypeRepository reviewTypes = new();
+            reviewTypes.ReviewTypes.Add(reviewType);
+
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            FakeReviewScheduler reviewScheduler = new()
+            {
+                RequeueResult = new ReviewScheduleResult { DuplicatesSkipped = 1 }
+            };
+
+            IssuesController controller = CreateController(
+                files: files,
+                reviewTypes: reviewTypes,
+                findings: findings,
+                reviewScheduler: reviewScheduler);
+
+            IActionResult result = await controller.ResubmitForReview(42, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(IssuesController.Details), redirect.ActionName);
+
+            string expected = string.Format(Revathryn.Resources.Strings.ResubmitAlreadyQueuedMessage, "src/Service.cs", "C# Review");
+            Assert.AreEqual(expected, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
+        public async Task ResubmitForReview_ReportsErrorWhenNothingQueued()
+        {
+            RepoFile file = new() { Id = 10, RepositoryId = 1, RelativePath = "src/Service.cs" };
+            ReviewType reviewType = new() { Id = 100, RepositoryId = 1, Name = "C# Review" };
+            Finding finding = new() { Id = 42, RepositoryId = 1, RepoFileId = 10, ReviewTypeId = 100 };
+
+            FakeRepositoryFileService files = new();
+            files.Files.Add(file);
+
+            FakeReviewTypeRepository reviewTypes = new();
+            reviewTypes.ReviewTypes.Add(reviewType);
+
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            FakeReviewScheduler reviewScheduler = new()
+            {
+                RequeueResult = new ReviewScheduleResult()
+            };
+
+            IssuesController controller = CreateController(
+                files: files,
+                reviewTypes: reviewTypes,
+                findings: findings,
+                reviewScheduler: reviewScheduler);
+
+            IActionResult result = await controller.ResubmitForReview(42, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(IssuesController.Details), redirect.ActionName);
+
+            string expected = string.Format(Revathryn.Resources.Strings.ResubmitNotQueuedMessage, "src/Service.cs", "C# Review");
+            Assert.AreEqual(expected, controller.TempData[Consts.ErrorMessageTempDataKey]);
+        }
+
         private static IssuesController CreateController(
             FakeRepositoryService repositories = null,
             FakeRepositoryFileService files = null,
@@ -381,7 +610,8 @@ namespace Revathryn.Tests
             FakeReviewTypeRepository reviewTypes = null,
             FakeReviewContextRepository contexts = null,
             FakeIssueValidationService validations = null,
-            FakeReviewEngineConfigurationService reviewEngine = null)
+            FakeReviewEngineConfigurationService reviewEngine = null,
+            FakeReviewScheduler reviewScheduler = null)
         {
             FakeRepositoryService repositoryService = repositories ?? new();
             FakeRepositoryFileService fileService = files ?? new();
@@ -390,6 +620,7 @@ namespace Revathryn.Tests
             FakeReviewContextRepository reviewContextRepository = contexts ?? new();
             FakeIssueValidationService validationService = validations ?? new();
             FakeReviewEngineConfigurationService reviewEngineConfiguration = reviewEngine ?? new();
+            FakeReviewScheduler scheduler = reviewScheduler ?? new();
 
             ControllerContext context = ControllerTestSupport.CreateControllerContext(out DefaultHttpContext httpContext);
 
@@ -408,12 +639,49 @@ namespace Revathryn.Tests
                 reviewContextRepository,
                 validationService,
                 reviewEngineConfiguration,
-                issueSettingsProvider)
+                issueSettingsProvider,
+                scheduler)
             {
                 ControllerContext = context,
                 Url = new FakeUrlHelper(context),
                 TempData = new TempDataDictionary(httpContext, new FakeTempDataProvider())
             };
+        }
+
+        private sealed class FakeReviewScheduler : IReviewScheduler
+        {
+            public ReviewScheduleResult RequeueResult { get; set; } = new();
+
+            public long RequeuedRepoFileId { get; private set; }
+
+            public long RequeuedReviewTypeId { get; private set; }
+
+            public Task<ReviewScheduleResult> ScheduleRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new ReviewScheduleResult());
+            }
+
+            public Task<ReviewScheduleResult> ScheduleFileAsync(long repoFileId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new ReviewScheduleResult());
+            }
+
+            public Task<ReviewScheduleResult> RequeueFileAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                RequeuedRepoFileId = repoFileId;
+                RequeuedReviewTypeId = reviewTypeId;
+                return Task.FromResult(RequeueResult ?? new ReviewScheduleResult());
+            }
+
+            public Task<IReadOnlyList<ReviewType>> GetApplicableReviewTypesAsync(RepoFile file, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ReviewType>>([]);
+            }
+
+            public Task<bool> IsCurrentAsync(RepoFile file, ReviewType reviewType, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(false);
+            }
         }
 
         private sealed class FakeRepositoryService : IRepositoryService

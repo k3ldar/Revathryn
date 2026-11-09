@@ -81,10 +81,12 @@ namespace Revathryn.Website.Tests
 
         private static HomeController CreateControllerWithHttpContext()
         {
-            HomeController controller = new(CreateSettings());
-            controller.ControllerContext = new ControllerContext
+            HomeController controller = new(CreateSettings())
             {
-                HttpContext = new DefaultHttpContext()
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext()
+                }
             };
             return controller;
         }

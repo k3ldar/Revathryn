@@ -103,8 +103,8 @@ namespace Revathryn.Data
             return claimed;
         }
 
-        /// <summary>Marks the item completed.</summary>
-        public async Task CompleteAsync(long id, CancellationToken cancellationToken = default)
+        /// <summary>Marks the item completed when the caller still owns the current attempt.</summary>
+        public async Task<bool> CompleteAsync(long id, int attemptCount, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
@@ -114,16 +114,19 @@ namespace Revathryn.Data
                     NextAttemptUtc = NULL,
                     LeasedUntilUtc = NULL,
                     LastError = ''
-                WHERE Id = @Id;
+                WHERE Id = @Id AND Status = @Running AND AttemptCount = @AttemptCount;
                 """;
             command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@Running", (int)DuplicateDetectionStatus.Running);
+            command.Parameters.AddWithValue("@AttemptCount", attemptCount);
             command.Parameters.AddWithValue("@Completed", (int)DuplicateDetectionStatus.Completed);
 
-            _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            int rows = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            return rows == 1;
         }
 
-        /// <summary>Marks the item permanently failed.</summary>
-        public async Task FailAsync(long id, string errorMessage, CancellationToken cancellationToken = default)
+        /// <summary>Marks the item permanently failed when the caller still owns the current attempt.</summary>
+        public async Task<bool> FailAsync(long id, int attemptCount, string errorMessage, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
@@ -133,17 +136,20 @@ namespace Revathryn.Data
                     NextAttemptUtc = NULL,
                     LeasedUntilUtc = NULL,
                     LastError = @LastError
-                WHERE Id = @Id;
+                WHERE Id = @Id AND Status = @Running AND AttemptCount = @AttemptCount;
                 """;
             command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@Running", (int)DuplicateDetectionStatus.Running);
+            command.Parameters.AddWithValue("@AttemptCount", attemptCount);
             command.Parameters.AddWithValue("@Failed", (int)DuplicateDetectionStatus.Failed);
             command.Parameters.AddWithValue("@LastError", errorMessage ?? string.Empty);
 
-            _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            int rows = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            return rows == 1;
         }
 
-        /// <summary>Returns the item to the pending state for a later retry.</summary>
-        public async Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string errorMessage, CancellationToken cancellationToken = default)
+        /// <summary>Returns the item to the pending state when the caller still owns the current attempt.</summary>
+        public async Task<bool> ReleaseForRetryAsync(long id, int attemptCount, DateTime nextAttemptUtc, string errorMessage, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
@@ -153,14 +159,17 @@ namespace Revathryn.Data
                     NextAttemptUtc = @NextAttemptUtc,
                     LeasedUntilUtc = NULL,
                     LastError = @LastError
-                WHERE Id = @Id;
+                WHERE Id = @Id AND Status = @Running AND AttemptCount = @AttemptCount;
                 """;
             command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@Running", (int)DuplicateDetectionStatus.Running);
+            command.Parameters.AddWithValue("@AttemptCount", attemptCount);
             command.Parameters.AddWithValue("@Pending", (int)DuplicateDetectionStatus.Pending);
             command.Parameters.AddWithValue("@NextAttemptUtc", SqliteValueConverter.ToText(nextAttemptUtc));
             command.Parameters.AddWithValue("@LastError", errorMessage ?? string.Empty);
 
-            _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            int rows = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            return rows == 1;
         }
 
         private static DateTime? ReadNullableDate(SqliteDataReader reader, int ordinal)
