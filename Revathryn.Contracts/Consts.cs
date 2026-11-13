@@ -290,6 +290,13 @@
         public const string DefaultRouteName = "default";
         public const string DefaultRoutePattern = "{controller=Dashboard}/{action=Index}/{id?}";
 
+        // File details API.
+        public const string FileDetailsApiRoute = "api/files/details";
+        public const string FileDetailsRepositoryQueryKey = "repo";
+        public const string FileDetailsFileQueryKey = "file";
+        public const string ReviewStatusCompleted = "Completed";
+        public const string ReviewStatusOutstanding = "Outstanding";
+
         // Text separators and path markers used by issue validation.
         public const string ListSeparator = ", ";
         public const string SpaceSeparator = " ";

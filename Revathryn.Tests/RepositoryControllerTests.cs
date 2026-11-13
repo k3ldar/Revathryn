@@ -674,7 +674,7 @@ namespace Revathryn.Tests
 
             public Task<IReadOnlyList<RepositoryReview>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<RepositoryReview>>(Array.Empty<RepositoryReview>());
+                return Task.FromResult<IReadOnlyList<RepositoryReview>>([]);
             }
 
             public Task<long> AddAsync(RepositoryReview link, CancellationToken cancellationToken = default)
