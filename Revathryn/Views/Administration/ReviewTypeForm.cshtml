@@ -1,5 +1,3 @@
-@using Microsoft.AspNetCore.Mvc.Rendering
-@using Revathryn.Contracts.Models
 @using Revathryn.Resources
 @model Revathryn.Models.Administration.ReviewTypeEditViewModel
 @{
@@ -12,14 +10,6 @@
 
 <form asp-action="@formAction" method="post">
     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-
-    <div class="mb-3">
-        <label asp-for="RepositoryId" class="form-label">@Strings.RepositoryLabel</label>
-        <select asp-for="RepositoryId" asp-items="@(new SelectList(Model.Repositories, nameof(Repository.Id), nameof(Repository.Name)))" class="form-select">
-            <option value="">@Strings.SelectRepositoryPrompt</option>
-        </select>
-        <span asp-validation-for="RepositoryId" class="text-danger"></span>
-    </div>
 
     <div class="mb-3">
         <label asp-for="Name" class="form-label">@Strings.NameLabel</label>
@@ -50,11 +40,6 @@
         <label asp-for="DefaultPriority" class="form-label">@Strings.PriorityLabel</label>
         <input asp-for="DefaultPriority" class="form-control" type="number" />
         <span asp-validation-for="DefaultPriority" class="text-danger"></span>
-    </div>
-
-    <div class="form-check mb-3">
-        <input asp-for="Enabled" class="form-check-input" />
-        <label asp-for="Enabled" class="form-check-label">@Strings.EnabledLabel</label>
     </div>
 
     <input asp-for="Id" type="hidden" />

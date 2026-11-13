@@ -401,7 +401,7 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult<QueueItem>(null);
             }
 
-            public Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
+            public Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;
             }

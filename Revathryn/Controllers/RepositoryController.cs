@@ -17,6 +17,7 @@ namespace Revathryn.Controllers
         private readonly IRepositoryProcessor _repositoryProcessor;
         private readonly IRepositoryScanRepository _scanRepository;
         private readonly IReviewTypeRepository _reviewTypeRepository;
+        private readonly IRepositoryReviewRepository _repositoryReviewRepository;
         private readonly IAIEngineRepository _aiEngineRepository;
 
         /// <summary>Initialises a new repository controller.</summary>
@@ -25,12 +26,14 @@ namespace Revathryn.Controllers
             IRepositoryProcessor repositoryProcessor,
             IRepositoryScanRepository scanRepository,
             IReviewTypeRepository reviewTypeRepository,
+            IRepositoryReviewRepository repositoryReviewRepository,
             IAIEngineRepository aiEngineRepository)
         {
             _repositoryService = repositoryService;
             _repositoryProcessor = repositoryProcessor;
             _scanRepository = scanRepository;
             _reviewTypeRepository = reviewTypeRepository;
+            _repositoryReviewRepository = repositoryReviewRepository;
             _aiEngineRepository = aiEngineRepository;
         }
 
@@ -163,7 +166,7 @@ namespace Revathryn.Controllers
             }
 
             IReadOnlyList<RepositoryScanRecord> scans = await _scanRepository.GetByRepositoryAsync(id, cancellationToken);
-            IReadOnlyList<ReviewType> reviewTypes = await _reviewTypeRepository.GetByRepositoryAsync(id, cancellationToken);
+            IReadOnlyList<RepositoryReviewType> reviewTypes = await _reviewTypeRepository.GetRepositoryReviewTypesAsync(id, cancellationToken);
 
             RepositoryManagementDetailsViewModel model = new()
             {
@@ -248,15 +251,12 @@ namespace Revathryn.Controllers
         {
             ReviewType reviewType = await _reviewTypeRepository.GetByIdAsync(reviewTypeId, cancellationToken);
 
-            if (reviewType is null || reviewType.RepositoryId != id)
+            if (reviewType is null)
             {
                 return NotFound();
             }
 
-            reviewType.Enabled = enabled;
-            reviewType.LastModifiedDate = DateTime.UtcNow;
-
-            await _reviewTypeRepository.UpdateAsync(reviewType, cancellationToken);
+            await _repositoryReviewRepository.SetEnabledAsync(id, reviewTypeId, enabled, cancellationToken);
 
             TempData[Consts.SuccessMessageTempDataKey] = enabled ? Strings.ReviewTypeEnabledMessage : Strings.ReviewTypeDisabledMessage;
             return RedirectToAction(nameof(Details), new { id });

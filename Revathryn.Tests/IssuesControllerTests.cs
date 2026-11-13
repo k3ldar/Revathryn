@@ -206,7 +206,7 @@ namespace Revathryn.Tests
         {
             Repository repository = new() { Id = 1, Name = "Repo", LocalPath = @"C:\src\repo" };
             RepoFile file = new() { Id = 10, RepositoryId = 1, RelativePath = "src/Service.cs" };
-            ReviewType reviewType = new() { Id = 100, RepositoryId = 1, Name = "C# Review" };
+            ReviewType reviewType = new() { Id = 100, Name = "C# Review" };
             AIReviewContext context = new() { Id = 5, ReviewInstructions = "instructions", FileContent = "content" };
             Finding finding = new()
             {
@@ -342,8 +342,8 @@ namespace Revathryn.Tests
             FakeReviewTypeRepository reviewTypes = new();
             reviewTypes.ReviewTypes.AddRange(
             [
-                new ReviewType { Id = 10, RepositoryId = 1, Name = "TypeA" },
-                new ReviewType { Id = 11, RepositoryId = 1, Name = "TypeB" }
+                new ReviewType { Id = 10, Name = "TypeA" },
+                new ReviewType { Id = 11, Name = "TypeB" }
             ]);
 
             FakeIssueValidationService validations = new();
@@ -492,7 +492,7 @@ namespace Revathryn.Tests
         public async Task ResubmitForReview_QueuesFileAndRedirectsToDetails()
         {
             RepoFile file = new() { Id = 10, RepositoryId = 1, RelativePath = "src/Service.cs" };
-            ReviewType reviewType = new() { Id = 100, RepositoryId = 1, Name = "C# Review" };
+            ReviewType reviewType = new() { Id = 100, Name = "C# Review" };
             Finding finding = new() { Id = 42, RepositoryId = 1, RepoFileId = 10, ReviewTypeId = 100 };
 
             FakeRepositoryFileService files = new();
@@ -533,7 +533,7 @@ namespace Revathryn.Tests
         public async Task ResubmitForReview_ReportsAlreadyQueuedWhenDuplicate()
         {
             RepoFile file = new() { Id = 10, RepositoryId = 1, RelativePath = "src/Service.cs" };
-            ReviewType reviewType = new() { Id = 100, RepositoryId = 1, Name = "C# Review" };
+            ReviewType reviewType = new() { Id = 100, Name = "C# Review" };
             Finding finding = new() { Id = 42, RepositoryId = 1, RepoFileId = 10, ReviewTypeId = 100 };
 
             FakeRepositoryFileService files = new();
@@ -570,7 +570,7 @@ namespace Revathryn.Tests
         public async Task ResubmitForReview_ReportsErrorWhenNothingQueued()
         {
             RepoFile file = new() { Id = 10, RepositoryId = 1, RelativePath = "src/Service.cs" };
-            ReviewType reviewType = new() { Id = 100, RepositoryId = 1, Name = "C# Review" };
+            ReviewType reviewType = new() { Id = 100, Name = "C# Review" };
             Finding finding = new() { Id = 42, RepositoryId = 1, RepoFileId = 10, ReviewTypeId = 100 };
 
             FakeRepositoryFileService files = new();
@@ -850,15 +850,25 @@ namespace Revathryn.Tests
                 return Task.FromResult(match);
             }
 
+            public Task<IReadOnlyList<ReviewType>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
+            }
+
             public Task<IReadOnlyList<ReviewType>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                IReadOnlyList<ReviewType> result = [.. ReviewTypes.Where(reviewType => reviewType.RepositoryId == repositoryId)];
-                return Task.FromResult(result);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
             }
 
             public Task<IReadOnlyList<ReviewType>> GetEnabledByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                throw new NotSupportedException();
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
+            }
+
+            public Task<IReadOnlyList<RepositoryReviewType>> GetRepositoryReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                IReadOnlyList<RepositoryReviewType> result = [.. ReviewTypes.Select(reviewType => new RepositoryReviewType { ReviewType = reviewType, Enabled = true })];
+                return Task.FromResult(result);
             }
 
             public Task<long> AddAsync(ReviewType reviewType, CancellationToken cancellationToken = default)

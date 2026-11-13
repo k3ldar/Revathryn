@@ -9,7 +9,9 @@ namespace Revathryn.Data
     /// <summary>SQLite implementation of <see cref="IQueueRepository"/>.</summary>
     public sealed class QueueRepository : SqliteRepositoryBase, IQueueRepository
     {
-        private const string SelectColumns = "Id, RepositoryId, RepoFileId, ReviewTypeId, Priority, CreatedDate, AttemptCount, MaxAttempts, NextAttemptUtc, LastError, LeasedUntilUtc, Status";
+        private const string SelectColumns = "q.Id, q.RepositoryId, q.RepoFileId, q.ReviewTypeId, q.CreatedDate, q.AttemptCount, q.MaxAttempts, q.NextAttemptUtc, q.LastError, q.LeasedUntilUtc, q.Status, q.Branch";
+
+        private const string ReturningColumns = "Id, RepositoryId, RepoFileId, ReviewTypeId, CreatedDate, AttemptCount, MaxAttempts, NextAttemptUtc, LastError, LeasedUntilUtc, Status, Branch";
 
         /// <summary>Initialises a new repository.</summary>
         public QueueRepository(SqliteConnectionFactory connectionFactory)
@@ -23,8 +25,8 @@ namespace Revathryn.Data
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT OR IGNORE INTO Queue (RepositoryId, RepoFileId, ReviewTypeId, Priority, CreatedDate, AttemptCount, MaxAttempts, NextAttemptUtc, LastError, LeasedUntilUtc, Status)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Priority, @CreatedDate, @AttemptCount, @MaxAttempts, @NextAttemptUtc, @LastError, @LeasedUntilUtc, @Status);
+                INSERT OR IGNORE INTO Queue (RepositoryId, RepoFileId, ReviewTypeId, CreatedDate, AttemptCount, MaxAttempts, NextAttemptUtc, LastError, LeasedUntilUtc, Status, Branch)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @CreatedDate, @AttemptCount, @MaxAttempts, @NextAttemptUtc, @LastError, @LeasedUntilUtc, @Status, @Branch);
                 """;
             AddParameters(command, item);
 
@@ -34,6 +36,7 @@ namespace Revathryn.Data
 
         /// <summary>
         /// Reclaims stale leases and claims the highest priority eligible pending item.
+        /// Priority is resolved live from the linked review type definition.
         /// The returned item is leased until <paramref name="leasedUntilUtc"/> and has its attempt count incremented.
         /// </summary>
         public async Task<QueueItem> ClaimNextAsync(DateTime leasedUntilUtc, CancellationToken cancellationToken = default)
@@ -67,12 +70,14 @@ namespace Revathryn.Data
                         LeasedUntilUtc = @LeasedUntilUtc,
                         AttemptCount = AttemptCount + 1
                     WHERE Id = (
-                        SELECT Id FROM Queue
-                        WHERE Status = @Pending AND (NextAttemptUtc IS NULL OR NextAttemptUtc <= @Now)
-                        ORDER BY Priority DESC, CreatedDate ASC
+                        SELECT q.Id
+                        FROM Queue q
+                        INNER JOIN ReviewTypes rt ON rt.Id = q.ReviewTypeId
+                        WHERE q.Status = @Pending AND (q.NextAttemptUtc IS NULL OR q.NextAttemptUtc <= @Now)
+                        ORDER BY rt.DefaultPriority DESC, q.CreatedDate ASC
                         LIMIT 1
                     )
-                    RETURNING {SelectColumns};
+                    RETURNING {ReturningColumns};
                     """;
                 claim.Parameters.AddWithValue("@InFlight", (int)QueueItemStatus.InFlight);
                 claim.Parameters.AddWithValue("@LeasedUntilUtc", lease);
@@ -95,21 +100,19 @@ namespace Revathryn.Data
         }
 
         /// <summary>Returns the claimed item to the pending state for a later retry.</summary>
-        public async Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
+        public async Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
                 UPDATE Queue
                 SET Status = @Pending,
-                    Priority = @Priority,
                     NextAttemptUtc = @NextAttemptUtc,
                     LastError = @LastError,
                     LeasedUntilUtc = NULL
                 WHERE Id = @Id;
                 """;
             command.Parameters.AddWithValue("@Pending", (int)QueueItemStatus.Pending);
-            command.Parameters.AddWithValue("@Priority", priority);
             command.Parameters.AddWithValue("@NextAttemptUtc", SqliteValueConverter.ToText(nextAttemptUtc));
             command.Parameters.AddWithValue("@LastError", lastError ?? string.Empty);
             command.Parameters.AddWithValue("@Id", id);
@@ -128,12 +131,18 @@ namespace Revathryn.Data
             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>Returns pending items ordered by priority descending, then creation ascending.</summary>
+        /// <summary>Returns pending items ordered by live review type priority descending, then creation ascending.</summary>
         public async Task<IReadOnlyList<QueueItem>> GetPendingAsync(CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"SELECT {SelectColumns} FROM Queue WHERE Status = @Pending ORDER BY Priority DESC, CreatedDate ASC;";
+            command.CommandText = $"""
+                SELECT {SelectColumns}
+                FROM Queue q
+                INNER JOIN ReviewTypes rt ON rt.Id = q.ReviewTypeId
+                WHERE q.Status = @Pending
+                ORDER BY rt.DefaultPriority DESC, q.CreatedDate ASC;
+                """;
             command.Parameters.AddWithValue("@Pending", (int)QueueItemStatus.Pending);
 
             List<QueueItem> results = [];
@@ -151,7 +160,13 @@ namespace Revathryn.Data
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"SELECT {SelectColumns} FROM Queue WHERE Status = @Pending AND RepositoryId = @RepositoryId ORDER BY Priority DESC, CreatedDate ASC;";
+            command.CommandText = $"""
+                SELECT {SelectColumns}
+                FROM Queue q
+                INNER JOIN ReviewTypes rt ON rt.Id = q.ReviewTypeId
+                WHERE q.Status = @Pending AND q.RepositoryId = @RepositoryId
+                ORDER BY rt.DefaultPriority DESC, q.CreatedDate ASC;
+                """;
             command.Parameters.AddWithValue("@Pending", (int)QueueItemStatus.Pending);
             command.Parameters.AddWithValue("@RepositoryId", repositoryId);
 
@@ -234,7 +249,6 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@RepositoryId", item.RepositoryId);
             command.Parameters.AddWithValue("@RepoFileId", item.RepoFileId);
             command.Parameters.AddWithValue("@ReviewTypeId", item.ReviewTypeId);
-            command.Parameters.AddWithValue("@Priority", item.Priority);
             command.Parameters.AddWithValue("@CreatedDate", SqliteValueConverter.ToText(item.CreatedDate));
             command.Parameters.AddWithValue("@AttemptCount", item.AttemptCount);
             command.Parameters.AddWithValue("@MaxAttempts", item.MaxAttempts);
@@ -242,6 +256,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@LastError", item.LastError ?? string.Empty);
             command.Parameters.AddWithValue("@LeasedUntilUtc", SqliteValueConverter.ToParameter(item.LeasedUntilUtc));
             command.Parameters.AddWithValue("@Status", (int)item.Status);
+            command.Parameters.AddWithValue("@Branch", item.Branch ?? string.Empty);
         }
 
         private static QueueItem MapQueueItem(SqliteDataReader reader)
@@ -252,14 +267,14 @@ namespace Revathryn.Data
                 RepositoryId = reader.GetInt64(1),
                 RepoFileId = reader.GetInt64(2),
                 ReviewTypeId = reader.GetInt64(3),
-                Priority = reader.GetInt32(4),
-                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(5)),
-                AttemptCount = reader.GetInt32(6),
-                MaxAttempts = reader.GetInt32(7),
-                NextAttemptUtc = reader.IsDBNull(8) ? (DateTime?)null : SqliteValueConverter.ToDateTime(reader.GetString(8)),
-                LastError = reader.IsDBNull(9) ? string.Empty : reader.GetString(9),
-                LeasedUntilUtc = reader.IsDBNull(10) ? (DateTime?)null : SqliteValueConverter.ToDateTime(reader.GetString(10)),
-                Status = (QueueItemStatus)reader.GetInt32(11)
+                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(4)),
+                AttemptCount = reader.GetInt32(5),
+                MaxAttempts = reader.GetInt32(6),
+                NextAttemptUtc = reader.IsDBNull(7) ? (DateTime?)null : SqliteValueConverter.ToDateTime(reader.GetString(7)),
+                LastError = reader.IsDBNull(8) ? string.Empty : reader.GetString(8),
+                LeasedUntilUtc = reader.IsDBNull(9) ? (DateTime?)null : SqliteValueConverter.ToDateTime(reader.GetString(9)),
+                Status = (QueueItemStatus)reader.GetInt32(10),
+                Branch = reader.IsDBNull(11) ? string.Empty : reader.GetString(11)
             };
         }
     }

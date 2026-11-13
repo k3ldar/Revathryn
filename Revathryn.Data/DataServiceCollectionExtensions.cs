@@ -36,6 +36,7 @@ namespace Revathryn.Data
             services.AddTransient<IProjectRepository, ProjectRepository>();
             services.AddTransient<IRepositoryScanRepository, RepositoryScanRepository>();
             services.AddTransient<IReviewTypeRepository, ReviewTypeRepository>();
+            services.AddTransient<IRepositoryReviewRepository, RepositoryReviewRepository>();
             services.AddTransient<IReviewLinkRepository, ReviewLinkRepository>();
             services.AddTransient<IRepoFileAnalysisRepository, RepoFileAnalysisRepository>();
             services.AddTransient<IFindingRepository, FindingRepository>();

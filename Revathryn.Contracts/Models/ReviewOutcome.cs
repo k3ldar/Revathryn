@@ -6,6 +6,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Owning repository.</summary>
         public long RepositoryId { get; set; }
 
+        /// <summary>Git branch the review completed against. Empty for legacy or detached HEAD reviews.</summary>
+        public string Branch { get; set; } = string.Empty;
+
         /// <summary>The reviewed file.</summary>
         public long RepoFileId { get; set; }
 

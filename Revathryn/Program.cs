@@ -95,14 +95,16 @@ namespace Revathryn
                 ISeverityRuleProvider severityRuleProvider = app.Services.GetRequiredService<ISeverityRuleProvider>();
                 severityRuleProvider.Refresh(await severityRuleRepository.GetAllAsync());
 
-                // Seed built-in review definitions for any repository that is missing them.
+                // Seed built-in review definitions once globally, then link them to each repository.
                 IReviewTypeSeeder reviewTypeSeeder = app.Services.GetRequiredService<IReviewTypeSeeder>();
                 IRepositoryService repositoryService = app.Services.GetRequiredService<IRepositoryService>();
                 IReadOnlyList<Repository> repositories = await repositoryService.GetAllAsync();
 
+                await reviewTypeSeeder.SeedAsync();
+
                 foreach (Repository repository in repositories)
                 {
-                    await reviewTypeSeeder.SeedAsync(repository.Id);
+                    await reviewTypeSeeder.LinkAllReviewTypesAsync(repository.Id);
                 }
 
                 // Seed immutable prompt versions from the now-configured master and review prompts.

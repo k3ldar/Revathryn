@@ -9,7 +9,7 @@ namespace Revathryn.Data
     public sealed class ReviewUsageRepository : SqliteRepositoryBase, IReviewUsageRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, RepoFileId, ReviewTypeId, EngineId, EngineName, EngineModel, AttemptCount, PromptTokens, CompletionTokens, TotalTokens, CachedTokens, OccurredUtc";
+            "Id, RepositoryId, RepoFileId, ReviewTypeId, EngineId, EngineName, EngineModel, AttemptCount, PromptTokens, CompletionTokens, TotalTokens, CachedTokens, OccurredUtc, Branch";
 
         /// <summary>Initialises a new repository.</summary>
         public ReviewUsageRepository(SqliteConnectionFactory connectionFactory)
@@ -34,8 +34,8 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT INTO ReviewUsage (RepositoryId, RepoFileId, ReviewTypeId, EngineId, EngineName, EngineModel, AttemptCount, PromptTokens, CompletionTokens, TotalTokens, CachedTokens, OccurredUtc)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @EngineId, @EngineName, @EngineModel, @AttemptCount, @PromptTokens, @CompletionTokens, @TotalTokens, @CachedTokens, @OccurredUtc);
+                INSERT INTO ReviewUsage (RepositoryId, RepoFileId, ReviewTypeId, EngineId, EngineName, EngineModel, AttemptCount, PromptTokens, CompletionTokens, TotalTokens, CachedTokens, OccurredUtc, Branch)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @EngineId, @EngineName, @EngineModel, @AttemptCount, @PromptTokens, @CompletionTokens, @TotalTokens, @CachedTokens, @OccurredUtc, @Branch);
                 SELECT last_insert_rowid();
                 """;
             AddParameters(command, usage);
@@ -124,6 +124,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@TotalTokens", usage.TotalTokens);
             command.Parameters.AddWithValue("@CachedTokens", usage.CachedTokens);
             command.Parameters.AddWithValue("@OccurredUtc", SqliteValueConverter.ToText(usage.OccurredUtc));
+            command.Parameters.AddWithValue("@Branch", usage.Branch ?? string.Empty);
         }
 
         private static ReviewUsage MapReviewUsage(SqliteDataReader reader)
@@ -142,7 +143,8 @@ namespace Revathryn.Data
                 CompletionTokens = reader.GetInt32(9),
                 TotalTokens = reader.GetInt32(10),
                 CachedTokens = reader.GetInt32(11),
-                OccurredUtc = SqliteValueConverter.ToDateTime(reader.GetString(12))
+                OccurredUtc = SqliteValueConverter.ToDateTime(reader.GetString(12)),
+                Branch = reader.IsDBNull(13) ? string.Empty : reader.GetString(13)
             };
         }
 

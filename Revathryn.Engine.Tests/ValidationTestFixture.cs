@@ -85,11 +85,9 @@ namespace Revathryn.Engine.Tests
             ReviewTypeId = await ReviewTypes.AddAsync(
                 new ReviewType
                 {
-                    RepositoryId = RepositoryId,
                     Name = "C# Review",
                     FileExtensions = "cs",
                     DefaultPriority = 10,
-                    Enabled = true,
                     CreatedDate = now,
                     LastModifiedDate = now
                 },

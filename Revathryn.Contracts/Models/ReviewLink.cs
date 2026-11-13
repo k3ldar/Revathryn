@@ -14,8 +14,5 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Whether the review type applies to the file.</summary>
         public bool Enabled { get; set; }
-
-        /// <summary>Optional per-file priority override; null uses the review type default.</summary>
-        public int? PriorityOverride { get; set; }
     }
 }

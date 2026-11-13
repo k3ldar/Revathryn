@@ -19,6 +19,7 @@ namespace Revathryn.Controllers
         private readonly IReviewUsageRepository _reviewUsageRepository;
         private readonly IReviewEngineConfigurationService _reviewEngineConfiguration;
         private readonly IReviewTypeRepository _reviewTypeRepository;
+        private readonly IRepositoryReviewRepository _repositoryReviewRepository;
         private readonly IRepositoryService _repositoryService;
         private readonly IIssueSettingsProvider _issueSettingsProvider;
         private readonly ISeverityRuleRepository _severityRuleRepository;
@@ -32,6 +33,7 @@ namespace Revathryn.Controllers
             IReviewUsageRepository reviewUsageRepository,
             IReviewEngineConfigurationService reviewEngineConfiguration,
             IReviewTypeRepository reviewTypeRepository,
+            IRepositoryReviewRepository repositoryReviewRepository,
             IRepositoryService repositoryService,
             IIssueSettingsProvider issueSettingsProvider,
             ISeverityRuleRepository severityRuleRepository,
@@ -43,6 +45,7 @@ namespace Revathryn.Controllers
             _reviewUsageRepository = reviewUsageRepository;
             _reviewEngineConfiguration = reviewEngineConfiguration;
             _reviewTypeRepository = reviewTypeRepository;
+            _repositoryReviewRepository = repositoryReviewRepository;
             _repositoryService = repositoryService;
             _issueSettingsProvider = issueSettingsProvider;
             _severityRuleRepository = severityRuleRepository;
@@ -364,32 +367,15 @@ namespace Revathryn.Controllers
             return View(failure);
         }
 
-        /// <summary>Lists review types, optionally filtered to a single repository.</summary>
+        /// <summary>Lists global review types.</summary>
         [HttpGet]
-        public async Task<IActionResult> ReviewTypes(long? repositoryId, CancellationToken cancellationToken)
+        public async Task<IActionResult> ReviewTypes(CancellationToken cancellationToken)
         {
-            IReadOnlyList<Repository> repositories = await _repositoryService.GetAllAsync(cancellationToken);
-
-            List<ReviewTypeListItemViewModel> items = [];
-            foreach (Repository repository in repositories)
-            {
-                if (repositoryId.HasValue && repositoryId.Value > 0 && repository.Id != repositoryId.Value)
-                {
-                    continue;
-                }
-
-                IReadOnlyList<ReviewType> reviewTypes = await _reviewTypeRepository.GetByRepositoryAsync(repository.Id, cancellationToken);
-                foreach (ReviewType reviewType in reviewTypes)
-                {
-                    items.Add(new ReviewTypeListItemViewModel { ReviewType = reviewType, RepositoryName = repository.Name });
-                }
-            }
+            IReadOnlyList<ReviewType> reviewTypes = await _reviewTypeRepository.GetAllAsync(cancellationToken);
 
             ReviewTypeListViewModel model = new()
             {
-                Items = [.. items.OrderBy(item => item.RepositoryName).ThenBy(item => item.ReviewType.Name)],
-                Repositories = repositories,
-                SelectedRepositoryId = repositoryId
+                Items = [.. reviewTypes.OrderBy(t => t.Name).Select(t => new ReviewTypeListItemViewModel { ReviewType = t })]
             };
 
             ViewData[Consts.BreadcrumbsViewDataKey] = BuildAdministrationBreadcrumbs(Strings.ReviewTypesLabel);
@@ -397,27 +383,17 @@ namespace Revathryn.Controllers
             return View(model);
         }
 
-        /// <summary>Renders the form for adding a review type.</summary>
+        /// <summary>Renders the form for adding a global review type.</summary>
         [HttpGet]
-        public async Task<IActionResult> CreateReviewType(long? repositoryId, CancellationToken cancellationToken)
+        public IActionResult CreateReviewType()
         {
-            IReadOnlyList<Repository> repositories = await _repositoryService.GetAllAsync(cancellationToken);
-
-            ReviewTypeEditViewModel model = new()
-            {
-                Repositories = repositories
-            };
-
-            if (repositoryId.HasValue && repositoryId.Value > 0)
-            {
-                model.RepositoryId = repositoryId.Value;
-            }
+            ReviewTypeEditViewModel model = new();
 
             ViewData[Consts.BreadcrumbsViewDataKey] = BuildReviewTypeEditorBreadcrumbs(Strings.AddReviewTypeTitle);
             return View(Consts.ReviewTypeFormViewName, model);
         }
 
-        /// <summary>Adds a new review type.</summary>
+        /// <summary>Adds a new global review type and links it to every repository.</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateReviewType(ReviewTypeEditViewModel form, CancellationToken cancellationToken)
@@ -435,7 +411,9 @@ namespace Revathryn.Controllers
                 reviewType.LastModifiedDate = DateTime.UtcNow;
                 reviewType.ReviewDefinitionVersion = ReviewDefinitionVersionCalculator.Compute(reviewType);
 
-                await _reviewTypeRepository.AddAsync(reviewType, cancellationToken);
+                long id = await _reviewTypeRepository.AddAsync(reviewType, cancellationToken);
+                await _repositoryReviewRepository.LinkToAllRepositoriesAsync(id, cancellationToken);
+
                 TempData[Consts.SuccessMessageTempDataKey] = Strings.ReviewTypeSavedMessage;
                 return RedirectToAction(nameof(ReviewTypes));
             }
@@ -446,7 +424,7 @@ namespace Revathryn.Controllers
             }
         }
 
-        /// <summary>Renders the form for editing an existing review type.</summary>
+        /// <summary>Renders the form for editing an existing global review type.</summary>
         [HttpGet]
         public async Task<IActionResult> EditReviewType(long id, CancellationToken cancellationToken)
         {
@@ -457,9 +435,7 @@ namespace Revathryn.Controllers
                 return NotFound();
             }
 
-            IReadOnlyList<Repository> repositories = await _repositoryService.GetAllAsync(cancellationToken);
             ReviewTypeEditViewModel model = ReviewTypeEditViewModel.FromReviewType(reviewType);
-            model.Repositories = repositories;
 
             ViewData[Consts.BreadcrumbsViewDataKey] = BuildReviewTypeEditorBreadcrumbs(Strings.EditReviewTypeTitle);
             return View(Consts.ReviewTypeFormViewName, model);
@@ -719,14 +695,12 @@ namespace Revathryn.Controllers
 
         private async Task<IActionResult> RenderCreateReviewTypeFormAsync(ReviewTypeEditViewModel form, CancellationToken cancellationToken)
         {
-            form.Repositories = await _repositoryService.GetAllAsync(cancellationToken);
             ViewData[Consts.BreadcrumbsViewDataKey] = BuildReviewTypeEditorBreadcrumbs(Strings.AddReviewTypeTitle);
             return View(Consts.ReviewTypeFormViewName, form);
         }
 
         private async Task<IActionResult> RenderEditReviewTypeFormAsync(ReviewTypeEditViewModel form, CancellationToken cancellationToken)
         {
-            form.Repositories = await _repositoryService.GetAllAsync(cancellationToken);
             ViewData[Consts.BreadcrumbsViewDataKey] = BuildReviewTypeEditorBreadcrumbs(Strings.EditReviewTypeTitle);
             return View(Consts.ReviewTypeFormViewName, form);
         }

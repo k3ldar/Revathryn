@@ -11,8 +11,8 @@ namespace Revathryn.Models.Repositories
         /// <summary>Scan records for the repository, most recent first.</summary>
         public IReadOnlyList<RepositoryScanRecord> Scans { get; set; } = [];
 
-        /// <summary>Review definitions belonging to the repository.</summary>
-        public IReadOnlyList<ReviewType> ReviewTypes { get; set; } = [];
+        /// <summary>Review types linked to the repository with their enabled state.</summary>
+        public IReadOnlyList<RepositoryReviewType> ReviewTypes { get; set; } = [];
 
         /// <summary>Whether the configured local path can no longer be reached.</summary>
         public bool PathMissing { get; set; }

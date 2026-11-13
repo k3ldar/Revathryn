@@ -37,7 +37,7 @@ namespace Revathryn.Engine
             long id = await _repositoryRepository.AddAsync(repository, cancellationToken).ConfigureAwait(false);
             repository.Id = id;
 
-            await _reviewTypeSeeder.SeedAsync(id, cancellationToken).ConfigureAwait(false);
+            await _reviewTypeSeeder.LinkAllReviewTypesAsync(id, cancellationToken).ConfigureAwait(false);
 
             TriggerInitialReview(repository);
 

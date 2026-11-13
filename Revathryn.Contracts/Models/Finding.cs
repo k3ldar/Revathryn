@@ -41,6 +41,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Optional suggested fix.</summary>
         public string SuggestedFix { get; set; } = string.Empty;
 
+        /// <summary>Model identifier used by the engine that performed the review producing this finding.</summary>
+        public string EngineModel { get; set; } = string.Empty;
+
         /// <summary>Lifecycle status of the finding.</summary>
         public FindingStatus Status { get; set; }
 
@@ -70,5 +73,8 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>SHA256 of the reviewed file content the finding was resolved against.</summary>
         public string ResolvedReviewSha256 { get; set; } = string.Empty;
+
+        /// <summary>Git branch the finding was produced against. Empty for legacy or detached HEAD records.</summary>
+        public string Branch { get; set; } = string.Empty;
     }
 }

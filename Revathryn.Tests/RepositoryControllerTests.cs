@@ -285,7 +285,7 @@ namespace Revathryn.Tests
             scanRepository.Records.Add(older);
 
             FakeReviewTypeRepository reviewTypeRepository = new();
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 4, Name = "Review" });
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 1, Name = "Review" });
 
             RepositoryController controller = CreateController(repositoryService, new FakeRepositoryProcessor(), scanRepository, reviewTypeRepository, out _);
 
@@ -307,9 +307,11 @@ namespace Revathryn.Tests
         public async Task ToggleReviewType_EnablesReviewTypeAndRedirects()
         {
             FakeReviewTypeRepository reviewTypeRepository = new();
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 7, RepositoryId = 4, Enabled = false });
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 7, Name = "Review" });
 
-            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), reviewTypeRepository, out _);
+            FakeRepositoryReviewRepository repositoryReviewRepository = new();
+
+            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), reviewTypeRepository, out _, repositoryReviewRepository: repositoryReviewRepository);
 
             IActionResult result = await controller.ToggleReviewType(4, 7, true, TestContext.CancellationToken);
 
@@ -317,7 +319,10 @@ namespace Revathryn.Tests
             Assert.IsNotNull(redirect);
             Assert.AreEqual(nameof(RepositoryController.Details), redirect.ActionName);
             Assert.AreEqual(4L, redirect.RouteValues["id"]);
-            Assert.IsTrue(reviewTypeRepository.ReviewTypes[0].Enabled);
+            Assert.AreEqual(1, repositoryReviewRepository.SetEnabledCallCount);
+            Assert.AreEqual(4, repositoryReviewRepository.LastRepositoryId);
+            Assert.AreEqual(7, repositoryReviewRepository.LastReviewTypeId);
+            Assert.IsTrue(repositoryReviewRepository.LastEnabled);
             Assert.AreEqual(Revathryn.Resources.Strings.ReviewTypeEnabledMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
         }
 
@@ -325,9 +330,11 @@ namespace Revathryn.Tests
         public async Task ToggleReviewType_DisablesReviewTypeAndRedirects()
         {
             FakeReviewTypeRepository reviewTypeRepository = new();
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 8, RepositoryId = 4, Enabled = true });
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 8, Name = "Review" });
 
-            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), reviewTypeRepository, out _);
+            FakeRepositoryReviewRepository repositoryReviewRepository = new();
+
+            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), reviewTypeRepository, out _, repositoryReviewRepository: repositoryReviewRepository);
 
             IActionResult result = await controller.ToggleReviewType(4, 8, false, TestContext.CancellationToken);
 
@@ -335,7 +342,10 @@ namespace Revathryn.Tests
             Assert.IsNotNull(redirect);
             Assert.AreEqual(nameof(RepositoryController.Details), redirect.ActionName);
             Assert.AreEqual(4L, redirect.RouteValues["id"]);
-            Assert.IsFalse(reviewTypeRepository.ReviewTypes[0].Enabled);
+            Assert.AreEqual(1, repositoryReviewRepository.SetEnabledCallCount);
+            Assert.AreEqual(4, repositoryReviewRepository.LastRepositoryId);
+            Assert.AreEqual(8, repositoryReviewRepository.LastReviewTypeId);
+            Assert.IsFalse(repositoryReviewRepository.LastEnabled);
             Assert.AreEqual(Revathryn.Resources.Strings.ReviewTypeDisabledMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
         }
 
@@ -345,19 +355,6 @@ namespace Revathryn.Tests
             RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), new FakeReviewTypeRepository(), out _);
 
             IActionResult result = await controller.ToggleReviewType(4, 999, true, TestContext.CancellationToken);
-
-            Assert.IsInstanceOfType<NotFoundResult>(result);
-        }
-
-        [TestMethod]
-        public async Task ToggleReviewType_NotFoundWhenReviewTypeBelongsToAnotherRepository()
-        {
-            FakeReviewTypeRepository reviewTypeRepository = new();
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 9, RepositoryId = 5, Enabled = true });
-
-            RepositoryController controller = CreateController(new FakeRepositoryService(), new FakeRepositoryProcessor(), new FakeRepositoryScanRepository(), reviewTypeRepository, out _);
-
-            IActionResult result = await controller.ToggleReviewType(4, 9, false, TestContext.CancellationToken);
 
             Assert.IsInstanceOfType<NotFoundResult>(result);
         }
@@ -472,11 +469,18 @@ namespace Revathryn.Tests
             FakeRepositoryScanRepository scanRepository,
             FakeReviewTypeRepository reviewTypeRepository,
             out DefaultHttpContext httpContext,
-            FakeAIEngineRepository aiEngineRepository = null)
+            FakeAIEngineRepository aiEngineRepository = null,
+            FakeRepositoryReviewRepository repositoryReviewRepository = null)
         {
             ControllerContext context = ControllerTestSupport.CreateControllerContext(out httpContext);
 
-            return new RepositoryController(repositoryService, processor, scanRepository, reviewTypeRepository, aiEngineRepository ?? new FakeAIEngineRepository())
+            return new RepositoryController(
+                repositoryService,
+                processor,
+                scanRepository,
+                reviewTypeRepository,
+                repositoryReviewRepository ?? new FakeRepositoryReviewRepository(),
+                aiEngineRepository ?? new FakeAIEngineRepository())
             {
                 ControllerContext = context,
                 Url = new FakeUrlHelper(context),
@@ -608,15 +612,24 @@ namespace Revathryn.Tests
                 return Task.FromResult(match);
             }
 
+            public Task<IReadOnlyList<ReviewType>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
+            }
+
             public Task<IReadOnlyList<ReviewType>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                IReadOnlyList<ReviewType> result = [.. ReviewTypes.Where(reviewType => reviewType.RepositoryId == repositoryId)];
-                return Task.FromResult(result);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
             }
 
             public Task<IReadOnlyList<ReviewType>> GetEnabledByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                IReadOnlyList<ReviewType> result = [.. ReviewTypes.Where(reviewType => reviewType.RepositoryId == repositoryId && reviewType.Enabled)];
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
+            }
+
+            public Task<IReadOnlyList<RepositoryReviewType>> GetRepositoryReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                IReadOnlyList<RepositoryReviewType> result = [.. ReviewTypes.Select(reviewType => new RepositoryReviewType { ReviewType = reviewType, Enabled = true })];
                 return Task.FromResult(result);
             }
 
@@ -641,6 +654,51 @@ namespace Revathryn.Tests
             public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeRepositoryReviewRepository : IRepositoryReviewRepository
+        {
+            public long LastRepositoryId { get; private set; }
+
+            public long LastReviewTypeId { get; private set; }
+
+            public bool LastEnabled { get; private set; }
+
+            public int SetEnabledCallCount { get; private set; }
+
+            public Task<RepositoryReview> GetAsync(long repositoryId, long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<RepositoryReview>(null);
+            }
+
+            public Task<IReadOnlyList<RepositoryReview>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryReview>>(Array.Empty<RepositoryReview>());
+            }
+
+            public Task<long> AddAsync(RepositoryReview link, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(link.Id);
+            }
+
+            public Task SetEnabledAsync(long repositoryId, long reviewTypeId, bool enabled, CancellationToken cancellationToken = default)
+            {
+                LastRepositoryId = repositoryId;
+                LastReviewTypeId = reviewTypeId;
+                LastEnabled = enabled;
+                SetEnabledCallCount++;
+                return Task.CompletedTask;
+            }
+
+            public Task<int> LinkAllReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(0);
+            }
+
+            public Task<int> LinkToAllRepositoriesAsync(long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(0);
             }
         }
 

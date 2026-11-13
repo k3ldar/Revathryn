@@ -62,5 +62,8 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>UTC timestamp when the review was completed.</summary>
         public DateTime CreatedUtc { get; set; }
+
+        /// <summary>Git branch the review was completed against. Empty for legacy or detached HEAD records.</summary>
+        public string Branch { get; set; } = string.Empty;
     }
 }

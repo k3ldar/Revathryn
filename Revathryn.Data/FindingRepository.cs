@@ -10,7 +10,7 @@ namespace Revathryn.Data
     public sealed class FindingRepository : SqliteRepositoryBase, IFindingRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore, FindingKey, LineStart, LineEnd, ResolutionOrigin, ResolvedUtc, ResolvedReviewSha256";
+            "Id, RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore, FindingKey, LineStart, LineEnd, ResolutionOrigin, ResolvedUtc, ResolvedReviewSha256, EngineModel, Branch";
 
         /// <summary>Initialises a new repository.</summary>
         public FindingRepository(SqliteConnectionFactory connectionFactory)
@@ -266,8 +266,8 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore, FindingKey, LineStart, LineEnd, ResolutionOrigin, ResolvedUtc, ResolvedReviewSha256)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @ReviewContextId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate, @DuplicateOfFindingId, @DuplicateSimilarityScore, @FindingKey, @LineStart, @LineEnd, @ResolutionOrigin, @ResolvedUtc, @ResolvedReviewSha256);
+                INSERT OR IGNORE INTO Findings (RepositoryId, RepoFileId, ReviewTypeId, ReviewContextId, Fingerprint, Severity, Title, Description, SuggestedFix, Status, Category, CreatedDate, LastModifiedDate, DuplicateOfFindingId, DuplicateSimilarityScore, FindingKey, LineStart, LineEnd, ResolutionOrigin, ResolvedUtc, ResolvedReviewSha256, EngineModel, Branch)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @ReviewContextId, @Fingerprint, @Severity, @Title, @Description, @SuggestedFix, @Status, @Category, @CreatedDate, @LastModifiedDate, @DuplicateOfFindingId, @DuplicateSimilarityScore, @FindingKey, @LineStart, @LineEnd, @ResolutionOrigin, @ResolvedUtc, @ResolvedReviewSha256, @EngineModel, @Branch);
                 SELECT Id FROM Findings WHERE RepositoryId = @RepositoryId AND Fingerprint = @Fingerprint LIMIT 1;
                 """;
             AddParameters(command, finding);
@@ -278,19 +278,21 @@ namespace Revathryn.Data
             return id;
         }
 
-        /// <summary>Returns all findings recorded for the given file and review type within the supplied transaction.</summary>
+        /// <summary>Returns all findings recorded for the given file, review type, and branch within the supplied transaction.</summary>
         internal static async Task<IReadOnlyList<Finding>> GetForFileAndReviewTypeAsync(
             SqliteConnection connection,
             SqliteTransaction transaction,
             long repoFileId,
             long reviewTypeId,
+            string branch,
             CancellationToken cancellationToken)
         {
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
-            command.CommandText = $"SELECT {SelectColumns} FROM Findings WHERE RepoFileId = @RepoFileId AND ReviewTypeId = @ReviewTypeId ORDER BY Id ASC;";
+            command.CommandText = $"SELECT {SelectColumns} FROM Findings WHERE RepoFileId = @RepoFileId AND ReviewTypeId = @ReviewTypeId AND Branch = @Branch ORDER BY Id ASC;";
             command.Parameters.AddWithValue("@RepoFileId", repoFileId);
             command.Parameters.AddWithValue("@ReviewTypeId", reviewTypeId);
+            command.Parameters.AddWithValue("@Branch", branch ?? string.Empty);
 
             List<Finding> results = [];
             using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
@@ -340,7 +342,9 @@ namespace Revathryn.Data
                     LineEnd = @LineEnd,
                     ResolutionOrigin = @ResolutionOrigin,
                     ResolvedUtc = @ResolvedUtc,
-                    ResolvedReviewSha256 = @ResolvedReviewSha256
+                    ResolvedReviewSha256 = @ResolvedReviewSha256,
+                    EngineModel = @EngineModel,
+                    Branch = @Branch
                 WHERE Id = @Id;
                 """;
             AddParameters(command, finding);
@@ -466,6 +470,8 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@ResolutionOrigin", (int)finding.ResolutionOrigin);
             command.Parameters.AddWithValue("@ResolvedUtc", SqliteValueConverter.ToParameter(finding.ResolvedUtc));
             command.Parameters.AddWithValue("@ResolvedReviewSha256", finding.ResolvedReviewSha256 ?? string.Empty);
+            command.Parameters.AddWithValue("@EngineModel", finding.EngineModel ?? string.Empty);
+            command.Parameters.AddWithValue("@Branch", finding.Branch ?? string.Empty);
         }
 
         private static Finding MapFinding(SqliteDataReader reader)
@@ -493,7 +499,9 @@ namespace Revathryn.Data
                 LineEnd = reader.IsDBNull(18) ? null : reader.GetInt32(18),
                 ResolutionOrigin = (FindingResolutionOrigin)reader.GetInt32(19),
                 ResolvedUtc = reader.IsDBNull(20) ? null : SqliteValueConverter.ToDateTime(reader.GetString(20)),
-                ResolvedReviewSha256 = reader.IsDBNull(21) ? string.Empty : reader.GetString(21)
+                ResolvedReviewSha256 = reader.IsDBNull(21) ? string.Empty : reader.GetString(21),
+                EngineModel = reader.IsDBNull(22) ? string.Empty : reader.GetString(22),
+                Branch = reader.IsDBNull(23) ? string.Empty : reader.GetString(23)
             };
         }
     }

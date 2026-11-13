@@ -5,15 +5,11 @@ using Revathryn.Contracts.Models;
 
 namespace Revathryn.Models.Administration
 {
-    /// <summary>Form model for creating and editing a review type.</summary>
+    /// <summary>Form model for creating and editing a global review type.</summary>
     public sealed class ReviewTypeEditViewModel
     {
         /// <summary>Review type identifier; zero when creating.</summary>
         public long Id { get; set; }
-
-        /// <summary>Owning repository identifier.</summary>
-        [Range(Consts.MinimumRepositoryId, int.MaxValue, ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.RepositoryRequiredMessage))]
-        public long RepositoryId { get; set; }
 
         /// <summary>Display name of the review type.</summary>
         [Required(ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.NameRequiredMessage))]
@@ -31,25 +27,17 @@ namespace Revathryn.Models.Administration
         /// <summary>Default queue priority; higher values are processed first.</summary>
         public int DefaultPriority { get; set; } = Consts.DefaultReviewTypePriority;
 
-        /// <summary>Whether the review type is active.</summary>
-        public bool Enabled { get; set; } = true;
-
-        /// <summary>Repositories available for selection; not persisted.</summary>
-        public IReadOnlyList<Repository> Repositories { get; set; } = [];
-
         /// <summary>Creates a form model from a persisted review type.</summary>
         public static ReviewTypeEditViewModel FromReviewType(ReviewType reviewType)
         {
             return new ReviewTypeEditViewModel
             {
                 Id = reviewType.Id,
-                RepositoryId = reviewType.RepositoryId,
                 Name = reviewType.Name,
                 Description = reviewType.Description,
                 FileExtensions = reviewType.FileExtensions,
                 Prompt = reviewType.Prompt,
-                DefaultPriority = reviewType.DefaultPriority,
-                Enabled = reviewType.Enabled
+                DefaultPriority = reviewType.DefaultPriority
             };
         }
 
@@ -59,14 +47,12 @@ namespace Revathryn.Models.Administration
             return new ReviewType
             {
                 Id = Id,
-                RepositoryId = RepositoryId,
                 Key = string.Empty,
                 Name = Name?.Trim() ?? string.Empty,
                 Description = Description?.Trim() ?? string.Empty,
                 FileExtensions = FileExtensions?.Trim() ?? string.Empty,
                 Prompt = Prompt?.Trim() ?? string.Empty,
-                DefaultPriority = DefaultPriority,
-                Enabled = Enabled
+                DefaultPriority = DefaultPriority
             };
         }
     }

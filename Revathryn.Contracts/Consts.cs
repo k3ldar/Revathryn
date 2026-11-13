@@ -33,6 +33,8 @@
         public const char CharHash = '#';
         public const char CharBang = '!';
         public const string FilePathGit = ".git";
+        public const string GitHeadFileName = "HEAD";
+        public const string GitHeadRefPrefix = "ref: refs/heads/";
         public const string FilePathVSInternal = ".vs";
         public const string FilePathBin = "bin";
         public const string FilePathObj = "obj";
@@ -221,9 +223,6 @@
 
         // Review queue reliability defaults.
         public const int DefaultQueueLeaseMinutes = 10;
-        public const int DefaultQueuePriorityDecayFactor = 2;
-        public const int DefaultQueueMinimumPriority = 1;
-        public const int MinimumPriorityDecayFactor = 1;
 
         // Reliability component names.
         public const string ReviewProcessorComponent = "ReviewProcessor";

@@ -46,11 +46,10 @@ namespace Revathryn.Data
             );
             """;
 
-        /// <summary>Creates the ReviewTypes table.</summary>
+        /// <summary>Creates the global ReviewTypes table.</summary>
         internal const string CreateReviewTypes = """
             CREATE TABLE IF NOT EXISTS ReviewTypes (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                RepositoryId INTEGER NOT NULL,
                 Key TEXT NOT NULL DEFAULT '',
                 Name TEXT NOT NULL,
                 Description TEXT NOT NULL DEFAULT '',
@@ -58,10 +57,21 @@ namespace Revathryn.Data
                 Prompt TEXT NOT NULL DEFAULT '',
                 DefaultPriority INTEGER NOT NULL DEFAULT 0,
                 ReviewDefinitionVersion TEXT NOT NULL DEFAULT '',
-                Enabled INTEGER NOT NULL DEFAULT 1,
                 CreatedDate TEXT NOT NULL,
-                LastModifiedDate TEXT NOT NULL,
-                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE
+                LastModifiedDate TEXT NOT NULL
+            );
+            """;
+
+        /// <summary>Creates the RepositoryReviews mapping table.</summary>
+        internal const string CreateRepositoryReviews = """
+            CREATE TABLE IF NOT EXISTS RepositoryReviews (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                RepositoryId INTEGER NOT NULL,
+                ReviewTypeId INTEGER NOT NULL,
+                Enabled INTEGER NOT NULL DEFAULT 1,
+                CONSTRAINT UQ_RepositoryReviews_Repository_ReviewType UNIQUE (RepositoryId, ReviewTypeId),
+                FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
+                FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE CASCADE
             );
             """;
 
@@ -72,7 +82,6 @@ namespace Revathryn.Data
                 RepoFileId INTEGER NOT NULL,
                 ReviewTypeId INTEGER NOT NULL,
                 Enabled INTEGER NOT NULL DEFAULT 1,
-                PriorityOverride INTEGER NULL,
                 CONSTRAINT UQ_ReviewLinks_File_ReviewType UNIQUE (RepoFileId, ReviewTypeId),
                 FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE,
                 FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE CASCADE
@@ -90,6 +99,7 @@ namespace Revathryn.Data
                 LastAnalysedDate TEXT NOT NULL,
                 AnalysisVersion TEXT NOT NULL DEFAULT '',
                 ReviewDefinitionVersion TEXT NOT NULL DEFAULT '',
+                Branch TEXT NOT NULL DEFAULT '',
                 CONSTRAINT UQ_RepoFileAnalysis_File_ReviewType UNIQUE (RepoFileId, ReviewTypeId),
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
                 FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE,
@@ -104,7 +114,6 @@ namespace Revathryn.Data
                 RepositoryId INTEGER NOT NULL,
                 RepoFileId INTEGER NOT NULL,
                 ReviewTypeId INTEGER NOT NULL,
-                Priority INTEGER NOT NULL DEFAULT 0,
                 CreatedDate TEXT NOT NULL,
                 AttemptCount INTEGER NOT NULL DEFAULT 0,
                 MaxAttempts INTEGER NOT NULL DEFAULT 0,
@@ -112,6 +121,7 @@ namespace Revathryn.Data
                 LastError TEXT NOT NULL DEFAULT '',
                 LeasedUntilUtc TEXT NULL,
                 Status INTEGER NOT NULL DEFAULT 0,
+                Branch TEXT NOT NULL DEFAULT '',
                 CONSTRAINT UQ_Queue_File_ReviewType UNIQUE (RepoFileId, ReviewTypeId),
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
                 FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE,
@@ -143,6 +153,8 @@ namespace Revathryn.Data
                 ResolutionOrigin INTEGER NOT NULL DEFAULT 0,
                 ResolvedUtc TEXT NULL,
                 ResolvedReviewSha256 TEXT NOT NULL DEFAULT '',
+                EngineModel TEXT NOT NULL DEFAULT '',
+                Branch TEXT NOT NULL DEFAULT '',
                 CONSTRAINT UQ_Findings_Repository_Fingerprint UNIQUE (RepositoryId, Fingerprint),
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
                 FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE SET NULL,
@@ -245,6 +257,7 @@ namespace Revathryn.Data
                 UnchangedFiles INTEGER NOT NULL DEFAULT 0,
                 RemovedFiles INTEGER NOT NULL DEFAULT 0,
                 RenamedFiles INTEGER NOT NULL DEFAULT 0,
+                Branch TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE
             );
             """;
@@ -265,6 +278,7 @@ namespace Revathryn.Data
                 TotalTokens INTEGER NOT NULL DEFAULT 0,
                 CachedTokens INTEGER NOT NULL DEFAULT 0,
                 OccurredUtc TEXT NOT NULL,
+                Branch TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
                 FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE,
                 FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE CASCADE
@@ -285,6 +299,7 @@ namespace Revathryn.Data
                 FileContent TEXT NOT NULL DEFAULT '',
                 ContextItemsJson TEXT NOT NULL DEFAULT '',
                 CreatedUtc TEXT NOT NULL,
+                Branch TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (RepositoryId) REFERENCES Repositories (Id) ON DELETE CASCADE,
                 FOREIGN KEY (RepoFileId) REFERENCES RepoFiles (Id) ON DELETE CASCADE,
                 FOREIGN KEY (ReviewTypeId) REFERENCES ReviewTypes (Id) ON DELETE CASCADE
@@ -504,15 +519,14 @@ namespace Revathryn.Data
         internal static readonly string[] CreateIndexes =
         [
             "CREATE INDEX IF NOT EXISTS IX_RepoFiles_RepositoryId ON RepoFiles (RepositoryId);",
-            "CREATE INDEX IF NOT EXISTS IX_ReviewTypes_RepositoryId ON ReviewTypes (RepositoryId);",
+            "CREATE INDEX IF NOT EXISTS IX_RepositoryReviews_ReviewTypeId ON RepositoryReviews (ReviewTypeId);",
             "CREATE INDEX IF NOT EXISTS IX_ReviewLinks_RepoFileId ON ReviewLinks (RepoFileId);",
             "CREATE INDEX IF NOT EXISTS IX_ReviewLinks_ReviewTypeId ON ReviewLinks (ReviewTypeId);",
             "CREATE INDEX IF NOT EXISTS IX_RepoFileAnalysis_RepositoryId ON RepoFileAnalysis (RepositoryId);",
             "CREATE INDEX IF NOT EXISTS IX_RepoFileAnalysis_RepoFileId ON RepoFileAnalysis (RepoFileId);",
             "CREATE INDEX IF NOT EXISTS IX_RepoFileAnalysis_ReviewTypeId ON RepoFileAnalysis (ReviewTypeId);",
             "CREATE INDEX IF NOT EXISTS IX_Queue_RepositoryId ON Queue (RepositoryId);",
-            "CREATE INDEX IF NOT EXISTS IX_Queue_Priority ON Queue (Priority DESC, CreatedDate ASC);",
-            "CREATE INDEX IF NOT EXISTS IX_Queue_Status ON Queue (Status, Priority DESC, CreatedDate ASC);",
+            "CREATE INDEX IF NOT EXISTS IX_Queue_Status ON Queue (Status, CreatedDate ASC);",
             "CREATE INDEX IF NOT EXISTS IX_Queue_LeasedUntilUtc ON Queue (LeasedUntilUtc);",
             "CREATE INDEX IF NOT EXISTS IX_Findings_RepositoryId ON Findings (RepositoryId);",
             "CREATE INDEX IF NOT EXISTS IX_Findings_RepoFileId ON Findings (RepoFileId);",
@@ -531,7 +545,7 @@ namespace Revathryn.Data
             "CREATE INDEX IF NOT EXISTS IX_IssueValidations_FindingId ON IssueValidations (FindingId, CreatedUtc DESC);",
             "CREATE INDEX IF NOT EXISTS IX_IssueValidations_Status ON IssueValidations (Status, NextAttemptUtc);",
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_IssueValidations_ActiveFinding ON IssueValidations (FindingId) WHERE Status IN (0, 1);",
-            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_ReviewTypes_Repository_Key ON ReviewTypes (RepositoryId, Key) WHERE Key <> '';",
+            "CREATE UNIQUE INDEX IF NOT EXISTS UQ_ReviewTypes_Key ON ReviewTypes (Key) WHERE Key <> '';",
             "CREATE INDEX IF NOT EXISTS IX_Prompts_ReviewTypeId ON Prompts (ReviewTypeId);",
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_Prompts_System ON Prompts (PromptType) WHERE PromptType = 0 AND ReviewTypeId IS NULL;",
             "CREATE UNIQUE INDEX IF NOT EXISTS UQ_Prompts_ReviewType ON Prompts (ReviewTypeId) WHERE PromptType = 1 AND ReviewTypeId IS NOT NULL;",

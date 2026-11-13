@@ -9,7 +9,9 @@ namespace Revathryn.Data
     public sealed class ReviewTypeRepository : SqliteRepositoryBase, IReviewTypeRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, Key, Name, Description, FileExtensions, Prompt, DefaultPriority, ReviewDefinitionVersion, Enabled, CreatedDate, LastModifiedDate";
+            "rt.Id, rt.Key, rt.Name, rt.Description, rt.FileExtensions, rt.Prompt, rt.DefaultPriority, rt.ReviewDefinitionVersion, rt.CreatedDate, rt.LastModifiedDate";
+
+        private const string SelectRepositoryColumns = SelectColumns + ", rr.Enabled";
 
         /// <summary>Initialises a new repository.</summary>
         public ReviewTypeRepository(SqliteConnectionFactory connectionFactory)
@@ -22,7 +24,7 @@ namespace Revathryn.Data
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"SELECT {SelectColumns} FROM ReviewTypes WHERE Id = @Id LIMIT 1;";
+            command.CommandText = $"SELECT {SelectColumns} FROM ReviewTypes rt WHERE rt.Id = @Id LIMIT 1;";
             command.Parameters.AddWithValue("@Id", id);
 
             using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
@@ -34,12 +36,35 @@ namespace Revathryn.Data
             return null;
         }
 
-        /// <summary>Returns all review types belonging to a repository.</summary>
+        /// <summary>Returns every global review type.</summary>
+        public async Task<IReadOnlyList<ReviewType>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = $"SELECT {SelectColumns} FROM ReviewTypes rt ORDER BY rt.Name ASC;";
+
+            List<ReviewType> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(MapReviewType(reader));
+            }
+
+            return results;
+        }
+
+        /// <summary>Returns the review types linked to a repository.</summary>
         public async Task<IReadOnlyList<ReviewType>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"SELECT {SelectColumns} FROM ReviewTypes WHERE RepositoryId = @RepositoryId ORDER BY Name ASC;";
+            command.CommandText = $"""
+                SELECT {SelectColumns}
+                FROM ReviewTypes rt
+                INNER JOIN RepositoryReviews rr ON rr.ReviewTypeId = rt.Id
+                WHERE rr.RepositoryId = @RepositoryId
+                ORDER BY rt.Name ASC;
+                """;
             command.Parameters.AddWithValue("@RepositoryId", repositoryId);
 
             List<ReviewType> results = [];
@@ -52,12 +77,18 @@ namespace Revathryn.Data
             return results;
         }
 
-        /// <summary>Returns the enabled review types belonging to a repository.</summary>
+        /// <summary>Returns the enabled review types linked to a repository.</summary>
         public async Task<IReadOnlyList<ReviewType>> GetEnabledByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"SELECT {SelectColumns} FROM ReviewTypes WHERE RepositoryId = @RepositoryId AND Enabled = 1 ORDER BY Name ASC;";
+            command.CommandText = $"""
+                SELECT {SelectColumns}
+                FROM ReviewTypes rt
+                INNER JOIN RepositoryReviews rr ON rr.ReviewTypeId = rt.Id
+                WHERE rr.RepositoryId = @RepositoryId AND rr.Enabled = 1
+                ORDER BY rt.Name ASC;
+                """;
             command.Parameters.AddWithValue("@RepositoryId", repositoryId);
 
             List<ReviewType> results = [];
@@ -65,6 +96,30 @@ namespace Revathryn.Data
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 results.Add(MapReviewType(reader));
+            }
+
+            return results;
+        }
+
+        /// <summary>Returns the repository-linked review types including their enabled state.</summary>
+        public async Task<IReadOnlyList<RepositoryReviewType>> GetRepositoryReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+        {
+            using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = $"""
+                SELECT {SelectRepositoryColumns}
+                FROM ReviewTypes rt
+                INNER JOIN RepositoryReviews rr ON rr.ReviewTypeId = rt.Id
+                WHERE rr.RepositoryId = @RepositoryId
+                ORDER BY rt.Name ASC;
+                """;
+            command.Parameters.AddWithValue("@RepositoryId", repositoryId);
+
+            List<RepositoryReviewType> results = [];
+            using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                results.Add(MapRepositoryReviewType(reader));
             }
 
             return results;
@@ -76,8 +131,8 @@ namespace Revathryn.Data
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO ReviewTypes (RepositoryId, Key, Name, Description, FileExtensions, Prompt, DefaultPriority, ReviewDefinitionVersion, Enabled, CreatedDate, LastModifiedDate)
-                VALUES (@RepositoryId, @Key, @Name, @Description, @FileExtensions, @Prompt, @DefaultPriority, @ReviewDefinitionVersion, @Enabled, @CreatedDate, @LastModifiedDate);
+                INSERT INTO ReviewTypes (Key, Name, Description, FileExtensions, Prompt, DefaultPriority, ReviewDefinitionVersion, CreatedDate, LastModifiedDate)
+                VALUES (@Key, @Name, @Description, @FileExtensions, @Prompt, @DefaultPriority, @ReviewDefinitionVersion, @CreatedDate, @LastModifiedDate);
                 SELECT last_insert_rowid();
                 """;
             AddParameters(command, reviewType);
@@ -93,15 +148,13 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
                 UPDATE ReviewTypes
-                SET RepositoryId = @RepositoryId,
-                    Key = @Key,
+                SET Key = @Key,
                     Name = @Name,
                     Description = @Description,
                     FileExtensions = @FileExtensions,
                     Prompt = @Prompt,
                     DefaultPriority = @DefaultPriority,
                     ReviewDefinitionVersion = @ReviewDefinitionVersion,
-                    Enabled = @Enabled,
                     CreatedDate = @CreatedDate,
                     LastModifiedDate = @LastModifiedDate
                 WHERE Id = @Id;
@@ -125,7 +178,6 @@ namespace Revathryn.Data
 
         private static void AddParameters(SqliteCommand command, ReviewType reviewType)
         {
-            command.Parameters.AddWithValue("@RepositoryId", reviewType.RepositoryId);
             command.Parameters.AddWithValue("@Key", reviewType.Key);
             command.Parameters.AddWithValue("@Name", reviewType.Name);
             command.Parameters.AddWithValue("@Description", reviewType.Description);
@@ -133,7 +185,6 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@Prompt", reviewType.Prompt);
             command.Parameters.AddWithValue("@DefaultPriority", reviewType.DefaultPriority);
             command.Parameters.AddWithValue("@ReviewDefinitionVersion", reviewType.ReviewDefinitionVersion);
-            command.Parameters.AddWithValue("@Enabled", reviewType.Enabled);
             command.Parameters.AddWithValue("@CreatedDate", SqliteValueConverter.ToText(reviewType.CreatedDate));
             command.Parameters.AddWithValue("@LastModifiedDate", SqliteValueConverter.ToText(reviewType.LastModifiedDate));
         }
@@ -143,18 +194,26 @@ namespace Revathryn.Data
             return new ReviewType
             {
                 Id = reader.GetInt64(0),
-                RepositoryId = reader.GetInt64(1),
-                Key = reader.GetString(2),
-                Name = reader.GetString(3),
-                Description = reader.GetString(4),
-                FileExtensions = reader.GetString(5),
-                Prompt = reader.GetString(6),
-                DefaultPriority = reader.GetInt32(7),
-                ReviewDefinitionVersion = reader.GetString(8),
-                Enabled = reader.GetBoolean(9),
-                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(10)),
-                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(11))
+                Key = reader.GetString(1),
+                Name = reader.GetString(2),
+                Description = reader.GetString(3),
+                FileExtensions = reader.GetString(4),
+                Prompt = reader.GetString(5),
+                DefaultPriority = reader.GetInt32(6),
+                ReviewDefinitionVersion = reader.GetString(7),
+                CreatedDate = SqliteValueConverter.ToDateTime(reader.GetString(8)),
+                LastModifiedDate = SqliteValueConverter.ToDateTime(reader.GetString(9))
+            };
+        }
+
+        private static RepositoryReviewType MapRepositoryReviewType(SqliteDataReader reader)
+        {
+            return new RepositoryReviewType
+            {
+                ReviewType = MapReviewType(reader),
+                Enabled = reader.GetBoolean(10)
             };
         }
     }
 }
+

@@ -106,7 +106,7 @@ namespace Revathryn.Tests
             RepoFile file = new() { Id = 10, RepositoryId = 1, RelativePath = "src/Program.cs", ProjectPath = "src/app.csproj" };
             RepoFile unassigned = new() { Id = 20, RepositoryId = 1, RelativePath = "README.md" };
 
-            ReviewType reviewType = new() { Id = 100, RepositoryId = 1, Name = "CSharp" };
+            ReviewType reviewType = new() { Id = 100, Name = "CSharp" };
 
             Finding finding = new()
             {
@@ -263,7 +263,7 @@ namespace Revathryn.Tests
             Repository repository = new() { Id = 3, Name = "Repo" };
             RepoFile file = new() { Id = 60, RepositoryId = 3, RelativePath = "src/Program.cs" };
 
-            ReviewType reviewType = new() { Id = 200, RepositoryId = 3, Name = "Security" };
+            ReviewType reviewType = new() { Id = 200, Name = "Security" };
 
             RepoFileAnalysis analysis = new()
             {
@@ -339,7 +339,7 @@ namespace Revathryn.Tests
             Repository repository = new() { Id = 4, Name = "Repo" };
             RepoFile file = new() { Id = 70, RepositoryId = 4, RelativePath = "src/Program.cs" };
 
-            ReviewType reviewType = new() { Id = 300, RepositoryId = 4, Name = "Style" };
+            ReviewType reviewType = new() { Id = 300, Name = "Style" };
 
             FakeRepositoryService repositories = new();
             repositories.Repositories.Add(repository);
@@ -565,9 +565,9 @@ namespace Revathryn.Tests
         {
             public List<RepoFileAnalysis> Analyses { get; } = [];
 
-            public Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
+            public Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, string branch, CancellationToken cancellationToken = default)
             {
-                RepoFileAnalysis match = Analyses.FirstOrDefault(analysis => analysis.RepoFileId == repoFileId && analysis.ReviewTypeId == reviewTypeId);
+                RepoFileAnalysis match = Analyses.FirstOrDefault(analysis => analysis.RepoFileId == repoFileId && analysis.ReviewTypeId == reviewTypeId && analysis.Branch == (branch ?? string.Empty));
                 return Task.FromResult(match);
             }
 
@@ -603,15 +603,24 @@ namespace Revathryn.Tests
                 return Task.FromResult(match);
             }
 
+            public Task<IReadOnlyList<ReviewType>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
+            }
+
             public Task<IReadOnlyList<ReviewType>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                IReadOnlyList<ReviewType> result = [.. ReviewTypes.Where(reviewType => reviewType.RepositoryId == repositoryId)];
-                return Task.FromResult(result);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
             }
 
             public Task<IReadOnlyList<ReviewType>> GetEnabledByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                IReadOnlyList<ReviewType> result = [.. ReviewTypes.Where(reviewType => reviewType.RepositoryId == repositoryId && reviewType.Enabled)];
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
+            }
+
+            public Task<IReadOnlyList<RepositoryReviewType>> GetRepositoryReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                IReadOnlyList<RepositoryReviewType> result = [.. ReviewTypes.Select(reviewType => new RepositoryReviewType { ReviewType = reviewType, Enabled = true })];
                 return Task.FromResult(result);
             }
 

@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Services;
 
 namespace Revathryn.Engine.Tests
 {
+    [ExcludeFromCodeCoverage]
     internal sealed class FakeRepositoryProcessor : IRepositoryProcessor
     {
         public List<long> ProcessedIds { get; } = [];

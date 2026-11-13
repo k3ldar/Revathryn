@@ -28,6 +28,7 @@ namespace Revathryn.Engine
         private readonly IRepositoryRepository _repositoryRepository;
         private readonly IRepoFileRepository _fileRepository;
         private readonly IReviewTypeRepository _reviewTypeRepository;
+        private readonly IRepositoryReviewRepository _repositoryReviewRepository;
         private readonly IReviewOutcomeStore _reviewOutcomeStore;
         private readonly IFindingRepository _findingRepository;
         private readonly IPromptResolutionService _promptResolutionService;
@@ -49,6 +50,7 @@ namespace Revathryn.Engine
             IRepositoryRepository repositoryRepository,
             IRepoFileRepository fileRepository,
             IReviewTypeRepository reviewTypeRepository,
+            IRepositoryReviewRepository repositoryReviewRepository,
             IReviewOutcomeStore reviewOutcomeStore,
             IFindingRepository findingRepository,
             IPromptResolutionService promptResolutionService,
@@ -68,6 +70,7 @@ namespace Revathryn.Engine
             _repositoryRepository = repositoryRepository;
             _fileRepository = fileRepository;
             _reviewTypeRepository = reviewTypeRepository;
+            _repositoryReviewRepository = repositoryReviewRepository;
             _reviewOutcomeStore = reviewOutcomeStore;
             _findingRepository = findingRepository;
             _promptResolutionService = promptResolutionService;
@@ -106,7 +109,7 @@ namespace Revathryn.Engine
                 else if (result.IsConfigurationFailure)
                 {
                     _processingGate.Pause(result.Error);
-                    await _reviewQueue.ReleaseForRetryAsync(item.Id, item.Priority, DateTime.UtcNow.Add(_resilienceOptions.QueueLeaseDuration), result.Error, cancellationToken).ConfigureAwait(false);
+                    await _reviewQueue.ReleaseForRetryAsync(item.Id, DateTime.UtcNow.Add(_resilienceOptions.QueueLeaseDuration), result.Error, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -115,7 +118,7 @@ namespace Revathryn.Engine
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                await _reviewQueue.ReleaseForRetryAsync(item.Id, item.Priority, DateTime.UtcNow, Strings.ReviewCancelled, CancellationToken.None).ConfigureAwait(false);
+                await _reviewQueue.ReleaseForRetryAsync(item.Id, DateTime.UtcNow, Strings.ReviewCancelled, CancellationToken.None).ConfigureAwait(false);
                 throw;
             }
             catch (Exception exception)
@@ -144,7 +147,14 @@ namespace Revathryn.Engine
 
             ReviewType reviewType = await _reviewTypeRepository.GetByIdAsync(item.ReviewTypeId, cancellationToken).ConfigureAwait(false);
 
-            if (reviewType is null || !reviewType.Enabled)
+            if (reviewType is null)
+            {
+                return ProcessingResult.Failed(Strings.ReviewTypeNotAvailable);
+            }
+
+            RepositoryReview mapping = await _repositoryReviewRepository.GetAsync(item.RepositoryId, item.ReviewTypeId, cancellationToken).ConfigureAwait(false);
+
+            if (mapping is null || !mapping.Enabled)
             {
                 return ProcessingResult.Failed(Strings.ReviewTypeNotAvailable);
             }
@@ -245,17 +255,8 @@ namespace Revathryn.Engine
             IRetryPolicy retryPolicy = _retryPolicyProvider.GetPolicy(RetryOperationType.ExternalService);
             TimeSpan delay = retryPolicy.GetRetryDelay(item.AttemptCount);
             DateTime nextAttemptUtc = DateTime.UtcNow.Add(delay);
-            int priority = DecayPriority(item.Priority);
 
-            await _reviewQueue.ReleaseForRetryAsync(item.Id, priority, nextAttemptUtc, message, cancellationToken).ConfigureAwait(false);
-        }
-
-        private int DecayPriority(int priority)
-        {
-            int factor = Math.Max(Consts.MinimumPriorityDecayFactor, _resilienceOptions.QueuePriorityDecayFactor);
-            int decayed = priority / factor;
-
-            return Math.Max(_resilienceOptions.QueueMinimumPriority, decayed);
+            await _reviewQueue.ReleaseForRetryAsync(item.Id, nextAttemptUtc, message, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task PersistOutcomeAsync(
@@ -279,11 +280,13 @@ namespace Revathryn.Engine
                     RepositoryId = item.RepositoryId,
                     RepoFileId = item.RepoFileId,
                     ReviewTypeId = item.ReviewTypeId,
+                    Branch = item.Branch,
                     Fingerprint = BuildFindingFingerprint(item, result),
                     Severity = _severityRuleEngine.Apply(result.Severity, result.Title ?? string.Empty, result.Description ?? string.Empty),
                     Title = result.Title ?? string.Empty,
                     Description = result.Description ?? string.Empty,
                     SuggestedFix = result.SuggestedFix ?? string.Empty,
+                    EngineModel = response.EngineModel ?? string.Empty,
                     Status = FindingStatus.New,
                     Category = FindingCategory.CodeIssue,
                     FindingKey = BuildFindingKey(result),
@@ -305,6 +308,7 @@ namespace Revathryn.Engine
                 Sha256 = file.Sha256,
                 AnalysisVersion = Consts.AnalysisVersion,
                 ReviewDefinitionVersion = reviewType.ReviewDefinitionVersion,
+                Branch = item.Branch,
                 Findings = findings,
                 UsageRecords = usageRecords,
                 Context = new AIReviewContext
@@ -313,6 +317,7 @@ namespace Revathryn.Engine
                     RepoFileId = item.RepoFileId,
                     ReviewTypeId = item.ReviewTypeId,
                     Sha256 = file.Sha256,
+                    Branch = item.Branch,
                     Language = request.Language,
                     FilePath = file.RelativePath,
                     ReviewInstructions = request.Prompt,
@@ -384,6 +389,7 @@ namespace Revathryn.Engine
                 RepositoryId = item.RepositoryId,
                 RepoFileId = item.RepoFileId,
                 ReviewTypeId = item.ReviewTypeId,
+                Branch = item.Branch,
                 Fingerprint = BuildOperationalFailureFingerprint(item),
                 Severity = FindingSeverity.High,
                 Title = Strings.OperationalFailureTitle,
@@ -581,6 +587,7 @@ namespace Revathryn.Engine
             usage.RepositoryId = item.RepositoryId;
             usage.RepoFileId = item.RepoFileId;
             usage.ReviewTypeId = item.ReviewTypeId;
+            usage.Branch = item.Branch;
             return usage;
         }
 

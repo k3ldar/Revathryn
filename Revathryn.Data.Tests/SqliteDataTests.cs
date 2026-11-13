@@ -173,15 +173,16 @@ namespace Revathryn.Data.Tests
             long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
             long fileA = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/A.cs"), TestContext.CancellationToken);
             long fileB = await files.UpsertAsync(CreateRepoFile(repositoryId, "src/B.cs"), TestContext.CancellationToken);
-            long reviewTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "C# Review"), TestContext.CancellationToken);
+            long lowPriorityTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "Low Priority", 10), TestContext.CancellationToken);
+            long highPriorityTypeId = await reviewTypes.AddAsync(CreateReviewType(repositoryId, "High Priority", 50), TestContext.CancellationToken);
 
-            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileA, reviewTypeId, 1), TestContext.CancellationToken);
-            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileB, reviewTypeId, 50), TestContext.CancellationToken);
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileA, lowPriorityTypeId, 10), TestContext.CancellationToken);
+            await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileB, highPriorityTypeId, 50), TestContext.CancellationToken);
 
             QueueItem claimed = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
 
             Assert.AreEqual(fileB, claimed.RepoFileId);
-            Assert.AreEqual(50, claimed.Priority);
+            Assert.AreEqual(highPriorityTypeId, claimed.ReviewTypeId);
             Assert.AreEqual(QueueItemStatus.InFlight, claimed.Status);
             Assert.AreEqual(1, claimed.AttemptCount);
             Assert.AreEqual(1, await queue.CountAsync(TestContext.CancellationToken));
@@ -205,13 +206,12 @@ namespace Revathryn.Data.Tests
             QueueItem claimed = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
             DateTime nextAttemptUtc = DateTime.UtcNow.AddMinutes(2);
 
-            await queue.ReleaseForRetryAsync(claimed.Id, 5, nextAttemptUtc, "failure", TestContext.CancellationToken);
+            await queue.ReleaseForRetryAsync(claimed.Id, nextAttemptUtc, "failure", TestContext.CancellationToken);
 
             Assert.AreEqual(1, await queue.CountAsync(TestContext.CancellationToken));
             IReadOnlyList<QueueItem> pending = await queue.GetPendingAsync(TestContext.CancellationToken);
             Assert.HasCount(1, pending);
             Assert.AreEqual(QueueItemStatus.Pending, pending[0].Status);
-            Assert.AreEqual(5, pending[0].Priority);
             Assert.AreEqual("failure", pending[0].LastError);
             Assert.IsTrue(pending[0].NextAttemptUtc.HasValue);
             Assert.IsGreaterThanOrEqualTo(nextAttemptUtc.AddSeconds(-5), pending[0].NextAttemptUtc.Value);
@@ -233,12 +233,12 @@ namespace Revathryn.Data.Tests
             await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileId, reviewTypeId, 10), TestContext.CancellationToken);
 
             QueueItem claimed = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
-            await queue.ReleaseForRetryAsync(claimed.Id, 5, DateTime.UtcNow.AddMinutes(5), "failure", TestContext.CancellationToken);
+            await queue.ReleaseForRetryAsync(claimed.Id, DateTime.UtcNow.AddMinutes(5), "failure", TestContext.CancellationToken);
 
             QueueItem notEligible = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(10), TestContext.CancellationToken);
             Assert.IsNull(notEligible);
 
-            await queue.ReleaseForRetryAsync(claimed.Id, 5, DateTime.UtcNow.AddSeconds(-1), "failure", TestContext.CancellationToken);
+            await queue.ReleaseForRetryAsync(claimed.Id, DateTime.UtcNow.AddSeconds(-1), "failure", TestContext.CancellationToken);
             QueueItem eligible = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(10), TestContext.CancellationToken);
             Assert.IsNotNull(eligible);
             Assert.AreEqual(claimed.Id, eligible.Id);
@@ -312,7 +312,7 @@ namespace Revathryn.Data.Tests
             await queue.EnqueueAsync(CreateQueueItem(repositoryId, fileC, reviewTypeId, 30), TestContext.CancellationToken);
 
             QueueItem retried = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
-            await queue.ReleaseForRetryAsync(retried.Id, retried.Priority, DateTime.UtcNow.AddSeconds(-1), "transient", TestContext.CancellationToken);
+            await queue.ReleaseForRetryAsync(retried.Id, DateTime.UtcNow.AddSeconds(-1), "transient", TestContext.CancellationToken);
 
             QueueMetrics metrics = await queue.GetMetricsAsync(TestContext.CancellationToken);
 
@@ -352,6 +352,25 @@ namespace Revathryn.Data.Tests
         }
 
         [TestMethod]
+        public async Task FindingRepository_PersistsEngineModel()
+        {
+            using TestDatabase database = new();
+            RepositoryRepository repositories = new(database.Factory);
+            FindingRepository findings = new(database.Factory);
+
+            long repositoryId = await repositories.AddAsync(CreateRepository("Repo"), TestContext.CancellationToken);
+
+            Finding finding = CreateFinding(repositoryId, "fp-engine-model");
+            finding.EngineModel = "gpt-4o";
+
+            long id = await findings.AddAsync(finding, TestContext.CancellationToken);
+
+            Finding stored = await findings.GetByIdAsync(id, TestContext.CancellationToken);
+
+            Assert.AreEqual("gpt-4o", stored.EngineModel);
+        }
+
+        [TestMethod]
         public async Task RepoFileAnalysisRepository_TracksFingerprintPerReviewType()
         {
             using TestDatabase database = new();
@@ -380,7 +399,7 @@ namespace Revathryn.Data.Tests
 
             Assert.AreEqual(firstId, secondId);
 
-            RepoFileAnalysis loaded = await analysis.GetAsync(fileId, reviewTypeId, TestContext.CancellationToken);
+            RepoFileAnalysis loaded = await analysis.GetAsync(fileId, reviewTypeId, string.Empty, TestContext.CancellationToken);
             Assert.AreEqual("hash-2", loaded.Sha256);
         }
 
@@ -467,7 +486,7 @@ namespace Revathryn.Data.Tests
             await files.DeleteAsync(fileId, TestContext.CancellationToken);
 
             Assert.IsNull(await links.GetAsync(fileId, reviewTypeId, TestContext.CancellationToken));
-            Assert.IsNull(await analyses.GetAsync(fileId, reviewTypeId, TestContext.CancellationToken));
+            Assert.IsNull(await analyses.GetAsync(fileId, reviewTypeId, string.Empty, TestContext.CancellationToken));
             Assert.AreEqual(0, await queue.CountAsync(TestContext.CancellationToken));
 
             Finding retained = await findings.GetByIdAsync(findingId, TestContext.CancellationToken);
@@ -1381,17 +1400,15 @@ namespace Revathryn.Data.Tests
             };
         }
 
-        private static ReviewType CreateReviewType(long repositoryId, string name)
+        private static ReviewType CreateReviewType(long repositoryId, string name, int defaultPriority = 10)
         {
             DateTime now = DateTime.UtcNow;
 
             return new ReviewType
             {
-                RepositoryId = repositoryId,
                 Name = name,
                 FileExtensions = "cs",
-                DefaultPriority = 10,
-                Enabled = true,
+                DefaultPriority = defaultPriority,
                 CreatedDate = now,
                 LastModifiedDate = now
             };
@@ -1404,7 +1421,6 @@ namespace Revathryn.Data.Tests
                 RepositoryId = repositoryId,
                 RepoFileId = repoFileId,
                 ReviewTypeId = reviewTypeId,
-                Priority = priority,
                 CreatedDate = DateTime.UtcNow
             };
         }

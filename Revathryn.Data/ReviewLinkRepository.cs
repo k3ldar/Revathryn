@@ -8,7 +8,7 @@ namespace Revathryn.Data
     /// <summary>SQLite implementation of <see cref="IReviewLinkRepository"/>.</summary>
     public sealed class ReviewLinkRepository : SqliteRepositoryBase, IReviewLinkRepository
     {
-        private const string SelectColumns = "Id, RepoFileId, ReviewTypeId, Enabled, PriorityOverride";
+        private const string SelectColumns = "Id, RepoFileId, ReviewTypeId, Enabled";
 
         /// <summary>Initialises a new repository.</summary>
         public ReviewLinkRepository(SqliteConnectionFactory connectionFactory)
@@ -93,11 +93,10 @@ namespace Revathryn.Data
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO ReviewLinks (RepoFileId, ReviewTypeId, Enabled, PriorityOverride)
-                VALUES (@RepoFileId, @ReviewTypeId, @Enabled, @PriorityOverride)
+                INSERT INTO ReviewLinks (RepoFileId, ReviewTypeId, Enabled)
+                VALUES (@RepoFileId, @ReviewTypeId, @Enabled)
                 ON CONFLICT (RepoFileId, ReviewTypeId) DO UPDATE SET
-                    Enabled = excluded.Enabled,
-                    PriorityOverride = excluded.PriorityOverride;
+                    Enabled = excluded.Enabled;
                 SELECT Id FROM ReviewLinks WHERE RepoFileId = @RepoFileId AND ReviewTypeId = @ReviewTypeId;
                 """;
             AddParameters(command, link);
@@ -133,7 +132,6 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@RepoFileId", link.RepoFileId);
             command.Parameters.AddWithValue("@ReviewTypeId", link.ReviewTypeId);
             command.Parameters.AddWithValue("@Enabled", link.Enabled);
-            command.Parameters.AddWithValue("@PriorityOverride", SqliteValueConverter.ToParameter(link.PriorityOverride));
         }
 
         private static ReviewLink MapReviewLink(SqliteDataReader reader)
@@ -143,8 +141,7 @@ namespace Revathryn.Data
                 Id = reader.GetInt64(0),
                 RepoFileId = reader.GetInt64(1),
                 ReviewTypeId = reader.GetInt64(2),
-                Enabled = reader.GetBoolean(3),
-                PriorityOverride = reader.IsDBNull(4) ? null : (int)reader.GetInt64(4)
+                Enabled = reader.GetBoolean(3)
             };
         }
     }

@@ -263,7 +263,7 @@ namespace Revathryn.Engine.Tests
         {
             FakeRepositoryRepository repositories = new();
             FakeReviewTypeRepository reviewTypes = new();
-            RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
+            RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), new FakeRepositoryProcessor());
 
             await Assert.ThrowsExactlyAsync<ArgumentException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = "  " }, TestContext.CancellationToken));
         }
@@ -275,7 +275,7 @@ namespace Revathryn.Engine.Tests
 
             FakeRepositoryRepository repositories = new();
             FakeReviewTypeRepository reviewTypes = new();
-            RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
+            RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), new FakeRepositoryProcessor());
 
             await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = missing }, TestContext.CancellationToken));
         }
@@ -288,7 +288,7 @@ namespace Revathryn.Engine.Tests
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), new FakeRepositoryProcessor());
 
                 await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
 
@@ -310,7 +310,7 @@ namespace Revathryn.Engine.Tests
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository
                 {
@@ -334,7 +334,7 @@ namespace Revathryn.Engine.Tests
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
 
@@ -385,6 +385,58 @@ namespace Revathryn.Engine.Tests
             harness.SeedFile(1, "src/A.cs", "cs", "h1");
             harness.SeedReviewType(1, "cs", "v1");
             harness.SeedAnalysis(1, 1, "h1", "v1");
+
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
+
+            Assert.AreEqual(0, result.Added);
+            Assert.AreEqual(0, await harness.Queue.CountAsync(TestContext.CancellationToken));
+        }
+
+        [TestMethod]
+        public async Task ReviewScheduler_AnalysisFromAnotherBranch_DoesNotSuppressReview()
+        {
+            SchedulerHarness harness = new();
+            harness.SeedRepository();
+            harness.SeedFile(1, "src/A.cs", "cs", "h1");
+            harness.SeedReviewType(1, "cs", "v1");
+            harness.Analyses.Add(new RepoFileAnalysis
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                ReviewTypeId = 1,
+                Sha256 = "h1",
+                ReviewDefinitionVersion = "v1",
+                AnalysisVersion = Consts.AnalysisVersion,
+                Branch = "feature"
+            });
+            harness.BranchProvider.Branch = "main";
+
+            ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
+
+            Assert.AreEqual(1, result.Added);
+            IReadOnlyList<QueueItem> pending = await harness.Queue.GetPendingAsync(TestContext.CancellationToken);
+            Assert.HasCount(1, pending);
+            Assert.AreEqual("main", pending[0].Branch);
+        }
+
+        [TestMethod]
+        public async Task ReviewScheduler_CurrentAnalysisOnSameBranch_SuppressesReview()
+        {
+            SchedulerHarness harness = new();
+            harness.SeedRepository();
+            harness.SeedFile(1, "src/A.cs", "cs", "h1");
+            harness.SeedReviewType(1, "cs", "v1");
+            harness.Analyses.Add(new RepoFileAnalysis
+            {
+                RepositoryId = 1,
+                RepoFileId = 1,
+                ReviewTypeId = 1,
+                Sha256 = "h1",
+                ReviewDefinitionVersion = "v1",
+                AnalysisVersion = Consts.AnalysisVersion,
+                Branch = "feature"
+            });
+            harness.BranchProvider.Branch = "feature";
 
             ReviewScheduleResult result = await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
@@ -469,21 +521,6 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
-        public async Task ReviewScheduler_UsesPriorityOverrideFromLink()
-        {
-            SchedulerHarness harness = new();
-            harness.SeedRepository();
-            harness.SeedFile(1, "src/A.cs", "cs", "h1");
-            harness.SeedReviewType(1, "cs", "v1", true, 10);
-            harness.Links.Add(new ReviewLink { RepoFileId = 1, ReviewTypeId = 1, Enabled = true, PriorityOverride = 500 });
-
-            await harness.Scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
-
-            QueueItem item = await harness.Queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
-            Assert.AreEqual(500, item.Priority);
-        }
-
-        [TestMethod]
         public async Task ReviewScheduler_RepeatedScheduleDoesNotDuplicate()
         {
             SchedulerHarness harness = new();
@@ -509,7 +546,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
 
                 ProcessorHarness harness = new(root);
-                harness.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
 
                 RepositoryScanSummary summary = await harness.Processor.ProcessAsync(1, CancellationToken.None);
 
@@ -526,6 +563,34 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
+        public async Task RepositoryProcessor_StampsBranchOnScanAndQueue()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                ProcessorHarness harness = new(root);
+                harness.BranchProvider.Branch = "feature/example";
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
+
+                RepositoryScanSummary summary = await harness.Processor.ProcessAsync(1, CancellationToken.None);
+
+                Assert.AreEqual("feature/example", summary.Branch);
+                Assert.HasCount(1, harness.Scans.Records);
+                Assert.AreEqual("feature/example", harness.Scans.Records[0].Branch);
+
+                IReadOnlyList<QueueItem> pending = await harness.Queue.GetPendingAsync(TestContext.CancellationToken);
+                Assert.HasCount(1, pending);
+                Assert.AreEqual("feature/example", pending[0].Branch);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
         public async Task RepositoryProcessor_RepeatedScanDoesNotDuplicateQueueEntries()
         {
             string root = CreateTempDirectory();
@@ -534,7 +599,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
 
                 ProcessorHarness harness = new(root);
-                harness.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
 
                 await harness.Processor.ProcessAsync(1, CancellationToken.None);
                 harness.AnalysisEngine.RequiresAnalysisResult = false;
@@ -562,7 +627,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(filePath, "class Program { }");
 
                 ProcessorHarness harness = new(root);
-                harness.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
 
                 await harness.Processor.ProcessAsync(1, CancellationToken.None);
 
@@ -591,7 +656,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
 
                 ProcessorHarness harness = new(root);
-                harness.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
                 harness.AnalysisEngine.ThrowOnAnalyse = true;
 
                 RepositoryScanSummary summary = await harness.Processor.ProcessAsync(1, CancellationToken.None);
@@ -626,8 +691,9 @@ namespace Revathryn.Engine.Tests
                 FakeProjectDiscoveryService projectDiscovery = new();
                 FakeProjectRepository projects = new();
                 FakeRepositoryScanRepository scans = new();
-                ReviewScheduler scheduler = new(repositories, files, reviewTypes, links, analyses, new ReviewQueue(queue));
-                RepositoryProcessor processor = new(repositories, files, new RepositoryScanner(), scheduler, analysisEngine, projectDiscovery, projects, scans, new RepositoryScanLockRegistry());
+                FakeRepositoryReviewRepository repositoryReviews = new();
+                ReviewScheduler scheduler = new(repositories, files, reviewTypes, repositoryReviews, links, analyses, new ReviewQueue(queue), new FakeGitBranchProvider());
+                RepositoryProcessor processor = new(repositories, files, new RepositoryScanner(), scheduler, analysisEngine, projectDiscovery, projects, scans, new RepositoryScanLockRegistry(), new FakeGitBranchProvider());
 
                 IReadOnlyList<RepositoryScanSummary> summaries = await processor.ProcessAllEnabledAsync(CancellationToken.None);
 
@@ -652,7 +718,7 @@ namespace Revathryn.Engine.Tests
 
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), new FakeRepositoryProcessor());
 
                 await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => service.RegisterAsync(new Repository { Name = "Repo", LocalPath = filePath }, TestContext.CancellationToken));
             }
@@ -670,7 +736,7 @@ namespace Revathryn.Engine.Tests
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root, Description = "Before" }, TestContext.CancellationToken);
 
@@ -699,7 +765,7 @@ namespace Revathryn.Engine.Tests
 
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), new FakeRepositoryProcessor());
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository { Name = "Repo", LocalPath = root }, TestContext.CancellationToken);
                 await service.DeleteAsync(registered.Id, TestContext.CancellationToken);
@@ -725,7 +791,7 @@ namespace Revathryn.Engine.Tests
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
                 FakeRepositoryProcessor processor = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), processor);
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), processor);
 
                 Repository registered = await service.RegisterAsync(new Repository
                 {
@@ -756,7 +822,7 @@ namespace Revathryn.Engine.Tests
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
                 FakeRepositoryProcessor processor = new();
-                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes), processor);
+                RepositoryService service = new(repositories, new ReviewTypeSeeder(reviewTypes, new FakeRepositoryReviewRepository()), processor);
 
                 await service.RegisterAsync(new Repository { Name = "Disabled", LocalPath = root, Enabled = false, AutomaticReviewEnabled = true }, TestContext.CancellationToken);
                 await service.RegisterAsync(new Repository { Name = "Manual", LocalPath = manualRoot, Enabled = true, AutomaticReviewEnabled = false }, TestContext.CancellationToken);
@@ -804,22 +870,6 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
-        public async Task ReviewScheduler_RequeueFileAsync_AppliesLinkPriorityOverride()
-        {
-            SchedulerHarness harness = new();
-            harness.SeedRepository();
-            harness.SeedFile(1, "src/A.cs", "cs", "h1");
-            harness.SeedReviewType(1, "cs", "v1", priority: 10);
-            harness.Links.Add(new ReviewLink { RepoFileId = 1, ReviewTypeId = 1, Enabled = true, PriorityOverride = 500 });
-
-            _ = await harness.Scheduler.RequeueFileAsync(1, 1, TestContext.CancellationToken);
-
-            IReadOnlyList<QueueItem> pending = await harness.Queue.GetPendingAsync(TestContext.CancellationToken);
-            Assert.HasCount(1, pending);
-            Assert.AreEqual(500, pending[0].Priority);
-        }
-
-        [TestMethod]
         public async Task ReviewScheduler_RequeueFileAsync_DoesNotEnqueueDisabledReviewType()
         {
             SchedulerHarness harness = new();
@@ -856,7 +906,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
 
                 ProcessorHarness harness = new(root);
-                harness.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
 
                 await harness.Processor.ProcessAsync(1, CancellationToken.None);
 
@@ -886,7 +936,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(filePath, "class Program { }");
 
                 ProcessorHarness harness = new(root);
-                harness.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
 
                 await harness.Processor.ProcessAsync(1, CancellationToken.None);
 
@@ -915,7 +965,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(filePath, "class Program { }");
 
                 ProcessorHarness harness = new(root);
-                harness.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
 
                 await harness.Processor.ProcessAsync(1, CancellationToken.None);
 
@@ -951,7 +1001,7 @@ namespace Revathryn.Engine.Tests
                 File.WriteAllText(lockedPath, "class Locked { }");
 
                 ProcessorHarness harness = new(root);
-                harness.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                harness.ReviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
 
                 using (FileStream locked = new(lockedPath, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
@@ -985,7 +1035,7 @@ namespace Revathryn.Engine.Tests
 
                 FakeRepoFileRepository files = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
                 FakeReviewLinkRepository links = new();
                 FakeRepoFileAnalysisRepository analyses = new();
                 FakeQueueRepository queue = new();
@@ -995,8 +1045,9 @@ namespace Revathryn.Engine.Tests
                 FakeRepositoryScanRepository scans = new();
                 FlakyScanner scanner = new();
 
-                ReviewScheduler scheduler = new(repositories, files, reviewTypes, links, analyses, new ReviewQueue(queue));
-                RepositoryProcessor processor = new(repositories, files, scanner, scheduler, analysisEngine, projectDiscovery, projects, scans, new RepositoryScanLockRegistry());
+                FakeRepositoryReviewRepository repositoryReviews = new();
+                ReviewScheduler scheduler = new(repositories, files, reviewTypes, repositoryReviews, links, analyses, new ReviewQueue(queue), new FakeGitBranchProvider());
+                RepositoryProcessor processor = new(repositories, files, scanner, scheduler, analysisEngine, projectDiscovery, projects, scans, new RepositoryScanLockRegistry(), new FakeGitBranchProvider());
 
                 await Assert.ThrowsExactlyAsync<IOException>(() => processor.ProcessAsync(1, CancellationToken.None));
 
@@ -1029,7 +1080,7 @@ namespace Revathryn.Engine.Tests
 
                 FakeRepoFileRepository files = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10 });
                 FakeReviewLinkRepository links = new();
                 FakeRepoFileAnalysisRepository analyses = new();
                 FakeQueueRepository queue = new();
@@ -1039,8 +1090,9 @@ namespace Revathryn.Engine.Tests
                 FakeRepositoryScanRepository scans = new();
                 FlakyScanner scanner = new();
 
-                ReviewScheduler scheduler = new(repositories, files, reviewTypes, links, analyses, new ReviewQueue(queue));
-                RepositoryProcessor processor = new(repositories, files, scanner, scheduler, analysisEngine, projectDiscovery, projects, scans, new RepositoryScanLockRegistry());
+                FakeRepositoryReviewRepository repositoryReviews = new();
+                ReviewScheduler scheduler = new(repositories, files, reviewTypes, repositoryReviews, links, analyses, new ReviewQueue(queue), new FakeGitBranchProvider());
+                RepositoryProcessor processor = new(repositories, files, scanner, scheduler, analysisEngine, projectDiscovery, projects, scans, new RepositoryScanLockRegistry(), new FakeGitBranchProvider());
 
                 await Assert.ThrowsExactlyAsync<IOException>(() => processor.ProcessAsync(1, CancellationToken.None));
 
@@ -1078,14 +1130,18 @@ namespace Revathryn.Engine.Tests
         {
             public SchedulerHarness()
             {
-                Scheduler = new ReviewScheduler(Repositories, Files, ReviewTypes, Links, Analyses, new ReviewQueue(Queue));
+                Scheduler = new ReviewScheduler(Repositories, Files, ReviewTypes, RepositoryReviews, Links, Analyses, new ReviewQueue(Queue), BranchProvider);
             }
+
+            public FakeGitBranchProvider BranchProvider { get; } = new();
 
             public FakeRepositoryRepository Repositories { get; } = new();
 
             public FakeRepoFileRepository Files { get; } = new();
 
             public FakeReviewTypeRepository ReviewTypes { get; } = new();
+
+            public FakeRepositoryReviewRepository RepositoryReviews { get; } = new();
 
             public FakeReviewLinkRepository Links { get; } = new();
 
@@ -1118,14 +1174,14 @@ namespace Revathryn.Engine.Tests
                 ReviewType reviewType = new()
                 {
                     Id = id,
-                    RepositoryId = 1,
                     FileExtensions = fileExtensions,
                     ReviewDefinitionVersion = version,
-                    DefaultPriority = priority,
-                    Enabled = enabled
+                    DefaultPriority = priority
                 };
 
                 ReviewTypes.Add(reviewType);
+                ReviewTypes.SetEnabled(id, enabled);
+                RepositoryReviews.Seed(1, id, enabled);
                 return reviewType;
             }
 
@@ -1149,15 +1205,19 @@ namespace Revathryn.Engine.Tests
             {
                 Repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = localPath, Enabled = true });
 
-                ReviewScheduler scheduler = new(Repositories, Files, ReviewTypes, Links, Analyses, new ReviewQueue(Queue));
-                Processor = new RepositoryProcessor(Repositories, Files, new RepositoryScanner(), scheduler, AnalysisEngine, ProjectDiscovery, Projects, Scans, new RepositoryScanLockRegistry());
+                ReviewScheduler scheduler = new(Repositories, Files, ReviewTypes, RepositoryReviews, Links, Analyses, new ReviewQueue(Queue), BranchProvider);
+                Processor = new RepositoryProcessor(Repositories, Files, new RepositoryScanner(), scheduler, AnalysisEngine, ProjectDiscovery, Projects, Scans, new RepositoryScanLockRegistry(), BranchProvider);
             }
+
+            public FakeGitBranchProvider BranchProvider { get; } = new();
 
             public FakeRepositoryRepository Repositories { get; } = new();
 
             public FakeRepoFileRepository Files { get; } = new();
 
             public FakeReviewTypeRepository ReviewTypes { get; } = new();
+
+            public FakeRepositoryReviewRepository RepositoryReviews { get; } = new();
 
             public FakeReviewLinkRepository Links { get; } = new();
 
@@ -1462,6 +1522,7 @@ namespace Revathryn.Engine.Tests
         private sealed class FakeReviewTypeRepository : IReviewTypeRepository
         {
             private readonly Dictionary<long, ReviewType> _items = [];
+            private readonly Dictionary<long, bool> _enabledOverrides = [];
             private long _nextId = 1;
 
             public void Add(ReviewType reviewType)
@@ -1474,20 +1535,35 @@ namespace Revathryn.Engine.Tests
                 _items[reviewType.Id] = reviewType;
             }
 
+            public void SetEnabled(long reviewTypeId, bool enabled)
+            {
+                _enabledOverrides[reviewTypeId] = enabled;
+            }
+
             public Task<ReviewType> GetByIdAsync(long id, CancellationToken cancellationToken = default)
             {
                 _items.TryGetValue(id, out ReviewType reviewType);
                 return Task.FromResult(reviewType);
             }
 
+            public Task<IReadOnlyList<ReviewType>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values]);
+            }
+
             public Task<IReadOnlyList<ReviewType>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values.Where(t => t.RepositoryId == repositoryId)]);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values]);
             }
 
             public Task<IReadOnlyList<ReviewType>> GetEnabledByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values.Where(t => t.RepositoryId == repositoryId && t.Enabled)]);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values.Where(t => !_enabledOverrides.TryGetValue(t.Id, out bool enabled) || enabled)]);
+            }
+
+            public Task<IReadOnlyList<RepositoryReviewType>> GetRepositoryReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryReviewType>>([.. _items.Values.Select(t => new RepositoryReviewType { ReviewType = t, Enabled = !_enabledOverrides.TryGetValue(t.Id, out bool enabled) || enabled })]);
             }
 
             public Task<long> AddAsync(ReviewType reviewType, CancellationToken cancellationToken = default)
@@ -1505,7 +1581,65 @@ namespace Revathryn.Engine.Tests
             public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
             {
                 _items.Remove(id);
+                _enabledOverrides.Remove(id);
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeRepositoryReviewRepository : IRepositoryReviewRepository
+        {
+            private readonly Dictionary<(long RepositoryId, long ReviewTypeId), RepositoryReview> _items = [];
+            private long _nextId = 1;
+
+            public void Seed(long repositoryId, long reviewTypeId, bool enabled)
+            {
+                _items[(repositoryId, reviewTypeId)] = new RepositoryReview
+                {
+                    Id = _nextId++,
+                    RepositoryId = repositoryId,
+                    ReviewTypeId = reviewTypeId,
+                    Enabled = enabled
+                };
+            }
+
+            public Task<RepositoryReview> GetAsync(long repositoryId, long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                _items.TryGetValue((repositoryId, reviewTypeId), out RepositoryReview link);
+                return Task.FromResult(link);
+            }
+
+            public Task<IReadOnlyList<RepositoryReview>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryReview>>([.. _items.Values.Where(l => l.RepositoryId == repositoryId)]);
+            }
+
+            public Task<long> AddAsync(RepositoryReview link, CancellationToken cancellationToken = default)
+            {
+                link.Id = _nextId++;
+                _items[(link.RepositoryId, link.ReviewTypeId)] = link;
+                return Task.FromResult(link.Id);
+            }
+
+            public Task SetEnabledAsync(long repositoryId, long reviewTypeId, bool enabled, CancellationToken cancellationToken = default)
+            {
+                _items[(repositoryId, reviewTypeId)] = new RepositoryReview
+                {
+                    Id = _nextId++,
+                    RepositoryId = repositoryId,
+                    ReviewTypeId = reviewTypeId,
+                    Enabled = enabled
+                };
+                return Task.CompletedTask;
+            }
+
+            public Task<int> LinkAllReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(0);
+            }
+
+            public Task<int> LinkToAllRepositoriesAsync(long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(0);
             }
         }
 
@@ -1588,7 +1722,7 @@ namespace Revathryn.Engine.Tests
 
         private sealed class FakeRepoFileAnalysisRepository : IRepoFileAnalysisRepository
         {
-            private readonly Dictionary<(long RepoFileId, long ReviewTypeId), RepoFileAnalysis> _items = [];
+            private readonly Dictionary<(long RepoFileId, long ReviewTypeId, string Branch), RepoFileAnalysis> _items = [];
             private long _nextId = 1;
 
             public void Add(RepoFileAnalysis analysis)
@@ -1598,12 +1732,12 @@ namespace Revathryn.Engine.Tests
                     analysis.Id = _nextId++;
                 }
 
-                _items[(analysis.RepoFileId, analysis.ReviewTypeId)] = analysis;
+                _items[(analysis.RepoFileId, analysis.ReviewTypeId, analysis.Branch)] = analysis;
             }
 
-            public Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
+            public Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, string branch, CancellationToken cancellationToken = default)
             {
-                _items.TryGetValue((repoFileId, reviewTypeId), out RepoFileAnalysis analysis);
+                _items.TryGetValue((repoFileId, reviewTypeId, branch ?? string.Empty), out RepoFileAnalysis analysis);
                 return Task.FromResult(analysis);
             }
 
@@ -1614,7 +1748,7 @@ namespace Revathryn.Engine.Tests
 
             public Task<long> UpsertAsync(RepoFileAnalysis analysis, CancellationToken cancellationToken = default)
             {
-                (long RepoFileId, long ReviewTypeId) key = (analysis.RepoFileId, analysis.ReviewTypeId);
+                (long RepoFileId, long ReviewTypeId, string Branch) key = (analysis.RepoFileId, analysis.ReviewTypeId, analysis.Branch);
 
                 if (_items.TryGetValue(key, out RepoFileAnalysis existing))
                 {
@@ -1635,7 +1769,7 @@ namespace Revathryn.Engine.Tests
 
                 if (analysis is not null)
                 {
-                    _items.Remove((analysis.RepoFileId, analysis.ReviewTypeId));
+                    _items.Remove((analysis.RepoFileId, analysis.ReviewTypeId, analysis.Branch));
                 }
 
                 return Task.CompletedTask;
@@ -1643,7 +1777,7 @@ namespace Revathryn.Engine.Tests
 
             public Task DeleteByRepoFileAsync(long repoFileId, CancellationToken cancellationToken = default)
             {
-                foreach ((long RepoFileId, long ReviewTypeId) key in _items.Keys.Where(k => k.RepoFileId == repoFileId).ToList())
+                foreach ((long RepoFileId, long ReviewTypeId, string Branch) key in _items.Keys.Where(k => k.RepoFileId == repoFileId).ToList())
                 {
                     _items.Remove(key);
                 }
@@ -1675,8 +1809,8 @@ namespace Revathryn.Engine.Tests
             {
                 QueueItem item = _items
                     .Where(i => i.Status == QueueItemStatus.Pending && (i.NextAttemptUtc is null || i.NextAttemptUtc <= DateTime.UtcNow))
-                    .OrderByDescending(i => i.Priority)
-                    .ThenBy(i => i.CreatedDate)
+                    .OrderBy(i => i.CreatedDate)
+                    .ThenBy(i => i.Id)
                     .FirstOrDefault();
 
                 if (item is not null)
@@ -1689,13 +1823,12 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult(item);
             }
 
-            public Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
+            public Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
             {
                 QueueItem item = _items.FirstOrDefault(i => i.Id == id);
                 if (item is not null)
                 {
                     item.Status = QueueItemStatus.Pending;
-                    item.Priority = priority;
                     item.NextAttemptUtc = nextAttemptUtc;
                     item.LastError = lastError ?? string.Empty;
                     item.LeasedUntilUtc = null;
@@ -1712,7 +1845,7 @@ namespace Revathryn.Engine.Tests
 
             public Task<IReadOnlyList<QueueItem>> GetPendingAsync(CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<QueueItem>>([.. _items.Where(i => i.Status == QueueItemStatus.Pending).OrderByDescending(i => i.Priority).ThenBy(i => i.CreatedDate)]);
+                return Task.FromResult<IReadOnlyList<QueueItem>>([.. _items.Where(i => i.Status == QueueItemStatus.Pending).OrderBy(i => i.CreatedDate).ThenBy(i => i.Id)]);
             }
 
             public Task<IReadOnlyList<QueueItem>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
@@ -1836,6 +1969,16 @@ namespace Revathryn.Engine.Tests
             }
         }
 
+        private sealed class FakeGitBranchProvider : IGitBranchProvider
+        {
+            public string Branch { get; set; } = string.Empty;
+
+            public Task<string> GetCurrentBranchAsync(string repositoryLocalPath, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Branch);
+            }
+        }
+
         private sealed class CountingFileHasher : IFileHasher
         {
             private readonly FileHasher _inner = new();
@@ -1878,7 +2021,7 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
-        public async Task ReviewProcessor_FailedReview_ReleasesForRetryWithDecayedPriority()
+        public async Task ReviewProcessor_FailedReview_ReleasesForRetry()
         {
             string root = CreateTempDirectory();
             try
@@ -1892,7 +2035,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -1900,13 +2043,12 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
                 FakeAIReviewEngine engine = new() { Response = new ReviewResponse { Success = false, Error = "boom" } };
                 FakeRetryPolicy retryPolicy = new() { Delay = TimeSpan.FromMinutes(7) };
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
                 options.DefaultRetry.MaxAttempts = 3;
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, retryPolicy, options);
@@ -1918,7 +2060,6 @@ namespace Revathryn.Engine.Tests
 
                 QueueItem pending = (await queue.GetPendingAsync(TestContext.CancellationToken))[0];
                 Assert.AreEqual(QueueItemStatus.Pending, pending.Status);
-                Assert.AreEqual(50, pending.Priority);
                 Assert.AreEqual(1, pending.AttemptCount);
                 Assert.AreEqual("boom", pending.LastError);
                 Assert.IsGreaterThanOrEqualTo(DateTime.UtcNow.AddMinutes(6), pending.NextAttemptUtc.Value);
@@ -1944,7 +2085,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -1952,7 +2093,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -1998,7 +2138,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2006,7 +2146,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2031,7 +2170,7 @@ namespace Revathryn.Engine.Tests
                 };
 
                 FakeReviewUsageRepository usageRepository = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
                 options.DefaultRetry.MaxAttempts = 3;
 
                 ReviewProcessor processor = CreateReviewProcessor(
@@ -2080,7 +2219,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2088,14 +2227,13 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     MaxAttempts = 1,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
                 FakeAIReviewEngine engine = new() { Response = new ReviewResponse { Success = false, Error = "boom" } };
                 FakeFindingRepository findings = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
                 options.DefaultRetry.MaxAttempts = 3;
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, findings);
@@ -2130,7 +2268,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2138,13 +2276,12 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
                 FakeAIReviewEngine engine = new() { Response = new ReviewResponse { Success = true, Results = [] } };
                 FakeReviewOutcomeStore outcomes = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes);
 
@@ -2153,6 +2290,59 @@ namespace Revathryn.Engine.Tests
                 Assert.IsTrue(processed);
                 Assert.AreEqual(0, await queue.CountAsync(TestContext.CancellationToken));
                 Assert.HasCount(1, outcomes.Outcomes);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task ReviewProcessor_Success_PersistsEngineModelOnFinding()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "Program.cs"), "class Program { }");
+
+                FakeRepositoryRepository repositories = new();
+                repositories.Add(new Repository { Id = 1, Name = "Repo", LocalPath = root, Enabled = true });
+
+                FakeRepoFileRepository files = new();
+                files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
+
+                FakeReviewTypeRepository reviewTypes = new();
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
+
+                FakeQueueRepository queue = new();
+                await queue.EnqueueAsync(new QueueItem
+                {
+                    RepositoryId = 1,
+                    RepoFileId = 1,
+                    ReviewTypeId = 1,
+                    CreatedDate = DateTime.UtcNow
+                }, TestContext.CancellationToken);
+
+                FakeAIReviewEngine engine = new()
+                {
+                    Response = new ReviewResponse
+                    {
+                        Success = true,
+                        EngineModel = "gpt-4o",
+                        Results = [new ReviewResult { Severity = FindingSeverity.High, Title = "Missing null check", Description = "Value can be null." }]
+                    }
+                };
+                FakeReviewOutcomeStore outcomes = new();
+                ResilienceOptions options = new();
+
+                ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes);
+
+                bool processed = await processor.ProcessNextAsync(TestContext.CancellationToken);
+
+                Assert.IsTrue(processed);
+                Assert.HasCount(1, outcomes.Outcomes);
+                Assert.HasCount(1, outcomes.Outcomes[0].Findings);
+                Assert.AreEqual("gpt-4o", outcomes.Outcomes[0].Findings[0].EngineModel);
             }
             finally
             {
@@ -2175,7 +2365,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2183,7 +2373,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2196,7 +2385,7 @@ namespace Revathryn.Engine.Tests
                     }
                 };
                 FakeIssueValidationService issueValidationService = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, issueValidationService: issueValidationService);
 
@@ -2227,7 +2416,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2235,7 +2424,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2248,7 +2436,7 @@ namespace Revathryn.Engine.Tests
                     }
                 };
                 FakeIssueValidationService issueValidationService = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, issueValidationService: issueValidationService);
 
@@ -2277,7 +2465,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2285,7 +2473,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2298,7 +2485,7 @@ namespace Revathryn.Engine.Tests
                     }
                 };
                 FakeIssueValidationService issueValidationService = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, issueValidationService: issueValidationService);
 
@@ -2327,7 +2514,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2335,7 +2522,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2348,7 +2534,7 @@ namespace Revathryn.Engine.Tests
                     }
                 };
                 FakeIssueValidationService issueValidationService = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, issueValidationService: issueValidationService);
 
@@ -2377,7 +2563,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2385,13 +2571,12 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
                 FakeAIReviewEngine engine = new() { Response = new ReviewResponse { Success = true, Results = [] } };
                 FakeReviewOutcomeStore outcomes = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
                 FakeArchitectureSummaryService architectureSummaryService = new() { Summary = string.Empty };
 
                 ReviewProcessor processor = CreateReviewProcessor(
@@ -2434,7 +2619,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2442,7 +2627,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2463,7 +2647,7 @@ namespace Revathryn.Engine.Tests
                         ]
                     }
                 };
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
                 FakeReviewOutcomeStore outcomes = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes, contextProvider: contextProvider);
@@ -2504,7 +2688,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2512,7 +2696,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2521,7 +2704,7 @@ namespace Revathryn.Engine.Tests
                 engine.Responses.Add(new ReviewResponse { Success = true, Results = [] });
 
                 FakeReviewContextProvider contextProvider = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
                 FakeReviewOutcomeStore outcomes = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes, contextProvider: contextProvider);
@@ -2559,7 +2742,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2567,7 +2750,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2576,7 +2758,7 @@ namespace Revathryn.Engine.Tests
                 engine.Responses.Add(new ReviewResponse { Success = true, Results = [] });
 
                 FakeReviewContextProvider contextProvider = new();
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
                 FakeReviewOutcomeStore outcomes = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes, contextProvider: contextProvider);
@@ -2618,7 +2800,7 @@ namespace Revathryn.Engine.Tests
                 files.Add(new RepoFile { Id = 1, RepositoryId = 1, RelativePath = "Program.cs", FileName = "Program.cs", Extension = "cs", Sha256 = "hash" });
 
                 FakeReviewTypeRepository reviewTypes = new();
-                reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 10, Enabled = true, Prompt = "prompt" });
+                reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 10, Prompt = "prompt" });
 
                 FakeQueueRepository queue = new();
                 await queue.EnqueueAsync(new QueueItem
@@ -2626,7 +2808,6 @@ namespace Revathryn.Engine.Tests
                     RepositoryId = 1,
                     RepoFileId = 1,
                     ReviewTypeId = 1,
-                    Priority = 100,
                     CreatedDate = DateTime.UtcNow
                 }, TestContext.CancellationToken);
 
@@ -2650,7 +2831,7 @@ namespace Revathryn.Engine.Tests
                         ]
                     }
                 };
-                ResilienceOptions options = new() { QueuePriorityDecayFactor = 2, QueueMinimumPriority = 1 };
+                ResilienceOptions options = new();
                 FakeReviewOutcomeStore outcomes = new();
 
                 ReviewProcessor processor = CreateReviewProcessor(queue, repositories, files, reviewTypes, engine, new FakeRetryPolicy(), options, outcomes: outcomes, contextProvider: contextProvider);
@@ -2688,11 +2869,15 @@ namespace Revathryn.Engine.Tests
             IProcessingGate processingGate = null,
             FakeIssueValidationService issueValidationService = null)
         {
+            FakeRepositoryReviewRepository repositoryReviews = new();
+            repositoryReviews.Seed(1, 1, true);
+
             return new ReviewProcessor(
                 new ReviewQueue(queue),
                 repositories,
                 files,
                 reviewTypes,
+                repositoryReviews,
                 outcomes ?? new FakeReviewOutcomeStore(),
                 findings ?? new FakeFindingRepository(),
                 new FakePromptResolutionService(),
