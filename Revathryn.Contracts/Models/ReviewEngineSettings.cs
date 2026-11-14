@@ -26,6 +26,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Maximum number of output tokens.</summary>
         public int MaxTokens { get; set; }
 
+        /// <summary>Maximum number of simultaneous requests sent to this engine.</summary>
+        public int MaxSimultaneousConnections { get; set; } = Consts.DefaultAIMaxSimultaneousConnections;
+
         /// <summary>
         /// Name of the secret holding the API key. The key itself is resolved at execution time
         /// and is never stored in this model, shown in the UI or returned by the API.

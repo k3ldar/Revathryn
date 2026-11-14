@@ -20,4 +20,7 @@
   <Project Path="Revathryn.Website/Revathryn.Website.csproj" Id="e5321282-4d19-4fa0-8c72-f86e8c2864b8" />
   <Project Path="Revathryn.Website.Tests/Revathryn.Website.Tests.csproj" />
   <Project Path="Revathryn/Revathryn.csproj" />
+  <Project Path="RevathrynVS/RevathrynVS2026.csproj">
+    <Deploy />
+  </Project>
 </Solution>

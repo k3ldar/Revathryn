@@ -1,4 +1,5 @@
 using Revathryn.Contracts;
+using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Orchestration;
 using Revathryn.Contracts.Persistence;
@@ -15,25 +16,31 @@ namespace Revathryn.Engine
         private readonly IRepositoryRepository _repositoryRepository;
         private readonly IRepoFileRepository _fileRepository;
         private readonly IReviewTypeRepository _reviewTypeRepository;
+        private readonly IRepositoryReviewRepository _repositoryReviewRepository;
         private readonly IReviewLinkRepository _reviewLinkRepository;
         private readonly IRepoFileAnalysisRepository _analysisRepository;
         private readonly IReviewQueue _reviewQueue;
+        private readonly IGitBranchProvider _gitBranchProvider;
 
         /// <summary>Initialises a new scheduler.</summary>
         public ReviewScheduler(
             IRepositoryRepository repositoryRepository,
             IRepoFileRepository fileRepository,
             IReviewTypeRepository reviewTypeRepository,
+            IRepositoryReviewRepository repositoryReviewRepository,
             IReviewLinkRepository reviewLinkRepository,
             IRepoFileAnalysisRepository analysisRepository,
-            IReviewQueue reviewQueue)
+            IReviewQueue reviewQueue,
+            IGitBranchProvider gitBranchProvider)
         {
             _repositoryRepository = repositoryRepository;
             _fileRepository = fileRepository;
             _reviewTypeRepository = reviewTypeRepository;
+            _repositoryReviewRepository = repositoryReviewRepository;
             _reviewLinkRepository = reviewLinkRepository;
             _analysisRepository = analysisRepository;
             _reviewQueue = reviewQueue;
+            _gitBranchProvider = gitBranchProvider;
         }
 
         /// <summary>Enqueues review work for a whole repository based on its review types.</summary>
@@ -47,6 +54,7 @@ namespace Revathryn.Engine
                 return result;
             }
 
+            string branch = await _gitBranchProvider.GetCurrentBranchAsync(repository.LocalPath, cancellationToken).ConfigureAwait(false);
             IReadOnlyList<RepoFile> files = await _fileRepository.GetByRepositoryAsync(repositoryId, cancellationToken).ConfigureAwait(false);
             IReadOnlyList<ReviewType> reviewTypes = await _reviewTypeRepository.GetEnabledByRepositoryAsync(repositoryId, cancellationToken).ConfigureAwait(false);
 
@@ -57,7 +65,7 @@ namespace Revathryn.Engine
                     continue;
                 }
 
-                ReviewScheduleResult fileResult = await ScheduleForFileAsync(repositoryId, file, reviewTypes, cancellationToken).ConfigureAwait(false);
+                ReviewScheduleResult fileResult = await ScheduleForFileAsync(repositoryId, branch, file, reviewTypes, cancellationToken).ConfigureAwait(false);
                 result.Added += fileResult.Added;
                 result.DuplicatesSkipped += fileResult.DuplicatesSkipped;
             }
@@ -76,8 +84,16 @@ namespace Revathryn.Engine
                 return result;
             }
 
+            Repository repository = await _repositoryRepository.GetByIdAsync(file.RepositoryId, cancellationToken).ConfigureAwait(false);
+
+            if (repository is null || !repository.Enabled)
+            {
+                return result;
+            }
+
+            string branch = await _gitBranchProvider.GetCurrentBranchAsync(repository.LocalPath, cancellationToken).ConfigureAwait(false);
             IReadOnlyList<ReviewType> reviewTypes = await _reviewTypeRepository.GetEnabledByRepositoryAsync(file.RepositoryId, cancellationToken).ConfigureAwait(false);
-            return await ScheduleForFileAsync(file.RepositoryId, file, reviewTypes, cancellationToken).ConfigureAwait(false);
+            return await ScheduleForFileAsync(file.RepositoryId, branch, file, reviewTypes, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>Requeues a single file for a specific review type, forcing re-review even when its analysis is current.</summary>
@@ -93,7 +109,14 @@ namespace Revathryn.Engine
 
             ReviewType reviewType = await _reviewTypeRepository.GetByIdAsync(reviewTypeId, cancellationToken).ConfigureAwait(false);
 
-            if (reviewType is null || !reviewType.Enabled || reviewType.RepositoryId != file.RepositoryId)
+            if (reviewType is null)
+            {
+                return result;
+            }
+
+            RepositoryReview mapping = await _repositoryReviewRepository.GetAsync(file.RepositoryId, reviewType.Id, cancellationToken).ConfigureAwait(false);
+
+            if (mapping is null || !mapping.Enabled)
             {
                 return result;
             }
@@ -110,13 +133,22 @@ namespace Revathryn.Engine
                 return result;
             }
 
+            Repository repository = await _repositoryRepository.GetByIdAsync(file.RepositoryId, cancellationToken).ConfigureAwait(false);
+
+            if (repository is null)
+            {
+                return result;
+            }
+
+            string branch = await _gitBranchProvider.GetCurrentBranchAsync(repository.LocalPath, cancellationToken).ConfigureAwait(false);
+
             QueueItem item = new()
             {
                 RepositoryId = file.RepositoryId,
                 RepoFileId = file.Id,
                 ReviewTypeId = reviewType.Id,
-                Priority = link?.PriorityOverride ?? reviewType.DefaultPriority,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.UtcNow,
+                Branch = branch
             };
 
             if (await _reviewQueue.EnqueueAsync(item, cancellationToken).ConfigureAwait(false))
@@ -170,11 +202,13 @@ namespace Revathryn.Engine
             ArgumentNullException.ThrowIfNull(file);
             ArgumentNullException.ThrowIfNull(reviewType);
 
-            return !await RequiresReviewAsync(file, reviewType, cancellationToken).ConfigureAwait(false);
+            string branch = await ResolveBranchAsync(file.RepositoryId, cancellationToken).ConfigureAwait(false);
+            return !await RequiresReviewAsync(file, reviewType, branch, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<ReviewScheduleResult> ScheduleForFileAsync(
             long repositoryId,
+            string branch,
             RepoFile file,
             IReadOnlyList<ReviewType> reviewTypes,
             CancellationToken cancellationToken)
@@ -195,7 +229,7 @@ namespace Revathryn.Engine
                     continue;
                 }
 
-                if (!await RequiresReviewAsync(file, reviewType, cancellationToken).ConfigureAwait(false))
+                if (!await RequiresReviewAsync(file, reviewType, branch, cancellationToken).ConfigureAwait(false))
                 {
                     continue;
                 }
@@ -205,8 +239,8 @@ namespace Revathryn.Engine
                     RepositoryId = repositoryId,
                     RepoFileId = file.Id,
                     ReviewTypeId = reviewType.Id,
-                    Priority = link?.PriorityOverride ?? reviewType.DefaultPriority,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.UtcNow,
+                    Branch = branch
                 };
 
                 bool added = await _reviewQueue.EnqueueAsync(item, cancellationToken).ConfigureAwait(false);
@@ -224,9 +258,9 @@ namespace Revathryn.Engine
             return result;
         }
 
-        private async Task<bool> RequiresReviewAsync(RepoFile file, ReviewType reviewType, CancellationToken cancellationToken)
+        private async Task<bool> RequiresReviewAsync(RepoFile file, ReviewType reviewType, string branch, CancellationToken cancellationToken)
         {
-            RepoFileAnalysis analysis = await _analysisRepository.GetAsync(file.Id, reviewType.Id, cancellationToken).ConfigureAwait(false);
+            RepoFileAnalysis analysis = await _analysisRepository.GetAsync(file.Id, reviewType.Id, branch, cancellationToken).ConfigureAwait(false);
 
             if (analysis is null)
             {
@@ -244,6 +278,18 @@ namespace Revathryn.Engine
             }
 
             return !string.Equals(analysis.AnalysisVersion, CurrentAnalysisVersion, StringComparison.Ordinal);
+        }
+
+        private async Task<string> ResolveBranchAsync(long repositoryId, CancellationToken cancellationToken)
+        {
+            Repository repository = await _repositoryRepository.GetByIdAsync(repositoryId, cancellationToken).ConfigureAwait(false);
+
+            if (repository is null)
+            {
+                return string.Empty;
+            }
+
+            return await _gitBranchProvider.GetCurrentBranchAsync(repository.LocalPath, cancellationToken).ConfigureAwait(false);
         }
 
         private static bool AppliesToFile(ReviewType reviewType, RepoFile file)

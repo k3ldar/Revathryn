@@ -9,7 +9,7 @@ namespace Revathryn.Data
     public sealed class RepositoryScanRepository : SqliteRepositoryBase, IRepositoryScanRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, StartedUtc, CompletedUtc, Succeeded, FilesDiscovered, NewFiles, ChangedFiles, UnchangedFiles, RemovedFiles, RenamedFiles";
+            "Id, RepositoryId, StartedUtc, CompletedUtc, Succeeded, FilesDiscovered, NewFiles, ChangedFiles, UnchangedFiles, RemovedFiles, RenamedFiles, Branch";
 
         /// <summary>Initialises a new repository.</summary>
         public RepositoryScanRepository(SqliteConnectionFactory connectionFactory)
@@ -23,8 +23,8 @@ namespace Revathryn.Data
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO RepositoryScans (RepositoryId, StartedUtc, CompletedUtc, Succeeded, FilesDiscovered, NewFiles, ChangedFiles, UnchangedFiles, RemovedFiles, RenamedFiles)
-                VALUES (@RepositoryId, @StartedUtc, @CompletedUtc, @Succeeded, @FilesDiscovered, @NewFiles, @ChangedFiles, @UnchangedFiles, @RemovedFiles, @RenamedFiles);
+                INSERT INTO RepositoryScans (RepositoryId, StartedUtc, CompletedUtc, Succeeded, FilesDiscovered, NewFiles, ChangedFiles, UnchangedFiles, RemovedFiles, RenamedFiles, Branch)
+                VALUES (@RepositoryId, @StartedUtc, @CompletedUtc, @Succeeded, @FilesDiscovered, @NewFiles, @ChangedFiles, @UnchangedFiles, @RemovedFiles, @RenamedFiles, @Branch);
                 SELECT last_insert_rowid();
                 """;
             AddParameters(command, record);
@@ -80,6 +80,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@UnchangedFiles", record.UnchangedFiles);
             command.Parameters.AddWithValue("@RemovedFiles", record.RemovedFiles);
             command.Parameters.AddWithValue("@RenamedFiles", record.RenamedFiles);
+            command.Parameters.AddWithValue("@Branch", record.Branch ?? string.Empty);
         }
 
         private static RepositoryScanRecord MapRecord(SqliteDataReader reader)
@@ -96,7 +97,8 @@ namespace Revathryn.Data
                 ChangedFiles = reader.GetInt32(7),
                 UnchangedFiles = reader.GetInt32(8),
                 RemovedFiles = reader.GetInt32(9),
-                RenamedFiles = reader.GetInt32(10)
+                RenamedFiles = reader.GetInt32(10),
+                Branch = reader.IsDBNull(11) ? string.Empty : reader.GetString(11)
             };
         }
     }

@@ -17,9 +17,6 @@ namespace Revathryn.Contracts.Models
         /// <summary>The review type to execute.</summary>
         public long ReviewTypeId { get; set; }
 
-        /// <summary>Processing priority; higher values are processed first.</summary>
-        public int Priority { get; set; }
-
         /// <summary>UTC timestamp when the item entered the queue.</summary>
         public DateTime CreatedDate { get; set; }
 
@@ -40,5 +37,8 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Current lifecycle state of the item.</summary>
         public QueueItemStatus Status { get; set; }
+
+        /// <summary>Git branch the item was queued against. Empty for legacy or detached HEAD items.</summary>
+        public string Branch { get; set; } = string.Empty;
     }
 }

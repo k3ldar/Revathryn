@@ -39,10 +39,11 @@ namespace Revathryn.Data
             foreach (Finding finding in newFindings)
             {
                 finding.ReviewContextId ??= reviewContextId;
+                finding.Branch = outcome.Branch;
             }
 
             IReadOnlyList<Finding> existingFindings = await FindingRepository
-                .GetForFileAndReviewTypeAsync(connection, transaction, outcome.RepoFileId, outcome.ReviewTypeId, cancellationToken)
+                .GetForFileAndReviewTypeAsync(connection, transaction, outcome.RepoFileId, outcome.ReviewTypeId, outcome.Branch, cancellationToken)
                 .ConfigureAwait(false);
 
             FindingReconciliation reconciliation = _findingReconciler.Reconcile(existingFindings, newFindings, outcome.Sha256, outcome.CompletedUtc);
@@ -77,7 +78,8 @@ namespace Revathryn.Data
                     CompletionTokens = usage.CompletionTokens,
                     TotalTokens = usage.TotalTokens,
                     CachedTokens = usage.CachedTokens,
-                    OccurredUtc = usage.OccurredUtc == default ? outcome.CompletedUtc : usage.OccurredUtc
+                    OccurredUtc = usage.OccurredUtc == default ? outcome.CompletedUtc : usage.OccurredUtc,
+                    Branch = outcome.Branch
                 };
 
                 await ReviewUsageRepository.AddAsync(connection, transaction, record, cancellationToken).ConfigureAwait(false);
@@ -91,7 +93,8 @@ namespace Revathryn.Data
                 Sha256 = outcome.Sha256,
                 LastAnalysedDate = outcome.CompletedUtc,
                 AnalysisVersion = outcome.AnalysisVersion,
-                ReviewDefinitionVersion = outcome.ReviewDefinitionVersion
+                ReviewDefinitionVersion = outcome.ReviewDefinitionVersion,
+                Branch = outcome.Branch
             };
 
             await RepoFileAnalysisRepository.UpsertAsync(connection, transaction, analysis, cancellationToken).ConfigureAwait(false);

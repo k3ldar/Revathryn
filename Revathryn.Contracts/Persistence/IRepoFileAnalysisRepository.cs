@@ -5,8 +5,8 @@ namespace Revathryn.Contracts.Persistence
     /// <summary>Data access for completed file analysis records.</summary>
     public interface IRepoFileAnalysisRepository
     {
-        /// <summary>Returns the analysis record for the file and review type, or null when not found.</summary>
-        Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default);
+        /// <summary>Returns the analysis record for the file, review type, and branch, or null when not found.</summary>
+        Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, string branch, CancellationToken cancellationToken = default);
 
         /// <summary>Returns all analysis records belonging to a repository.</summary>
         Task<IReadOnlyList<RepoFileAnalysis>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default);

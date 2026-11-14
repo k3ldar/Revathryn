@@ -9,6 +9,7 @@
 
     string displayTitle = string.IsNullOrWhiteSpace(Model.Finding.Title) ? Model.Finding.Id.ToString() : Model.Finding.Title;
     string locationPath = !string.IsNullOrWhiteSpace(Model.FileRelativePath) ? Model.FileRelativePath : Model.Context?.FilePath ?? string.Empty;
+    string detectionModel = !string.IsNullOrWhiteSpace(Model.Finding.EngineModel) ? Model.Finding.EngineModel : Model.Context?.EngineModel ?? string.Empty;
     List<Revathryn.Contracts.Models.ReviewContextItem> suppliedContextItems = Model.Context?.ContextItems.Where(item => !item.Requested).ToList() ?? [];
     List<Revathryn.Contracts.Models.ReviewContextItem> requestedContextItems = Model.Context?.ContextItems.Where(item => item.Requested).ToList() ?? [];
     List<string> aiRequestedKeys = Model.Context?.RequestedContextKeys.Where(key => !string.Equals(key, Consts.ContextKeyRelated, StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
@@ -65,6 +66,21 @@
                             @foreach (FindingSeverity option in SeverityOptions())
                             {
                                 <option value="@((int)option)" selected="@(Model.Finding.Severity == option)">@SeverityLabel(option)</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">@Strings.SaveButton</button>
+                </form>
+            </div>
+            <div class="col-12 col-md-auto">
+                <form method="post" asp-action="UpdateStatus" asp-all-route-data="@PostStateRoute()" class="d-flex flex-wrap gap-2 align-items-end">
+                    <input type="hidden" name="id" value="@Model.Finding.Id" />
+                    <div>
+                        <label for="newStatus" class="form-label">@Strings.UpdateStatusLabel</label>
+                        <select id="newStatus" name="newStatus" class="form-select">
+                            @foreach (FindingStatus option in StatusOptions())
+                            {
+                                <option value="@((int)option)" selected="@(Model.Finding.Status == option)">@StatusLabel(option)</option>
                             }
                         </select>
                     </div>
@@ -167,6 +183,9 @@
 <div class="card mb-4">
     <div class="card-header">@Strings.FindingsLabel</div>
     <div class="card-body">
+        <h2 class="h6">@Strings.ModelLabel</h2>
+        <p class="mb-3">@(string.IsNullOrWhiteSpace(detectionModel) ? Strings.NotAvailableLabel : detectionModel)</p>
+
         @if (string.IsNullOrWhiteSpace(Model.Finding.Description))
         {
             <p class="text-muted mb-0">@Strings.NotAvailableLabel</p>
@@ -422,6 +441,18 @@
             FindingSeverity.Medium,
             FindingSeverity.Low,
             FindingSeverity.Info
+        ];
+    }
+
+    private static FindingStatus[] StatusOptions()
+    {
+        return
+        [
+            FindingStatus.New,
+            FindingStatus.Reviewed,
+            FindingStatus.FalsePositive,
+            FindingStatus.Resolved,
+            FindingStatus.Deferred
         ];
     }
 

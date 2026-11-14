@@ -1,6 +1,7 @@
 using Revathryn.Contracts;
 using Revathryn.Contracts.Analysis;
 using Revathryn.Contracts.Enums;
+using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Orchestration;
 using Revathryn.Contracts.Persistence;
@@ -26,6 +27,7 @@ namespace Revathryn.Engine
         private readonly IProjectRepository _projectRepository;
         private readonly IRepositoryScanRepository _scanRepository;
         private readonly RepositoryScanLockRegistry _lockRegistry;
+        private readonly IGitBranchProvider _gitBranchProvider;
 
         /// <summary>Initialises a new processor.</summary>
         public RepositoryProcessor(
@@ -37,7 +39,8 @@ namespace Revathryn.Engine
             IProjectDiscoveryService projectDiscoveryService,
             IProjectRepository projectRepository,
             IRepositoryScanRepository scanRepository,
-            RepositoryScanLockRegistry lockRegistry)
+            RepositoryScanLockRegistry lockRegistry,
+            IGitBranchProvider gitBranchProvider)
         {
             _repositoryRepository = repositoryRepository;
             _fileRepository = fileRepository;
@@ -48,6 +51,7 @@ namespace Revathryn.Engine
             _projectRepository = projectRepository;
             _scanRepository = scanRepository;
             _lockRegistry = lockRegistry;
+            _gitBranchProvider = gitBranchProvider;
         }
 
         /// <summary>Scans and processes a single repository, returning a summary of the work performed.</summary>
@@ -86,6 +90,7 @@ namespace Revathryn.Engine
             RepositoryScanSummary summary = new()
             {
                 RepositoryId = repository.Id,
+                Branch = await _gitBranchProvider.GetCurrentBranchAsync(repository.LocalPath, cancellationToken).ConfigureAwait(false),
                 StartedUtc = DateTime.UtcNow
             };
 
@@ -243,7 +248,8 @@ namespace Revathryn.Engine
                 ChangedFiles = summary.ChangedFiles,
                 UnchangedFiles = summary.UnchangedFiles,
                 RemovedFiles = summary.RemovedFiles,
-                RenamedFiles = summary.RenamedFiles
+                RenamedFiles = summary.RenamedFiles,
+                Branch = summary.Branch
             };
 
             // Persist changed scans, and always persist failures so the dashboard can surface them.

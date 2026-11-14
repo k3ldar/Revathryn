@@ -35,6 +35,26 @@ namespace Revathryn.Data.Tests
         }
 
         [TestMethod]
+        public async Task UpsertFileAsync_ThenGetSymbolsForFileAsync_ReturnsUsingDirectives()
+        {
+            using TempDirectory temp = new();
+            SymbolIndexStore store = new(temp.Path);
+
+            IndexedSymbol symbol = CreateSymbol("Program", "Demo.Program", "Class", []);
+            symbol.UsingDirectives = ["System", "Microsoft.Extensions.Logging", "Demo.Orders"];
+
+            await store.UpsertFileAsync(RepositoryName, CreateFile(temp.SourcePath), [symbol], TestContext.CancellationToken);
+
+            IReadOnlyList<IndexedSymbol> symbols = await store.GetSymbolsForFileAsync(RepositoryName, temp.SourcePath, TestContext.CancellationToken);
+
+            Assert.HasCount(1, symbols);
+            Assert.HasCount(3, symbols[0].UsingDirectives);
+            Assert.AreEqual("System", symbols[0].UsingDirectives[0]);
+            Assert.AreEqual("Microsoft.Extensions.Logging", symbols[0].UsingDirectives[1]);
+            Assert.AreEqual("Demo.Orders", symbols[0].UsingDirectives[2]);
+        }
+
+        [TestMethod]
         public async Task UpsertFileAsync_WithSameSourcePath_ReplacesPreviousSymbols()
         {
             using TempDirectory temp = new();

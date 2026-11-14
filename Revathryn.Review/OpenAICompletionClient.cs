@@ -31,13 +31,15 @@ namespace Revathryn.Review
         private readonly ISecretsProvider _secretsProvider;
         private readonly HttpClient _httpClient;
         private readonly IOperationalDiagnostics _diagnostics;
+        private readonly IKeyedConcurrencyLimiter _limiter;
 
         /// <summary>Initialises a new client.</summary>
-        public OpenAICompletionClient(ISecretsProvider secretsProvider, HttpClient httpClient, IOperationalDiagnostics diagnostics)
+        public OpenAICompletionClient(ISecretsProvider secretsProvider, HttpClient httpClient, IOperationalDiagnostics diagnostics, IKeyedConcurrencyLimiter limiter)
         {
             _secretsProvider = secretsProvider;
             _httpClient = httpClient;
             _diagnostics = diagnostics;
+            _limiter = limiter;
         }
 
         /// <summary>Executes the request. Failures are reported in the result rather than thrown.</summary>
@@ -58,6 +60,8 @@ namespace Revathryn.Review
             {
                 return Failure(AICompletionFailureKind.Configuration, Strings.ReviewEngineSecretMissing);
             }
+
+            using IDisposable permit = await _limiter.AcquireAsync(Consts.ReviewEngineConnectionKey, settings.MaxSimultaneousConnections, cancellationToken).ConfigureAwait(false);
 
             using HttpRequestMessage httpRequest = BuildHttpRequest(request, apiKey);
 

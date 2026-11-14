@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="RevathrynVS2026.90adf646-c7c8-4bdf-83cb-c1e683089ce1" Version="1.0.0" Language="en-US" Publisher="Revathryn" />
+    <DisplayName>Revathryn Code Analysis</DisplayName>
+    <Description xml:space="preserve">Revathryn is focused on making software systems easier to understand, maintain and improve.
+
+We build developer tools that combine AI-powered code analysis, architectural intelligence and software quality insights to help development teams better understand their codebases.
+
+Our goal is to bring meaningful repository intelligence directly into the developer workflow, helping developers identify issues, understand dependencies, explore architecture and make more informed engineering decisions.
+
+Revathryn is designed to provide a deeper understanding of software, not just analyse individual files.</Description>
+    <Tags>code-analysis code-quality code-review developer-tol quality-control repositories repository-analysis</Tags>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[18.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[18.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[18.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" Version="[4.8,)" d:Source="Manual" />
+  </Dependencies>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" DisplayName="Visual Studio core editor" Version="[18.0,19.0)" />
+  </Prerequisites>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" d:Source="Project" d:ProjectName="%CurrentProject%" />
+  </Assets>
+</PackageManifest>

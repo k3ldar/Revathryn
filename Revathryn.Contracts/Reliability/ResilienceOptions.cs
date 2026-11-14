@@ -18,12 +18,6 @@ namespace Revathryn.Contracts.Reliability
         /// <summary>Duration a claimed queue item may be processed before its lease expires.</summary>
         public TimeSpan QueueLeaseDuration { get; set; } = TimeSpan.FromMinutes(DefaultQueueLeaseMinutes);
 
-        /// <summary>Divisor applied to an item's priority each time processing fails.</summary>
-        public int QueuePriorityDecayFactor { get; set; } = DefaultQueuePriorityDecayFactor;
-
-        /// <summary>Floor below which a decayed queue priority cannot fall.</summary>
-        public int QueueMinimumPriority { get; set; } = DefaultQueueMinimumPriority;
-
         /// <summary>Per-operation retry policy overrides keyed by operation type.</summary>
         public Dictionary<RetryOperationType, RetryPolicyOptions> OperationRetryPolicies { get; } = [];
 

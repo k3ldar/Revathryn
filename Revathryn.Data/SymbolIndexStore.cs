@@ -12,7 +12,7 @@ namespace Revathryn.Data
     public sealed class SymbolIndexStore : ISymbolIndexStore
     {
         private const int BusyTimeoutMilliseconds = 30000;
-        private const string SelectSymbolColumns = "Id, SourcePath, Name, FullyQualifiedName, Kind, LineNumber, EndLineNumber, Namespace, Accessibility, IsStatic, IsAbstract, IsSealed, DependenciesJson";
+        private const string SelectSymbolColumns = "Id, SourcePath, Name, FullyQualifiedName, Kind, LineNumber, EndLineNumber, Namespace, Accessibility, IsStatic, IsAbstract, IsSealed, DependenciesJson, UsingDirectivesJson";
         private const string SelectMemberColumns = "SymbolId, Kind, Name, Signature, LineNumber, EndLineNumber, Accessibility, IsStatic";
 
         private readonly string _analysisOutputDirectory;
@@ -243,6 +243,37 @@ namespace Revathryn.Data
                 SymbolIndexSchema.CreateMembers,
                 SymbolIndexSchema.CreateIndexes);
             command.ExecuteNonQuery();
+
+            EnsureSymbolsColumn(connection, SymbolIndexSchema.SymbolsUsingDirectivesJsonColumn, SymbolIndexSchema.AddSymbolsUsingDirectivesJsonColumn);
+        }
+
+        private static void EnsureSymbolsColumn(SqliteConnection connection, string columnName, string addColumnStatement)
+        {
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = "PRAGMA table_info(Symbols);";
+
+            bool columnExists = false;
+
+            using (SqliteDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    if (string.Equals(reader.GetString(1), columnName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        columnExists = true;
+                        break;
+                    }
+                }
+            }
+
+            if (columnExists)
+            {
+                return;
+            }
+
+            using SqliteCommand alter = connection.CreateCommand();
+            alter.CommandText = addColumnStatement;
+            alter.ExecuteNonQuery();
         }
 
         private static async Task DeleteFileCoreAsync(SqliteConnection connection, SqliteTransaction transaction, string sourcePath, CancellationToken cancellationToken)
@@ -259,8 +290,8 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT INTO Symbols (SourcePath, Name, FullyQualifiedName, Kind, LineNumber, EndLineNumber, Namespace, Accessibility, IsStatic, IsAbstract, IsSealed, DependenciesJson)
-                VALUES (@SourcePath, @Name, @FullyQualifiedName, @Kind, @LineNumber, @EndLineNumber, @Namespace, @Accessibility, @IsStatic, @IsAbstract, @IsSealed, @DependenciesJson);
+                INSERT INTO Symbols (SourcePath, Name, FullyQualifiedName, Kind, LineNumber, EndLineNumber, Namespace, Accessibility, IsStatic, IsAbstract, IsSealed, DependenciesJson, UsingDirectivesJson)
+                VALUES (@SourcePath, @Name, @FullyQualifiedName, @Kind, @LineNumber, @EndLineNumber, @Namespace, @Accessibility, @IsStatic, @IsAbstract, @IsSealed, @DependenciesJson, @UsingDirectivesJson);
                 SELECT last_insert_rowid();
                 """;
             command.Parameters.AddWithValue("@SourcePath", sourcePath ?? string.Empty);
@@ -275,6 +306,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@IsAbstract", ToInteger(symbol.IsAbstract));
             command.Parameters.AddWithValue("@IsSealed", ToInteger(symbol.IsSealed));
             command.Parameters.AddWithValue("@DependenciesJson", SerializeDependencies(symbol.Dependencies));
+            command.Parameters.AddWithValue("@UsingDirectivesJson", SerializeDependencies(symbol.UsingDirectives));
 
             object result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
             return (long)result;
@@ -377,7 +409,8 @@ namespace Revathryn.Data
                 IsStatic = reader.GetInt32(9) == 1,
                 IsAbstract = reader.GetInt32(10) == 1,
                 IsSealed = reader.GetInt32(11) == 1,
-                Dependencies = DeserializeDependencies(reader.GetString(12))
+                Dependencies = DeserializeDependencies(reader.GetString(12)),
+                UsingDirectives = DeserializeDependencies(reader.GetString(13))
             };
         }
 

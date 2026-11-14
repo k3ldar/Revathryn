@@ -29,6 +29,7 @@ namespace Revathryn.Engine
             services.AddSingleton<IRetryExecutor, RetryExecutor>();
 
             services.AddSingleton<IFileHasher, FileHasher>();
+            services.AddSingleton<IGitBranchProvider, GitBranchProvider>();
             services.AddSingleton<IRepositoryScanner, RepositoryScanner>();
             services.AddSingleton<IProjectDiscoveryService, ProjectDiscoveryService>();
             services.AddSingleton<IFileChangeMonitor, FileChangeMonitor>();

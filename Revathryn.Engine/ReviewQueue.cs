@@ -28,9 +28,9 @@ namespace Revathryn.Engine
         }
 
         /// <summary>Returns a claimed item to the pending state for a later retry.</summary>
-        public Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
+        public Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
         {
-            return _queueRepository.ReleaseForRetryAsync(id, priority, nextAttemptUtc, lastError, cancellationToken);
+            return _queueRepository.ReleaseForRetryAsync(id, nextAttemptUtc, lastError, cancellationToken);
         }
 
         /// <summary>Removes the item because it completed successfully.</summary>

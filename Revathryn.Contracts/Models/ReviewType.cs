@@ -1,13 +1,10 @@
 namespace Revathryn.Contracts.Models
 {
-    /// <summary>A configurable review definition belonging to a single repository.</summary>
+    /// <summary>A global review definition shared by all repositories.</summary>
     public class ReviewType
     {
         /// <summary>Primary key.</summary>
         public long Id { get; set; }
-
-        /// <summary>Owning repository.</summary>
-        public long RepositoryId { get; set; }
 
         /// <summary>Stable identifier used to seed built-in review definitions.</summary>
         public string Key { get; set; } = String.Empty;
@@ -29,9 +26,6 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Fingerprint of the review-defining configuration; changes trigger re-review.</summary>
         public string ReviewDefinitionVersion { get; set; } = String.Empty;
-
-        /// <summary>Whether the review definition is active.</summary>
-        public bool Enabled { get; set; }
 
         /// <summary>UTC timestamp when the review definition was created.</summary>
         public DateTime CreatedDate { get; set; }

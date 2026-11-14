@@ -36,6 +36,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>Number of files reliably detected as renamed or moved.</summary>
         public int RenamedFiles { get; set; }
 
+        /// <summary>Git branch the scan ran against. Empty for legacy or detached HEAD records.</summary>
+        public string Branch { get; set; } = string.Empty;
+
         /// <summary>
         /// Gets a value indicating whether any files were added, changed, removed, or renamed.
         /// </summary>

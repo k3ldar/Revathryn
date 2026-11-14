@@ -10,11 +10,11 @@ namespace Revathryn.Contracts.Tests
     public class ModelsTests
     {
         [TestMethod]
-        public void ReviewLink_PriorityOverride_DefaultsToNull()
+        public void ReviewLink_Enabled_DefaultsToFalse()
         {
             ReviewLink link = new();
 
-            Assert.IsNull(link.PriorityOverride);
+            Assert.IsFalse(link.Enabled);
         }
 
         [TestMethod]

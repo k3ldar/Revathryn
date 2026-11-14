@@ -9,7 +9,7 @@ namespace Revathryn.Data
     public sealed class RepoFileAnalysisRepository : SqliteRepositoryBase, IRepoFileAnalysisRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, RepoFileId, ReviewTypeId, Sha256, LastAnalysedDate, AnalysisVersion, ReviewDefinitionVersion";
+            "Id, RepositoryId, RepoFileId, ReviewTypeId, Sha256, LastAnalysedDate, AnalysisVersion, ReviewDefinitionVersion, Branch";
 
         /// <summary>Initialises a new repository.</summary>
         public RepoFileAnalysisRepository(SqliteConnectionFactory connectionFactory)
@@ -17,14 +17,15 @@ namespace Revathryn.Data
         {
         }
 
-        /// <summary>Returns the analysis record for the file and review type, or null when not found.</summary>
-        public async Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
+        /// <summary>Returns the analysis record for the file, review type, and branch, or null when not found.</summary>
+        public async Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, string branch, CancellationToken cancellationToken = default)
         {
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"SELECT {SelectColumns} FROM RepoFileAnalysis WHERE RepoFileId = @RepoFileId AND ReviewTypeId = @ReviewTypeId LIMIT 1;";
+            command.CommandText = $"SELECT {SelectColumns} FROM RepoFileAnalysis WHERE RepoFileId = @RepoFileId AND ReviewTypeId = @ReviewTypeId AND Branch = @Branch LIMIT 1;";
             command.Parameters.AddWithValue("@RepoFileId", repoFileId);
             command.Parameters.AddWithValue("@ReviewTypeId", reviewTypeId);
+            command.Parameters.AddWithValue("@Branch", branch ?? string.Empty);
 
             using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -70,14 +71,15 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT INTO RepoFileAnalysis (RepositoryId, RepoFileId, ReviewTypeId, Sha256, LastAnalysedDate, AnalysisVersion, ReviewDefinitionVersion)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Sha256, @LastAnalysedDate, @AnalysisVersion, @ReviewDefinitionVersion)
+                INSERT INTO RepoFileAnalysis (RepositoryId, RepoFileId, ReviewTypeId, Sha256, LastAnalysedDate, AnalysisVersion, ReviewDefinitionVersion, Branch)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Sha256, @LastAnalysedDate, @AnalysisVersion, @ReviewDefinitionVersion, @Branch)
                 ON CONFLICT (RepoFileId, ReviewTypeId) DO UPDATE SET
                     RepositoryId = excluded.RepositoryId,
                     Sha256 = excluded.Sha256,
                     LastAnalysedDate = excluded.LastAnalysedDate,
                     AnalysisVersion = excluded.AnalysisVersion,
-                    ReviewDefinitionVersion = excluded.ReviewDefinitionVersion;
+                    ReviewDefinitionVersion = excluded.ReviewDefinitionVersion,
+                    Branch = excluded.Branch;
                 SELECT Id FROM RepoFileAnalysis WHERE RepoFileId = @RepoFileId AND ReviewTypeId = @ReviewTypeId;
                 """;
             AddParameters(command, analysis);
@@ -117,6 +119,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@LastAnalysedDate", SqliteValueConverter.ToText(analysis.LastAnalysedDate));
             command.Parameters.AddWithValue("@AnalysisVersion", analysis.AnalysisVersion);
             command.Parameters.AddWithValue("@ReviewDefinitionVersion", analysis.ReviewDefinitionVersion);
+            command.Parameters.AddWithValue("@Branch", analysis.Branch ?? string.Empty);
         }
 
         private static RepoFileAnalysis MapAnalysis(SqliteDataReader reader)
@@ -130,7 +133,8 @@ namespace Revathryn.Data
                 Sha256 = reader.GetString(4),
                 LastAnalysedDate = SqliteValueConverter.ToDateTime(reader.GetString(5)),
                 AnalysisVersion = reader.GetString(6),
-                ReviewDefinitionVersion = reader.GetString(7)
+                ReviewDefinitionVersion = reader.GetString(7),
+                Branch = reader.GetString(8)
             };
         }
     }

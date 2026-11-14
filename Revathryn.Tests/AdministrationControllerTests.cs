@@ -162,7 +162,8 @@ namespace Revathryn.Tests
                 SecretKeyName = null,
                 Provider = AIProvider.Local,
                 Enabled = true,
-                IsDefault = true
+                IsDefault = true,
+                MaxSimultaneousConnections = 8
             };
 
             AIEngine engine = model.ToEngine();
@@ -175,6 +176,7 @@ namespace Revathryn.Tests
             Assert.AreEqual(AIProvider.Local, engine.Provider);
             Assert.IsTrue(engine.Enabled);
             Assert.IsTrue(engine.IsDefault);
+            Assert.AreEqual(8, engine.MaxSimultaneousConnections);
         }
 
         [TestMethod]
@@ -189,7 +191,8 @@ namespace Revathryn.Tests
                 Model = "gpt-4o",
                 SecretKeyName = "secret",
                 Enabled = false,
-                IsDefault = true
+                IsDefault = true,
+                MaxSimultaneousConnections = 12
             };
 
             AIEngineEditViewModel model = AIEngineEditViewModel.FromEngine(engine);
@@ -202,6 +205,7 @@ namespace Revathryn.Tests
             Assert.AreEqual("secret", model.SecretKeyName);
             Assert.IsFalse(model.Enabled);
             Assert.IsTrue(model.IsDefault);
+            Assert.AreEqual(12, model.MaxSimultaneousConnections);
         }
 
         [TestMethod]
@@ -218,6 +222,32 @@ namespace Revathryn.Tests
             Assert.HasCount(2, results);
             Assert.IsTrue(results.Exists(r => r.MemberNames.Contains(nameof(AIEngineEditViewModel.Name))));
             Assert.IsTrue(results.Exists(r => r.MemberNames.Contains(nameof(AIEngineEditViewModel.Model))));
+        }
+
+        [TestMethod]
+        public void AIEngineEditViewModel_ValidatesMaxSimultaneousConnectionsRange()
+        {
+            AssertRangeValidation(Consts.MinimumAIMaxSimultaneousConnections, isValid: true);
+            AssertRangeValidation(Consts.MaximumAIMaxSimultaneousConnections, isValid: true);
+            AssertRangeValidation(Consts.MinimumAIMaxSimultaneousConnections - 1, isValid: false);
+            AssertRangeValidation(Consts.MaximumAIMaxSimultaneousConnections + 1, isValid: false);
+        }
+
+        private static void AssertRangeValidation(int maxSimultaneousConnections, bool isValid)
+        {
+            AIEngineEditViewModel model = new()
+            {
+                Name = "Engine",
+                Model = "gpt-4o",
+                MaxSimultaneousConnections = maxSimultaneousConnections
+            };
+
+            List<ValidationResult> results = new();
+            ValidationContext context = new(model);
+
+            bool actual = Validator.TryValidateObject(model, context, results, validateAllProperties: true);
+
+            Assert.AreEqual(isValid, actual, $"MaxSimultaneousConnections {maxSimultaneousConnections} produced an unexpected validation result.");
         }
 
         [TestMethod]
@@ -430,19 +460,15 @@ namespace Revathryn.Tests
         }
 
         [TestMethod]
-        public async Task ReviewTypes_NoFilter_ReturnsAllReviewTypesGroupedByRepository()
+        public async Task ReviewTypes_ReturnsAllReviewTypesOrderedByName()
         {
             FakeReviewTypeRepository reviewTypeRepository = new();
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 10, Name = "Security" });
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 2, RepositoryId = 20, Name = "Style" });
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 1, Name = "Style" });
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 2, Name = "Security" });
 
-            FakeRepositoryService repositoryService = new();
-            repositoryService.Repositories.Add(new Repository { Id = 10, Name = "Repo A" });
-            repositoryService.Repositories.Add(new Repository { Id = 20, Name = "Repo B" });
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository);
 
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService, reviewTypeRepository: reviewTypeRepository);
-
-            IActionResult result = await controller.ReviewTypes(null, TestContext.CancellationToken);
+            IActionResult result = await controller.ReviewTypes(TestContext.CancellationToken);
 
             ViewResult view = result as ViewResult;
             Assert.IsNotNull(view);
@@ -450,63 +476,31 @@ namespace Revathryn.Tests
             Assert.IsNotNull(model);
             Assert.HasCount(2, model.Items);
             Assert.AreEqual("Security", model.Items[0].ReviewType.Name);
-            Assert.AreEqual("Repo A", model.Items[0].RepositoryName);
             Assert.AreEqual("Style", model.Items[1].ReviewType.Name);
-            Assert.AreEqual("Repo B", model.Items[1].RepositoryName);
-            Assert.IsNull(model.SelectedRepositoryId);
         }
 
         [TestMethod]
-        public async Task ReviewTypes_WithRepositoryFilter_ReturnsOnlyMatchingRepository()
+        public async Task ReviewTypes_NoReviewTypes_ReturnsEmptyItems()
         {
             FakeReviewTypeRepository reviewTypeRepository = new();
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 10, Name = "Security" });
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 2, RepositoryId = 20, Name = "Style" });
 
-            FakeRepositoryService repositoryService = new();
-            repositoryService.Repositories.Add(new Repository { Id = 10, Name = "Repo A" });
-            repositoryService.Repositories.Add(new Repository { Id = 20, Name = "Repo B" });
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository);
 
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService, reviewTypeRepository: reviewTypeRepository);
-
-            IActionResult result = await controller.ReviewTypes(20, TestContext.CancellationToken);
-
-            ViewResult view = result as ViewResult;
-            Assert.IsNotNull(view);
-            ReviewTypeListViewModel model = view.Model as ReviewTypeListViewModel;
-            Assert.IsNotNull(model);
-            Assert.HasCount(1, model.Items);
-            Assert.AreEqual(20, model.Items[0].ReviewType.RepositoryId);
-            Assert.AreEqual(20, model.SelectedRepositoryId.Value);
-        }
-
-        [TestMethod]
-        public async Task ReviewTypes_NoRepositories_ReturnsEmptyItems()
-        {
-            FakeReviewTypeRepository reviewTypeRepository = new();
-            FakeRepositoryService repositoryService = new();
-
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService, reviewTypeRepository: reviewTypeRepository);
-
-            IActionResult result = await controller.ReviewTypes(null, TestContext.CancellationToken);
+            IActionResult result = await controller.ReviewTypes(TestContext.CancellationToken);
 
             ViewResult view = result as ViewResult;
             Assert.IsNotNull(view);
             ReviewTypeListViewModel model = view.Model as ReviewTypeListViewModel;
             Assert.IsNotNull(model);
             Assert.HasCount(0, model.Items);
-            Assert.HasCount(0, model.Repositories);
         }
 
         [TestMethod]
-        public async Task CreateReviewType_Get_ReturnsEmptyFormWithRepositories()
+        public void CreateReviewType_Get_ReturnsEmptyForm()
         {
-            FakeRepositoryService repositoryService = new();
-            repositoryService.Repositories.Add(new Repository { Id = 1, Name = "Repo A" });
+            AdministrationController controller = CreateController(new FakeAIEngineRepository());
 
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService);
-
-            IActionResult result = await controller.CreateReviewType((long?)null, TestContext.CancellationToken);
+            IActionResult result = controller.CreateReviewType();
 
             ViewResult view = result as ViewResult;
             Assert.IsNotNull(view);
@@ -515,39 +509,18 @@ namespace Revathryn.Tests
             ReviewTypeEditViewModel model = view.Model as ReviewTypeEditViewModel;
             Assert.IsNotNull(model);
             Assert.AreEqual(0, model.Id);
-            Assert.AreEqual(0, model.RepositoryId);
             Assert.AreEqual(string.Empty, model.Name);
-            Assert.IsTrue(model.Enabled);
-            Assert.HasCount(1, model.Repositories);
-        }
-
-        [TestMethod]
-        public async Task CreateReviewType_Get_WithRepositoryId_PreselectsRepository()
-        {
-            FakeRepositoryService repositoryService = new();
-            repositoryService.Repositories.Add(new Repository { Id = 7, Name = "Repo A" });
-
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService);
-
-            IActionResult result = await controller.CreateReviewType(7, TestContext.CancellationToken);
-
-            ViewResult view = result as ViewResult;
-            Assert.IsNotNull(view);
-            ReviewTypeEditViewModel model = view.Model as ReviewTypeEditViewModel;
-            Assert.IsNotNull(model);
-            Assert.AreEqual(7, model.RepositoryId);
+            Assert.AreEqual(Consts.DefaultReviewTypePriority, model.DefaultPriority);
         }
 
         [TestMethod]
         public async Task CreateReviewType_InvalidModelState_ReturnsViewPreservingSubmittedData()
         {
             FakeReviewTypeRepository reviewTypeRepository = new();
-            FakeRepositoryService repositoryService = new();
-            repositoryService.Repositories.Add(new Repository { Id = 1, Name = "Repo A" });
 
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService, reviewTypeRepository: reviewTypeRepository);
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository);
 
-            ReviewTypeEditViewModel model = new() { RepositoryId = 1, Name = "Security" };
+            ReviewTypeEditViewModel model = new() { Name = "Security" };
             controller.ModelState.AddModelError(nameof(ReviewTypeEditViewModel.Name), "required");
 
             IActionResult result = await controller.CreateReviewType(model, TestContext.CancellationToken);
@@ -556,7 +529,6 @@ namespace Revathryn.Tests
             Assert.IsNotNull(view);
             Assert.AreEqual(Consts.ReviewTypeFormViewName, view.ViewName);
             Assert.AreSame(model, view.Model);
-            Assert.HasCount(1, model.Repositories);
             Assert.AreEqual(0, reviewTypeRepository.AddCallCount);
         }
 
@@ -568,11 +540,9 @@ namespace Revathryn.Tests
                 AddException = new InvalidOperationException("storage unavailable")
             };
 
-            FakeRepositoryService repositoryService = new();
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository);
 
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService, reviewTypeRepository: reviewTypeRepository);
-
-            ReviewTypeEditViewModel model = new() { RepositoryId = 1, Name = "Security" };
+            ReviewTypeEditViewModel model = new() { Name = "Security" };
 
             IActionResult result = await controller.CreateReviewType(model, TestContext.CancellationToken);
 
@@ -589,23 +559,20 @@ namespace Revathryn.Tests
         }
 
         [TestMethod]
-        public async Task CreateReviewType_ValidModel_AddsReviewTypeAndRedirects()
+        public async Task CreateReviewType_ValidModel_AddsReviewTypeLinksToAllRepositoriesAndRedirects()
         {
             FakeReviewTypeRepository reviewTypeRepository = new() { NextId = 42 };
-            FakeRepositoryService repositoryService = new();
-            repositoryService.Repositories.Add(new Repository { Id = 1, Name = "Repo A" });
+            FakeRepositoryReviewRepository repositoryReviewRepository = new();
 
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService, reviewTypeRepository: reviewTypeRepository);
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository, repositoryReviewRepository: repositoryReviewRepository);
 
             ReviewTypeEditViewModel model = new()
             {
-                RepositoryId = 1,
                 Name = "  Security  ",
                 Description = "  Finds vulnerabilities  ",
                 FileExtensions = "  .cs,.csproj  ",
                 Prompt = "  Review for security  ",
-                DefaultPriority = 3,
-                Enabled = false
+                DefaultPriority = 3
             };
 
             IActionResult result = await controller.CreateReviewType(model, TestContext.CancellationToken);
@@ -622,12 +589,13 @@ namespace Revathryn.Tests
             Assert.AreEqual(".cs,.csproj", added.FileExtensions);
             Assert.AreEqual("Review for security", added.Prompt);
             Assert.AreEqual(3, added.DefaultPriority);
-            Assert.IsFalse(added.Enabled);
             Assert.AreEqual(string.Empty, added.Key);
             Assert.IsFalse(string.IsNullOrEmpty(added.ReviewDefinitionVersion));
             Assert.IsGreaterThan(DateTime.MinValue, added.CreatedDate);
             Assert.IsGreaterThan(DateTime.MinValue, added.LastModifiedDate);
 
+            Assert.HasCount(1, repositoryReviewRepository.LinkedReviewTypeIds);
+            Assert.AreEqual(42, repositoryReviewRepository.LinkedReviewTypeIds[0]);
             Assert.AreEqual(Strings.ReviewTypeSavedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
         }
 
@@ -635,12 +603,9 @@ namespace Revathryn.Tests
         public async Task EditReviewType_Get_ReturnsFormModelFromExistingReviewType()
         {
             FakeReviewTypeRepository reviewTypeRepository = new();
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 5, RepositoryId = 1, Name = "Security", DefaultPriority = 2, Enabled = true });
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 5, Name = "Security", DefaultPriority = 2 });
 
-            FakeRepositoryService repositoryService = new();
-            repositoryService.Repositories.Add(new Repository { Id = 1, Name = "Repo A" });
-
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService, reviewTypeRepository: reviewTypeRepository);
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository);
 
             IActionResult result = await controller.EditReviewType(5, TestContext.CancellationToken);
 
@@ -653,8 +618,6 @@ namespace Revathryn.Tests
             Assert.AreEqual(5, model.Id);
             Assert.AreEqual("Security", model.Name);
             Assert.AreEqual(2, model.DefaultPriority);
-            Assert.IsTrue(model.Enabled);
-            Assert.HasCount(1, model.Repositories);
         }
 
         [TestMethod]
@@ -671,12 +634,10 @@ namespace Revathryn.Tests
         public async Task EditReviewType_InvalidModelState_ReturnsViewPreservingSubmittedData()
         {
             FakeReviewTypeRepository reviewTypeRepository = new();
-            FakeRepositoryService repositoryService = new();
-            repositoryService.Repositories.Add(new Repository { Id = 1, Name = "Repo A" });
 
-            AdministrationController controller = CreateController(new FakeAIEngineRepository(), repositoryService: repositoryService, reviewTypeRepository: reviewTypeRepository);
+            AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository);
 
-            ReviewTypeEditViewModel model = new() { Id = 5, RepositoryId = 1, Name = "Security" };
+            ReviewTypeEditViewModel model = new() { Id = 5, Name = "Security" };
             controller.ModelState.AddModelError(nameof(ReviewTypeEditViewModel.Name), "required");
 
             IActionResult result = await controller.EditReviewType(model, TestContext.CancellationToken);
@@ -685,7 +646,6 @@ namespace Revathryn.Tests
             Assert.IsNotNull(view);
             Assert.AreEqual(Consts.ReviewTypeFormViewName, view.ViewName);
             Assert.AreSame(model, view.Model);
-            Assert.HasCount(1, model.Repositories);
             Assert.AreEqual(0, reviewTypeRepository.UpdateCallCount);
         }
 
@@ -695,7 +655,7 @@ namespace Revathryn.Tests
             FakeReviewTypeRepository reviewTypeRepository = new();
             AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository);
 
-            ReviewTypeEditViewModel model = new() { Id = 99, RepositoryId = 1, Name = "Security" };
+            ReviewTypeEditViewModel model = new() { Id = 99, Name = "Security" };
 
             IActionResult result = await controller.EditReviewType(model, TestContext.CancellationToken);
 
@@ -709,11 +669,11 @@ namespace Revathryn.Tests
             {
                 UpdateException = new InvalidOperationException("storage unavailable")
             };
-            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 5, RepositoryId = 1, Name = "Security" });
+            reviewTypeRepository.ReviewTypes.Add(new ReviewType { Id = 5, Name = "Security" });
 
             AdministrationController controller = CreateController(new FakeAIEngineRepository(), reviewTypeRepository: reviewTypeRepository);
 
-            ReviewTypeEditViewModel model = new() { Id = 5, RepositoryId = 1, Name = "Security" };
+            ReviewTypeEditViewModel model = new() { Id = 5, Name = "Security" };
 
             IActionResult result = await controller.EditReviewType(model, TestContext.CancellationToken);
 
@@ -738,7 +698,6 @@ namespace Revathryn.Tests
             reviewTypeRepository.ReviewTypes.Add(new ReviewType
             {
                 Id = 5,
-                RepositoryId = 1,
                 Key = "builtin",
                 Name = "Old",
                 CreatedDate = createdDate
@@ -749,13 +708,11 @@ namespace Revathryn.Tests
             ReviewTypeEditViewModel model = new()
             {
                 Id = 5,
-                RepositoryId = 1,
                 Name = "  Security  ",
                 Description = "  Finds vulnerabilities  ",
                 FileExtensions = "  .cs  ",
                 Prompt = "  Review  ",
-                DefaultPriority = 4,
-                Enabled = false
+                DefaultPriority = 4
             };
 
             IActionResult result = await controller.EditReviewType(model, TestContext.CancellationToken);
@@ -770,7 +727,6 @@ namespace Revathryn.Tests
             Assert.AreEqual(5, updated.Id);
             Assert.AreEqual("Security", updated.Name);
             Assert.AreEqual(4, updated.DefaultPriority);
-            Assert.IsFalse(updated.Enabled);
             Assert.AreEqual("builtin", updated.Key);
             Assert.AreEqual(createdDate, updated.CreatedDate);
             Assert.IsGreaterThanOrEqualTo(createdDate, updated.LastModifiedDate);
@@ -977,6 +933,7 @@ namespace Revathryn.Tests
             FakeReviewUsageRepository usageRepository = null,
             FakeReviewEngineConfigurationService reviewEngine = null,
             FakeReviewTypeRepository reviewTypeRepository = null,
+            FakeRepositoryReviewRepository repositoryReviewRepository = null,
             FakeRepositoryService repositoryService = null,
             FakeAISettingsRepository aiSettingsRepository = null,
             IIssueSettingsProvider issueSettingsProvider = null,
@@ -994,6 +951,7 @@ namespace Revathryn.Tests
                 usageRepository ?? new FakeReviewUsageRepository(),
                 reviewEngine ?? new FakeReviewEngineConfigurationService(),
                 reviewTypeRepository ?? new FakeReviewTypeRepository(),
+                repositoryReviewRepository ?? new FakeRepositoryReviewRepository(),
                 repositoryService ?? new FakeRepositoryService(),
                 issueSettingsProvider ?? new IssueSettingsProvider(),
                 severityRuleRepository ?? new FakeSeverityRuleRepository(),
@@ -1238,14 +1196,24 @@ namespace Revathryn.Tests
                 return Task.FromResult(ReviewTypes.FirstOrDefault(reviewType => reviewType.Id == id));
             }
 
+            public Task<IReadOnlyList<ReviewType>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
+            }
+
             public Task<IReadOnlyList<ReviewType>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes.Where(reviewType => reviewType.RepositoryId == repositoryId)]);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
             }
 
             public Task<IReadOnlyList<ReviewType>> GetEnabledByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes.Where(reviewType => reviewType.RepositoryId == repositoryId && reviewType.Enabled)]);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. ReviewTypes]);
+            }
+
+            public Task<IReadOnlyList<RepositoryReviewType>> GetRepositoryReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryReviewType>>([.. ReviewTypes.Select(reviewType => new RepositoryReviewType { ReviewType = reviewType, Enabled = true })]);
             }
 
             public Task<long> AddAsync(ReviewType reviewType, CancellationToken cancellationToken = default)
@@ -1279,6 +1247,45 @@ namespace Revathryn.Tests
                 DeleteCallCount++;
                 DeletedId = id;
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeRepositoryReviewRepository : IRepositoryReviewRepository
+        {
+            public List<long> LinkedRepositoryIds { get; } = new();
+
+            public List<long> LinkedReviewTypeIds { get; } = new();
+
+            public Task<RepositoryReview> GetAsync(long repositoryId, long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<RepositoryReview>(null);
+            }
+
+            public Task<IReadOnlyList<RepositoryReview>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryReview>>([]);
+            }
+
+            public Task<long> AddAsync(RepositoryReview link, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(link.Id);
+            }
+
+            public Task SetEnabledAsync(long repositoryId, long reviewTypeId, bool enabled, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task<int> LinkAllReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                LinkedRepositoryIds.Add(repositoryId);
+                return Task.FromResult(0);
+            }
+
+            public Task<int> LinkToAllRepositoriesAsync(long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                LinkedReviewTypeIds.Add(reviewTypeId);
+                return Task.FromResult(0);
             }
         }
 

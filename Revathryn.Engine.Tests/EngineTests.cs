@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 
 using Revathryn.Contracts.Enums;
+using Revathryn.Contracts.Infrastructure;
 using Revathryn.Contracts.Models;
 using Revathryn.Contracts.Persistence;
 
@@ -58,18 +59,17 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
-        public async Task ReviewQueue_EnqueuesAndDequeuesByPriority()
+        public async Task ReviewQueue_EnqueuesAndDequeuesInOrder()
         {
             FakeQueueRepository repository = new();
             ReviewQueue queue = new(repository);
 
-            await queue.EnqueueAsync(CreateQueueItem(1, 1, 1, 5), TestContext.CancellationToken);
-            await queue.EnqueueAsync(CreateQueueItem(1, 2, 1, 50), TestContext.CancellationToken);
+            await queue.EnqueueAsync(CreateQueueItem(1, 1, 1), TestContext.CancellationToken);
+            await queue.EnqueueAsync(CreateQueueItem(1, 2, 1), TestContext.CancellationToken);
 
             QueueItem dequeued = await queue.ClaimNextAsync(DateTime.UtcNow.AddMinutes(5), TestContext.CancellationToken);
 
-            Assert.AreEqual(2, dequeued.RepoFileId);
-            Assert.AreEqual(50, dequeued.Priority);
+            Assert.AreEqual(1, dequeued.RepoFileId);
         }
 
         [TestMethod]
@@ -78,7 +78,7 @@ namespace Revathryn.Engine.Tests
             FakeQueueRepository repository = new();
             ReviewQueue queue = new(repository);
 
-            QueueItem item = CreateQueueItem(1, 1, 1, 5);
+            QueueItem item = CreateQueueItem(1, 1, 1);
 
             bool first = await queue.EnqueueAsync(item, TestContext.CancellationToken);
             bool second = await queue.EnqueueAsync(item, TestContext.CancellationToken);
@@ -93,6 +93,7 @@ namespace Revathryn.Engine.Tests
             FakeRepositoryRepository repositories = new();
             FakeRepoFileRepository files = new();
             FakeReviewTypeRepository reviewTypes = new();
+            FakeRepositoryReviewRepository repositoryReviews = new();
             FakeReviewLinkRepository links = new();
             FakeQueueRepository queue = new();
 
@@ -104,11 +105,11 @@ namespace Revathryn.Engine.Tests
             files.Add(csFile);
             files.Add(mdFile);
 
-            reviewTypes.Add(new ReviewType { Id = 1, RepositoryId = 1, FileExtensions = "cs", DefaultPriority = 20, Enabled = true });
-            reviewTypes.Add(new ReviewType { Id = 2, RepositoryId = 1, FileExtensions = "md", DefaultPriority = 10, Enabled = true });
+            reviewTypes.Add(new ReviewType { Id = 1, FileExtensions = "cs", DefaultPriority = 20 });
+            reviewTypes.Add(new ReviewType { Id = 2, FileExtensions = "md", DefaultPriority = 10 });
 
             FakeRepoFileAnalysisRepository analyses = new();
-            ReviewScheduler scheduler = new(repositories, files, reviewTypes, links, analyses, new ReviewQueue(queue));
+            ReviewScheduler scheduler = new(repositories, files, reviewTypes, repositoryReviews, links, analyses, new ReviewQueue(queue), new FakeGitBranchProvider());
 
             await scheduler.ScheduleRepositoryAsync(1, TestContext.CancellationToken);
 
@@ -118,14 +119,15 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
-        public async Task RepositoryService_RegisterSeedsDefaultReviewTypes()
+        public async Task RepositoryService_RegisterLinksDefaultReviewTypes()
         {
             string root = CreateTempDirectory();
             try
             {
                 FakeRepositoryRepository repositories = new();
                 FakeReviewTypeRepository reviewTypes = new();
-                ReviewTypeSeeder seeder = new(reviewTypes);
+                FakeRepositoryReviewRepository repositoryReviews = new();
+                ReviewTypeSeeder seeder = new(reviewTypes, repositoryReviews);
                 RepositoryService service = new(repositories, seeder, new FakeRepositoryProcessor());
 
                 Repository registered = await service.RegisterAsync(new Repository
@@ -135,9 +137,8 @@ namespace Revathryn.Engine.Tests
                 }, TestContext.CancellationToken);
 
                 Assert.AreNotEqual(0, registered.Id);
-                Assert.HasCount(28, reviewTypes.Added);
-                Assert.IsTrue(reviewTypes.Added.All(t => !string.IsNullOrEmpty(t.Key)));
-                Assert.IsTrue(reviewTypes.Added.All(t => t.Enabled));
+                Assert.HasCount(1, repositoryReviews.LinkedRepositoryIds);
+                Assert.AreEqual(registered.Id, repositoryReviews.LinkedRepositoryIds[0]);
             }
             finally
             {
@@ -149,29 +150,116 @@ namespace Revathryn.Engine.Tests
         public async Task ReviewTypeSeeder_SeedsOnlyMissingDefinitions()
         {
             FakeReviewTypeRepository reviewTypes = new();
-            reviewTypes.Add(new ReviewType { RepositoryId = 1, Key = "security", Name = "Security" });
+            reviewTypes.Add(new ReviewType { Key = "security", Name = "Security" });
 
-            ReviewTypeSeeder seeder = new(reviewTypes);
+            ReviewTypeSeeder seeder = new(reviewTypes, new FakeRepositoryReviewRepository());
 
-            int inserted = await seeder.SeedAsync(1, TestContext.CancellationToken);
+            int inserted = await seeder.SeedAsync(TestContext.CancellationToken);
 
             Assert.AreEqual(27, inserted);
             Assert.DoesNotContain(t => t.Key == "security", reviewTypes.Added);
-            Assert.HasCount(28, await reviewTypes.GetByRepositoryAsync(1, TestContext.CancellationToken));
+            Assert.HasCount(28, await reviewTypes.GetAllAsync(TestContext.CancellationToken));
         }
 
         [TestMethod]
         public async Task ReviewTypeSeeder_IsIdempotent()
         {
             FakeReviewTypeRepository reviewTypes = new();
-            ReviewTypeSeeder seeder = new(reviewTypes);
+            ReviewTypeSeeder seeder = new(reviewTypes, new FakeRepositoryReviewRepository());
 
-            int firstSeed = await seeder.SeedAsync(1, TestContext.CancellationToken);
-            int secondSeed = await seeder.SeedAsync(1, TestContext.CancellationToken);
+            int firstSeed = await seeder.SeedAsync(TestContext.CancellationToken);
+            int secondSeed = await seeder.SeedAsync(TestContext.CancellationToken);
 
             Assert.AreEqual(28, firstSeed);
             Assert.AreEqual(0, secondSeed);
-            Assert.HasCount(28, await reviewTypes.GetByRepositoryAsync(1, TestContext.CancellationToken));
+            Assert.HasCount(28, await reviewTypes.GetAllAsync(TestContext.CancellationToken));
+        }
+
+        [TestMethod]
+        public async Task GitBranchProvider_ReadsBranchFromHeadFile()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, ".git"));
+                File.WriteAllText(Path.Combine(root, ".git", "HEAD"), "ref: refs/heads/feature/example");
+
+                GitBranchProvider provider = new();
+                string branch = await provider.GetCurrentBranchAsync(root, TestContext.CancellationToken);
+
+                Assert.AreEqual("feature/example", branch);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task GitBranchProvider_TrimsWhitespaceAroundBranchName()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, ".git"));
+                File.WriteAllText(Path.Combine(root, ".git", "HEAD"), "  ref: refs/heads/main  \n");
+
+                GitBranchProvider provider = new();
+                string branch = await provider.GetCurrentBranchAsync(root, TestContext.CancellationToken);
+
+                Assert.AreEqual("main", branch);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task GitBranchProvider_DetachedHead_ReturnsEmpty()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, ".git"));
+                File.WriteAllText(Path.Combine(root, ".git", "HEAD"), "a1b2c3d4e5f6");
+
+                GitBranchProvider provider = new();
+                string branch = await provider.GetCurrentBranchAsync(root, TestContext.CancellationToken);
+
+                Assert.AreEqual(string.Empty, branch);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task GitBranchProvider_MissingHeadFile_ReturnsEmpty()
+        {
+            string root = CreateTempDirectory();
+
+            try
+            {
+                GitBranchProvider provider = new();
+                string branch = await provider.GetCurrentBranchAsync(root, TestContext.CancellationToken);
+
+                Assert.AreEqual(string.Empty, branch);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
+        public async Task GitBranchProvider_NullOrWhitespacePath_ReturnsEmpty()
+        {
+            GitBranchProvider provider = new();
+
+            Assert.AreEqual(string.Empty, await provider.GetCurrentBranchAsync(null, TestContext.CancellationToken));
+            Assert.AreEqual(string.Empty, await provider.GetCurrentBranchAsync("   ", TestContext.CancellationToken));
         }
 
         private static string CreateTempDirectory()
@@ -181,14 +269,13 @@ namespace Revathryn.Engine.Tests
             return path;
         }
 
-        private static QueueItem CreateQueueItem(long repositoryId, long repoFileId, long reviewTypeId, int priority)
+        private static QueueItem CreateQueueItem(long repositoryId, long repoFileId, long reviewTypeId)
         {
             return new QueueItem
             {
                 RepositoryId = repositoryId,
                 RepoFileId = repoFileId,
                 ReviewTypeId = reviewTypeId,
-                Priority = priority,
                 CreatedDate = DateTime.UtcNow
             };
         }
@@ -376,14 +463,24 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult(reviewType);
             }
 
+            public Task<IReadOnlyList<ReviewType>> GetAllAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values]);
+            }
+
             public Task<IReadOnlyList<ReviewType>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values.Where(t => t.RepositoryId == repositoryId)]);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values]);
             }
 
             public Task<IReadOnlyList<ReviewType>> GetEnabledByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values.Where(t => t.RepositoryId == repositoryId && t.Enabled)]);
+                return Task.FromResult<IReadOnlyList<ReviewType>>([.. _items.Values]);
+            }
+
+            public Task<IReadOnlyList<RepositoryReviewType>> GetRepositoryReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryReviewType>>([.. _items.Values.Select(t => new RepositoryReviewType { ReviewType = t, Enabled = true })]);
             }
 
             public Task<long> AddAsync(ReviewType reviewType, CancellationToken cancellationToken = default)
@@ -407,13 +504,65 @@ namespace Revathryn.Engine.Tests
             }
         }
 
+        private sealed class FakeRepositoryReviewRepository : IRepositoryReviewRepository
+        {
+            private readonly Dictionary<(long RepositoryId, long ReviewTypeId), RepositoryReview> _items = [];
+            private long _nextId = 1;
+
+            public List<long> LinkedRepositoryIds { get; } = [];
+            public List<long> LinkedReviewTypeIds { get; } = [];
+
+            public Task<RepositoryReview> GetAsync(long repositoryId, long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                _items.TryGetValue((repositoryId, reviewTypeId), out RepositoryReview link);
+                return Task.FromResult(link);
+            }
+
+            public Task<IReadOnlyList<RepositoryReview>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<RepositoryReview>>([.. _items.Values.Where(l => l.RepositoryId == repositoryId)]);
+            }
+
+            public Task<long> AddAsync(RepositoryReview link, CancellationToken cancellationToken = default)
+            {
+                link.Id = _nextId++;
+                _items[(link.RepositoryId, link.ReviewTypeId)] = link;
+                return Task.FromResult(link.Id);
+            }
+
+            public Task SetEnabledAsync(long repositoryId, long reviewTypeId, bool enabled, CancellationToken cancellationToken = default)
+            {
+                RepositoryReview link = new()
+                {
+                    Id = _nextId++,
+                    RepositoryId = repositoryId,
+                    ReviewTypeId = reviewTypeId,
+                    Enabled = enabled
+                };
+                _items[(repositoryId, reviewTypeId)] = link;
+                return Task.CompletedTask;
+            }
+
+            public Task<int> LinkAllReviewTypesAsync(long repositoryId, CancellationToken cancellationToken = default)
+            {
+                LinkedRepositoryIds.Add(repositoryId);
+                return Task.FromResult(0);
+            }
+
+            public Task<int> LinkToAllRepositoriesAsync(long reviewTypeId, CancellationToken cancellationToken = default)
+            {
+                LinkedReviewTypeIds.Add(reviewTypeId);
+                return Task.FromResult(0);
+            }
+        }
+
         private sealed class FakeRepoFileAnalysisRepository : IRepoFileAnalysisRepository
         {
-            private readonly Dictionary<(long, long), RepoFileAnalysis> _items = [];
+            private readonly Dictionary<(long, long, string), RepoFileAnalysis> _items = [];
 
-            public Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
+            public Task<RepoFileAnalysis> GetAsync(long repoFileId, long reviewTypeId, string branch, CancellationToken cancellationToken = default)
             {
-                _items.TryGetValue((repoFileId, reviewTypeId), out RepoFileAnalysis analysis);
+                _items.TryGetValue((repoFileId, reviewTypeId, branch ?? string.Empty), out RepoFileAnalysis analysis);
                 return Task.FromResult(analysis);
             }
 
@@ -425,13 +574,13 @@ namespace Revathryn.Engine.Tests
             public Task<long> UpsertAsync(RepoFileAnalysis analysis, CancellationToken cancellationToken = default)
             {
                 analysis.Id = _items.Count + 1;
-                _items[(analysis.RepoFileId, analysis.ReviewTypeId)] = analysis;
+                _items[(analysis.RepoFileId, analysis.ReviewTypeId, analysis.Branch)] = analysis;
                 return Task.FromResult(analysis.Id);
             }
 
             public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
             {
-                (long, long)? key = _items.Where(pair => pair.Value.Id == id).Select(pair => ((long, long)?)pair.Key).FirstOrDefault();
+                (long, long, string)? key = _items.Where(pair => pair.Value.Id == id).Select(pair => ((long, long, string)?)pair.Key).FirstOrDefault();
 
                 if (key is not null)
                 {
@@ -443,12 +592,22 @@ namespace Revathryn.Engine.Tests
 
             public Task DeleteByRepoFileAsync(long repoFileId, CancellationToken cancellationToken = default)
             {
-                foreach ((long, long) key in _items.Keys.Where(k => k.Item1 == repoFileId).ToList())
+                foreach ((long, long, string) key in _items.Keys.Where(k => k.Item1 == repoFileId).ToList())
                 {
                     _items.Remove(key);
                 }
 
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class FakeGitBranchProvider : IGitBranchProvider
+        {
+            public string Branch { get; set; } = string.Empty;
+
+            public Task<string> GetCurrentBranchAsync(string repositoryLocalPath, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(Branch);
             }
         }
 
@@ -530,8 +689,8 @@ namespace Revathryn.Engine.Tests
             {
                 QueueItem item = _items
                     .Where(i => i.Status == QueueItemStatus.Pending && (i.NextAttemptUtc is null || i.NextAttemptUtc <= DateTime.UtcNow))
-                    .OrderByDescending(i => i.Priority)
-                    .ThenBy(i => i.CreatedDate)
+                    .OrderBy(i => i.CreatedDate)
+                    .ThenBy(i => i.Id)
                     .FirstOrDefault();
 
                 if (item is not null)
@@ -544,13 +703,12 @@ namespace Revathryn.Engine.Tests
                 return Task.FromResult(item);
             }
 
-            public Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
+            public Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default)
             {
                 QueueItem item = _items.FirstOrDefault(i => i.Id == id);
                 if (item is not null)
                 {
                     item.Status = QueueItemStatus.Pending;
-                    item.Priority = priority;
                     item.NextAttemptUtc = nextAttemptUtc;
                     item.LastError = lastError ?? string.Empty;
                     item.LeasedUntilUtc = null;
@@ -567,7 +725,7 @@ namespace Revathryn.Engine.Tests
 
             public Task<IReadOnlyList<QueueItem>> GetPendingAsync(CancellationToken cancellationToken = default)
             {
-                return Task.FromResult<IReadOnlyList<QueueItem>>([.. _items.Where(i => i.Status == QueueItemStatus.Pending).OrderByDescending(i => i.Priority).ThenBy(i => i.CreatedDate)]);
+                return Task.FromResult<IReadOnlyList<QueueItem>>([.. _items.Where(i => i.Status == QueueItemStatus.Pending).OrderBy(i => i.CreatedDate).ThenBy(i => i.Id)]);
             }
 
             public Task<IReadOnlyList<QueueItem>> GetByRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)

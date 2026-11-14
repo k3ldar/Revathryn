@@ -12,7 +12,7 @@ namespace Revathryn.Contracts.Orchestration
         Task<QueueItem> ClaimNextAsync(DateTime leasedUntilUtc, CancellationToken cancellationToken = default);
 
         /// <summary>Returns a claimed item to the pending state for a later retry.</summary>
-        Task ReleaseForRetryAsync(long id, int priority, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default);
+        Task ReleaseForRetryAsync(long id, DateTime nextAttemptUtc, string lastError, CancellationToken cancellationToken = default);
 
         /// <summary>Removes the item because it completed successfully.</summary>
         Task MarkCompletedAsync(long id, CancellationToken cancellationToken = default);

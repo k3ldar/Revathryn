@@ -1,3 +1,4 @@
+@using Revathryn.Contracts
 @using Revathryn.Contracts.Enums
 @using Revathryn.Resources
 @model Revathryn.Models.Administration.AIEngineEditViewModel
@@ -34,6 +35,13 @@
         <label asp-for="MaxTokens" class="form-label">@Strings.MaxTokensLabel</label>
         <input asp-for="MaxTokens" class="form-control" type="number" min="1" />
         <span asp-validation-for="MaxTokens" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MaxSimultaneousConnections" class="form-label">@Strings.MaxSimultaneousConnectionsLabel</label>
+        <input asp-for="MaxSimultaneousConnections" class="form-control" type="number" min="@Consts.MinimumAIMaxSimultaneousConnections" max="@Consts.MaximumAIMaxSimultaneousConnections" />
+        <div class="form-text">@Strings.MaxSimultaneousConnectionsHelp</div>
+        <span asp-validation-for="MaxSimultaneousConnections" class="text-danger"></span>
     </div>
 
     <div class="mb-3">

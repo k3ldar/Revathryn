@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Revathryn.Contracts;
 using Revathryn.Contracts.Analysis;
+using Revathryn.Contracts.Reliability;
 using Revathryn.Engine;
 using Revathryn.Review.CSharp;
 
@@ -26,6 +27,7 @@ namespace Revathryn.Review
             services.AddSingleton<ICSharpAnalysisEngine, CSharpAnalysisEngine>();
             services.AddSingleton<IAnalysisEngine, CSharpAnalysisEngine>();
             services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(Consts.OpenAIRequestTimeoutSeconds) });
+            services.AddSingleton<IKeyedConcurrencyLimiter, KeyedConcurrencyLimiter>();
             services.AddSingleton<IAIReviewEngine, OpenAIReviewEngine>();
             services.AddSingleton<IArchitectureAnalysisEngine, ArchitectureAnalysisEngine>();
             services.AddSingleton<IAICompletionClient, OpenAICompletionClient>();

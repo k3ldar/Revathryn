@@ -6,6 +6,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>The repository that was scanned.</summary>
         public long RepositoryId { get; set; }
 
+        /// <summary>Git branch the scan ran against. Empty for legacy or detached HEAD scans.</summary>
+        public string Branch { get; set; } = string.Empty;
+
         /// <summary>Number of files discovered during the scan.</summary>
         public int FilesDiscovered { get; set; }
 

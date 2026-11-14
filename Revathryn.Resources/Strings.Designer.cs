@@ -1995,6 +1995,33 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Max simultaneous connections.
+        /// </summary>
+        public static string MaxSimultaneousConnectionsLabel {
+            get {
+                return ResourceManager.GetString("MaxSimultaneousConnectionsLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Number of requests sent to this engine at the same time (1 to 16)..
+        /// </summary>
+        public static string MaxSimultaneousConnectionsHelp {
+            get {
+                return ResourceManager.GetString("MaxSimultaneousConnectionsHelp", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Max simultaneous connections must be between 1 and 16..
+        /// </summary>
+        public static string MaxSimultaneousConnectionsRangeMessage {
+            get {
+                return ResourceManager.GetString("MaxSimultaneousConnectionsRangeMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Default engine.
         /// </summary>
         public static string IsDefaultLabel {
@@ -2826,6 +2853,15 @@ namespace Revathryn.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Update status.
+        /// </summary>
+        public static string UpdateStatusLabel {
+            get {
+                return ResourceManager.GetString("UpdateStatusLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Are you sure you want to delete this finding? This action cannot be undone..
         /// </summary>
         public static string DeleteFindingConfirmation {
@@ -2849,6 +2885,15 @@ namespace Revathryn.Resources {
         public static string SeverityUpdatedMessage {
             get {
                 return ResourceManager.GetString("SeverityUpdatedMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Status updated..
+        /// </summary>
+        public static string StatusUpdatedMessage {
+            get {
+                return ResourceManager.GetString("StatusUpdatedMessage", resourceCulture);
             }
         }
 
@@ -3225,6 +3270,8 @@ namespace Revathryn.Resources {
         public static string ReviewEngineEndpointInvalid { get { return ResourceManager.GetString("ReviewEngineEndpointInvalid", resourceCulture); } }
 
         public static string ReviewEngineMaxTokensInvalid { get { return ResourceManager.GetString("ReviewEngineMaxTokensInvalid", resourceCulture); } }
+
+        public static string ReviewEngineMaxSimultaneousConnectionsInvalid { get { return ResourceManager.GetString("ReviewEngineMaxSimultaneousConnectionsInvalid", resourceCulture); } }
 
         public static string ReviewEngineModelHelp { get { return ResourceManager.GetString("ReviewEngineModelHelp", resourceCulture); } }
 

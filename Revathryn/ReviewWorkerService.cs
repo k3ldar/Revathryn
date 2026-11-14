@@ -100,24 +100,11 @@ namespace Revathryn
 
         private async Task DrainQueueAsync(CancellationToken cancellationToken)
         {
-            int processed = 0;
-
-            while (processed < Consts.ReviewWorkerMaxItemsPerCycle)
-            {
-                if (_processingGate.IsPaused)
-                {
-                    return;
-                }
-
-                bool handled = await _reviewProcessor.ProcessNextAsync(cancellationToken);
-
-                if (!handled)
-                {
-                    return;
-                }
-
-                processed++;
-            }
+            await QueueDrainHelper.DrainAsync(
+                _reviewProcessor.ProcessNextAsync,
+                Consts.ReviewWorkerMaxItemsPerCycle,
+                cancellationToken,
+                () => !_processingGate.IsPaused).ConfigureAwait(false);
         }
     }
 }

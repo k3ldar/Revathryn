@@ -48,18 +48,21 @@ namespace Revathryn.Review
         private readonly ISecretsProvider _secretsProvider;
         private readonly HttpClient _httpClient;
         private readonly IOperationalDiagnostics _diagnostics;
+        private readonly IKeyedConcurrencyLimiter _limiter;
 
         /// <summary>Initialises a new OpenAI-compatible review engine.</summary>
         public OpenAIReviewEngine(
             IAIEngineRepository engineRepository,
             ISecretsProvider secretsProvider,
             HttpClient httpClient,
-            IOperationalDiagnostics diagnostics)
+            IOperationalDiagnostics diagnostics,
+            IKeyedConcurrencyLimiter limiter)
         {
             _engineRepository = engineRepository;
             _secretsProvider = secretsProvider;
             _httpClient = httpClient;
             _diagnostics = diagnostics;
+            _limiter = limiter;
         }
 
         /// <summary>Runs a review request and returns the resulting findings.</summary>
@@ -287,6 +290,10 @@ namespace Revathryn.Review
 
         private async Task<SendResult> SendReviewRequestAsync(AIEngine engine, string apiKey, string requestJson, CancellationToken cancellationToken)
         {
+            string connectionKey = Consts.DetectionEngineConnectionKeyPrefix + engine.Id;
+
+            using IDisposable permit = await _limiter.AcquireAsync(connectionKey, engine.MaxSimultaneousConnections, cancellationToken).ConfigureAwait(false);
+
             using HttpRequestMessage httpRequest = new(HttpMethod.Post, BuildEndpoint(engine.Endpoint));
 
             if (!string.IsNullOrWhiteSpace(apiKey))

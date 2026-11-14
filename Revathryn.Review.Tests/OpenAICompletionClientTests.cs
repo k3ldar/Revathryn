@@ -324,7 +324,7 @@ namespace Revathryn.Review.Tests
 
         private static OpenAICompletionClient CreateClient(RecordingHandler handler, string secret = ApiKey)
         {
-            return new OpenAICompletionClient(new StubSecretsProvider(secret), new HttpClient(handler), new NullDiagnostics());
+            return new OpenAICompletionClient(new StubSecretsProvider(secret), new HttpClient(handler), new NullDiagnostics(), new KeyedConcurrencyLimiter());
         }
 
         private sealed class RecordingHandler : HttpMessageHandler

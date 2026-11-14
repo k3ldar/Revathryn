@@ -47,6 +47,35 @@ namespace Revathryn.Review.Tests
         }
 
         [TestMethod]
+        public async Task CSharpAnalysisEngine_MapsUsingDirectivesIntoIndexedSymbol()
+        {
+            string root = CreateTempDirectory();
+            try
+            {
+                string sourcePath = Path.Combine(root, "Program.cs");
+                File.WriteAllText(sourcePath, "using System; using Microsoft.Extensions.Logging; using Demo.Orders; namespace Demo { public class Program { } }");
+
+                string outputDirectory = Path.Combine(root, "output");
+                CSharpAnalyser analyser = new(outputDirectory);
+                ManifestManager manifestManager = new(outputDirectory);
+                FakeSymbolIndexStore store = new();
+                CSharpAnalysisEngine engine = new(analyser, manifestManager, store);
+
+                await engine.AnalyseSymbolsAsync(RepositoryName, sourcePath, TestContext.CancellationToken);
+
+                Assert.HasCount(1, store.LastSymbols);
+                Assert.HasCount(3, store.LastSymbols[0].UsingDirectives);
+                Assert.AreEqual("Demo.Orders", store.LastSymbols[0].UsingDirectives[0]);
+                Assert.AreEqual("Microsoft.Extensions.Logging", store.LastSymbols[0].UsingDirectives[1]);
+                Assert.AreEqual("System", store.LastSymbols[0].UsingDirectives[2]);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [TestMethod]
         public async Task CSharpAnalysisEngine_WithoutStore_SkipsIndexing()
         {
             string root = CreateTempDirectory();

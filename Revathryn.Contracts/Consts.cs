@@ -33,6 +33,8 @@
         public const char CharHash = '#';
         public const char CharBang = '!';
         public const string FilePathGit = ".git";
+        public const string GitHeadFileName = "HEAD";
+        public const string GitHeadRefPrefix = "ref: refs/heads/";
         public const string FilePathVSInternal = ".vs";
         public const string FilePathBin = "bin";
         public const string FilePathObj = "obj";
@@ -63,6 +65,10 @@
         public const char CharTilde = '~';
         public const string FullStop = ".";
         public const string StringArrayIdentifier = "[]";
+        public const string SystemNamespace = "System";
+        public const string MicrosoftNamespace = "Microsoft";
+        public const string SystemDependencyPrefix = SystemNamespace + FullStop;
+        public const string MicrosoftDependencyPrefix = MicrosoftNamespace + FullStop;
         public const string StringSpace = " ";
         public const string LanguageType = "CSharp";
         public const string LanguageVersionNumber = "14.0";
@@ -193,6 +199,11 @@
         public const string OpenAIResponseFormatJsonObject = "json_object";
         public const int DefaultAIMaxTokens = 4096;
         public const int MinimumAIMaxTokens = 1;
+        public const int DefaultAIMaxSimultaneousConnections = 1;
+        public const int MinimumAIMaxSimultaneousConnections = 1;
+        public const int MaximumAIMaxSimultaneousConnections = 16;
+        public const string DetectionEngineConnectionKeyPrefix = "detection:";
+        public const string ReviewEngineConnectionKey = "review";
         public const int AIReviewCorrectionMaxAttempts = 1;
         public const int ReviewWorkerDelayMilliseconds = 30000;
         public const int ReviewWorkerMaxItemsPerCycle = 100;
@@ -221,9 +232,6 @@
 
         // Review queue reliability defaults.
         public const int DefaultQueueLeaseMinutes = 10;
-        public const int DefaultQueuePriorityDecayFactor = 2;
-        public const int DefaultQueueMinimumPriority = 1;
-        public const int MinimumPriorityDecayFactor = 1;
 
         // Reliability component names.
         public const string ReviewProcessorComponent = "ReviewProcessor";
@@ -290,6 +298,16 @@
         public const string DashboardErrorRoute = "/Dashboard/Error";
         public const string DefaultRouteName = "default";
         public const string DefaultRoutePattern = "{controller=Dashboard}/{action=Index}/{id?}";
+
+        // File details API.
+        public const string FileDetailsApiRoute = "api/files/details";
+        public const string FileDetailsRepositoryQueryKey = "repo";
+        public const string FileDetailsFileQueryKey = "file";
+        public const string FileDetailsIssueSeverityRoute = "issues/{findingId:long}/severity";
+        public const string FileDetailsIssueStatusRoute = "issues/{findingId:long}/status";
+        public const string FileDetailsIssueResubmitRoute = "issues/{findingId:long}/resubmit";
+        public const string ReviewStatusCompleted = "Completed";
+        public const string ReviewStatusOutstanding = "Outstanding";
 
         // Text separators and path markers used by issue validation.
         public const string ListSeparator = ", ";

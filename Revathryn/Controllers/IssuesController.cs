@@ -343,6 +343,41 @@ namespace Revathryn.Controllers
                 BuildDetailsRedirectValues(id, browseRepositoryId, page, pageSize, severity, reviewTypeId, search, sort, descending));
         }
 
+        /// <summary>Updates the status of a finding and returns to its details.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(
+            long id,
+            FindingStatus newStatus,
+            long? repositoryId,
+            int? page,
+            int? pageSize,
+            FindingSeverity? severity,
+            long? reviewTypeId,
+            string search,
+            FindingSortField? sort,
+            bool? descending,
+            CancellationToken cancellationToken)
+        {
+            Finding finding = await _findingRepository.GetByIdAsync(id, cancellationToken);
+
+            if (finding is null)
+            {
+                return NotFound();
+            }
+
+            finding.Status = newStatus;
+            finding.LastModifiedDate = DateTime.UtcNow;
+            await _findingRepository.UpdateAsync(finding, cancellationToken);
+
+            TempData[Consts.SuccessMessageTempDataKey] = Strings.StatusUpdatedMessage;
+
+            long browseRepositoryId = repositoryId ?? finding.RepositoryId;
+            return RedirectToAction(
+                nameof(Details),
+                BuildDetailsRedirectValues(id, browseRepositoryId, page, pageSize, severity, reviewTypeId, search, sort, descending));
+        }
+
         /// <summary>Deletes a finding and returns to the issue listing.</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]

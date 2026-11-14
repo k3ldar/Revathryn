@@ -11,7 +11,7 @@ namespace Revathryn.Data
     public sealed class ReviewContextRepository : SqliteRepositoryBase, IReviewContextRepository
     {
         private const string SelectColumns =
-            "Id, RepositoryId, RepoFileId, ReviewTypeId, Sha256, Language, FilePath, ReviewInstructions, FileContent, ContextItemsJson, CreatedUtc, ReviewPrompt, SystemPrompt, ReviewDefinitionVersion, EngineName, EngineProvider, EngineModel, RequestedContextKeysJson, SystemPromptVersionId, ReviewPromptVersionId";
+            "Id, RepositoryId, RepoFileId, ReviewTypeId, Sha256, Language, FilePath, ReviewInstructions, FileContent, ContextItemsJson, CreatedUtc, ReviewPrompt, SystemPrompt, ReviewDefinitionVersion, EngineName, EngineProvider, EngineModel, RequestedContextKeysJson, SystemPromptVersionId, ReviewPromptVersionId, Branch";
 
         /// <summary>Initialises a new repository.</summary>
         public ReviewContextRepository(SqliteConnectionFactory connectionFactory)
@@ -53,8 +53,8 @@ namespace Revathryn.Data
             using SqliteCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT INTO ReviewContexts (RepositoryId, RepoFileId, ReviewTypeId, Sha256, Language, FilePath, ReviewInstructions, FileContent, ContextItemsJson, CreatedUtc, ReviewPrompt, SystemPrompt, ReviewDefinitionVersion, EngineName, EngineProvider, EngineModel, RequestedContextKeysJson, SystemPromptVersionId, ReviewPromptVersionId)
-                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Sha256, @Language, @FilePath, @ReviewInstructions, @FileContent, @ContextItemsJson, @CreatedUtc, @ReviewPrompt, @SystemPrompt, @ReviewDefinitionVersion, @EngineName, @EngineProvider, @EngineModel, @RequestedContextKeysJson, @SystemPromptVersionId, @ReviewPromptVersionId);
+                INSERT INTO ReviewContexts (RepositoryId, RepoFileId, ReviewTypeId, Sha256, Language, FilePath, ReviewInstructions, FileContent, ContextItemsJson, CreatedUtc, ReviewPrompt, SystemPrompt, ReviewDefinitionVersion, EngineName, EngineProvider, EngineModel, RequestedContextKeysJson, SystemPromptVersionId, ReviewPromptVersionId, Branch)
+                VALUES (@RepositoryId, @RepoFileId, @ReviewTypeId, @Sha256, @Language, @FilePath, @ReviewInstructions, @FileContent, @ContextItemsJson, @CreatedUtc, @ReviewPrompt, @SystemPrompt, @ReviewDefinitionVersion, @EngineName, @EngineProvider, @EngineModel, @RequestedContextKeysJson, @SystemPromptVersionId, @ReviewPromptVersionId, @Branch);
                 SELECT last_insert_rowid();
                 """;
             AddParameters(command, context);
@@ -84,6 +84,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@RequestedContextKeysJson", SerializeKeys(context.RequestedContextKeys));
             command.Parameters.AddWithValue("@SystemPromptVersionId", SqliteValueConverter.ToParameter(context.SystemPromptVersionId));
             command.Parameters.AddWithValue("@ReviewPromptVersionId", SqliteValueConverter.ToParameter(context.ReviewPromptVersionId));
+            command.Parameters.AddWithValue("@Branch", context.Branch ?? string.Empty);
         }
 
         private static string SerializeKeys(IReadOnlyList<string> keys)
@@ -153,7 +154,8 @@ namespace Revathryn.Data
                 EngineModel = reader.GetString(16),
                 RequestedContextKeys = DeserializeKeys(reader.GetString(17)),
                 SystemPromptVersionId = reader.GetNullableInt64(18),
-                ReviewPromptVersionId = reader.GetNullableInt64(19)
+                ReviewPromptVersionId = reader.GetNullableInt64(19),
+                Branch = reader.IsDBNull(20) ? string.Empty : reader.GetString(20)
             };
         }
     }

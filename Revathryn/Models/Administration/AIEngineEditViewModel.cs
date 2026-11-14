@@ -30,6 +30,10 @@ namespace Revathryn.Models.Administration
         [Range(Consts.MinimumAIMaxTokens, int.MaxValue, ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.MaxTokensRangeMessage))]
         public int MaxTokens { get; set; } = Consts.DefaultAIMaxTokens;
 
+        /// <summary>Maximum number of simultaneous requests sent to this engine.</summary>
+        [Range(Consts.MinimumAIMaxSimultaneousConnections, Consts.MaximumAIMaxSimultaneousConnections, ErrorMessageResourceType = typeof(Revathryn.Resources.Strings), ErrorMessageResourceName = nameof(Revathryn.Resources.Strings.MaxSimultaneousConnectionsRangeMessage))]
+        public int MaxSimultaneousConnections { get; set; } = Consts.DefaultAIMaxSimultaneousConnections;
+
         /// <summary>Reference into the secrets provider where the API key is stored.</summary>
         public string SecretKeyName { get; set; } = string.Empty;
 
@@ -53,6 +57,7 @@ namespace Revathryn.Models.Administration
                 Endpoint = engine.Endpoint,
                 Model = engine.Model,
                 MaxTokens = engine.MaxTokens,
+                MaxSimultaneousConnections = engine.MaxSimultaneousConnections,
                 SecretKeyName = engine.SecretKeyName,
                 Enabled = engine.Enabled,
                 IsDefault = engine.IsDefault,
@@ -71,6 +76,7 @@ namespace Revathryn.Models.Administration
                 Endpoint = Endpoint?.Trim() ?? string.Empty,
                 Model = Model?.Trim() ?? string.Empty,
                 MaxTokens = MaxTokens,
+                MaxSimultaneousConnections = MaxSimultaneousConnections,
                 SecretKeyName = SecretKeyName?.Trim() ?? string.Empty,
                 Enabled = Enabled,
                 IsDefault = IsDefault,

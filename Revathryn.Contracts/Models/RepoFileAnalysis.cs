@@ -26,5 +26,8 @@ namespace Revathryn.Contracts.Models
 
         /// <summary>Version of the review definition the analysis completed against.</summary>
         public string ReviewDefinitionVersion { get; set; } = String.Empty;
+
+        /// <summary>Git branch the analysis was completed against. Empty for legacy or detached HEAD records.</summary>
+        public string Branch { get; set; } = String.Empty;
     }
 }

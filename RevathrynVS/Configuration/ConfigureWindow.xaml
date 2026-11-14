@@ -1,0 +1,80 @@
+<vsui:DialogWindow
+    x:Class="RevathrynVS2026.Configuration.ConfigureWindow"
+    x:ClassModifier="internal"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vsshell="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
+    xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
+    AutomationProperties.AutomationId="ConfigureWindow"
+    Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}"
+    Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    SizeToContent="Height"
+    Title="Revathryn Configuration"
+    Width="520"
+    WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Label
+            Grid.Row="0"
+            Padding="0,0,0,4"
+            Content="_Server URL"
+            Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"
+            Target="{Binding ElementName=EndpointTextBox}" />
+
+        <TextBox
+            x:Name="EndpointTextBox"
+            Grid.Row="1"
+            AutomationProperties.AutomationId="EndpointUrlTextBox"
+            Text="{Binding EndpointUrl, UpdateSourceTrigger=PropertyChanged}" />
+
+        <Label
+            Grid.Row="2"
+            Padding="0,8,0,4"
+            Content="_Repository override (leave empty to detect automatically)"
+            Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"
+            Target="{Binding ElementName=RepositoryTextBox}" />
+
+        <TextBox
+            x:Name="RepositoryTextBox"
+            Grid.Row="3"
+            AutomationProperties.AutomationId="RepositoryTextBox"
+            Text="{Binding Repository, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock
+            Grid.Row="4"
+            Margin="0,4,0,0"
+            AutomationProperties.AutomationId="ErrorText"
+            Foreground="{DynamicResource {x:Static vsshell:VsBrushes.ToolWindowTextKey}}"
+            Text="{Binding ErrorText}"
+            TextWrapping="Wrap" />
+
+        <StackPanel
+            Grid.Row="5"
+            Margin="0,12,0,0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <Button
+                MinWidth="75"
+                Margin="0,0,8,0"
+                AutomationProperties.AutomationId="SaveButton"
+                Click="OnSaveClicked"
+                Content="_Save"
+                IsDefault="True" />
+            <Button
+                MinWidth="75"
+                AutomationProperties.AutomationId="CancelButton"
+                Content="_Cancel"
+                IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</vsui:DialogWindow>
