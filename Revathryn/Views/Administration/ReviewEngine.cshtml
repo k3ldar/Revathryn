@@ -62,6 +62,12 @@
             <label asp-for="MaxTokens" class="form-label">@Strings.MaxTokensLabel</label>
             <input asp-for="MaxTokens" class="form-control" type="number" min="@Consts.MinimumAIMaxTokens" />
         </div>
+
+        <div class="col-12 col-md-4 mb-3">
+            <label asp-for="MaxSimultaneousConnections" class="form-label">@Strings.MaxSimultaneousConnectionsLabel</label>
+            <input asp-for="MaxSimultaneousConnections" class="form-control" type="number" min="@Consts.MinimumAIMaxSimultaneousConnections" max="@Consts.MaximumAIMaxSimultaneousConnections" />
+            <div class="form-text">@Strings.MaxSimultaneousConnectionsHelp</div>
+        </div>
     </div>
 
     <div class="mb-3">

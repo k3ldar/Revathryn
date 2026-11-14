@@ -117,7 +117,8 @@ namespace Revathryn.Review.Tests
                 new FakeAIEngineRepository(configuredEngine),
                 new FakeSecretsProvider("api-key"),
                 httpClient,
-                new FakeOperationalDiagnostics());
+                new FakeOperationalDiagnostics(),
+                new KeyedConcurrencyLimiter());
 
             ReviewRequest request = new()
             {
@@ -190,7 +191,8 @@ namespace Revathryn.Review.Tests
                 new FakeAIEngineRepository(disabledEngine),
                 new FakeSecretsProvider("api-key"),
                 httpClient,
-                new FakeOperationalDiagnostics());
+                new FakeOperationalDiagnostics(),
+                new KeyedConcurrencyLimiter());
 
             ReviewRequest request = new()
             {
@@ -236,7 +238,8 @@ namespace Revathryn.Review.Tests
                 new FakeAIEngineRepository(configuredEngine),
                 new FakeSecretsProvider(null),
                 httpClient,
-                new FakeOperationalDiagnostics());
+                new FakeOperationalDiagnostics(),
+                new KeyedConcurrencyLimiter());
 
             ReviewRequest request = new()
             {
@@ -299,7 +302,8 @@ namespace Revathryn.Review.Tests
                 new FakeAIEngineRepository(configuredEngine),
                 new FakeSecretsProvider("api-key"),
                 httpClient,
-                new FakeOperationalDiagnostics());
+                new FakeOperationalDiagnostics(),
+                new KeyedConcurrencyLimiter());
 
             ReviewRequest request = new()
             {
@@ -392,7 +396,8 @@ namespace Revathryn.Review.Tests
                 new FakeAIEngineRepository(configuredEngine),
                 new FakeSecretsProvider("api-key"),
                 httpClient,
-                new FakeOperationalDiagnostics());
+                new FakeOperationalDiagnostics(),
+                new KeyedConcurrencyLimiter());
 
             ReviewRequest request = new()
             {
@@ -464,7 +469,8 @@ namespace Revathryn.Review.Tests
                 new FakeAIEngineRepository(configuredEngine),
                 new FakeSecretsProvider("api-key"),
                 httpClient,
-                new FakeOperationalDiagnostics());
+                new FakeOperationalDiagnostics(),
+                new KeyedConcurrencyLimiter());
 
             ReviewRequest request = new()
             {
@@ -527,7 +533,8 @@ namespace Revathryn.Review.Tests
                 new FakeAIEngineRepository(configuredEngine),
                 new FakeSecretsProvider("api-key"),
                 httpClient,
-                new FakeOperationalDiagnostics());
+                new FakeOperationalDiagnostics(),
+                new KeyedConcurrencyLimiter());
 
             ReviewRequest request = new()
             {
@@ -572,7 +579,7 @@ namespace Revathryn.Review.Tests
 
             ArchitectureAnalysisEngine engine = new(
                 new FakeAIEngineRepository(configuredEngine),
-                new OpenAICompletionClient(new FakeSecretsProvider("api-key"), httpClient, new FakeOperationalDiagnostics()));
+                new OpenAICompletionClient(new FakeSecretsProvider("api-key"), httpClient, new FakeOperationalDiagnostics(), new KeyedConcurrencyLimiter()));
 
             ArchitectureAnalysisRequest request = new()
             {
@@ -633,7 +640,7 @@ namespace Revathryn.Review.Tests
 
             ArchitectureAnalysisEngine engine = new(
                 new FakeAIEngineRepository(configuredEngine),
-                new OpenAICompletionClient(new FakeSecretsProvider("api-key"), httpClient, new FakeOperationalDiagnostics()));
+                new OpenAICompletionClient(new FakeSecretsProvider("api-key"), httpClient, new FakeOperationalDiagnostics(), new KeyedConcurrencyLimiter()));
 
             ArchitectureAnalysisRequest request = new()
             {

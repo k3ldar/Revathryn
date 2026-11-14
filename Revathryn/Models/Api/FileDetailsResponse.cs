@@ -23,6 +23,12 @@ namespace Revathryn.Models.Api
         /// <summary>Code-analysis symbols defined in the file.</summary>
         public IReadOnlyList<IndexedSymbol> Symbols { get; init; } = [];
 
+        /// <summary>Framework dependencies of the file (System.* and Microsoft.*), deduplicated.</summary>
+        public IReadOnlyList<string> SystemDependencies { get; init; } = [];
+
+        /// <summary>Non-framework dependencies of the file, deduplicated.</summary>
+        public IReadOnlyList<string> OtherDependencies { get; init; } = [];
+
         /// <summary>UTC timestamp when the response was assembled.</summary>
         public DateTime ExportedUtc { get; init; }
     }

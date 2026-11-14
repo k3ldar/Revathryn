@@ -93,6 +93,77 @@ namespace Revathryn.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// Updates the severity of a finding. Used by the Visual Studio extension and the website.
+        /// </summary>
+        /// <param name="findingId">Finding identifier.</param>
+        /// <param name="request">The new severity.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        [HttpPost(Consts.FileDetailsIssueSeverityRoute)]
+        public async Task<IActionResult> UpdateSeverity(long findingId, [FromBody] UpdateFindingSeverityRequest request, CancellationToken cancellationToken)
+        {
+            Finding finding = await _findingRepository.GetByIdAsync(findingId, cancellationToken);
+
+            if (finding is null)
+            {
+                return NotFound();
+            }
+
+            finding.Severity = request.Severity;
+            finding.LastModifiedDate = DateTime.UtcNow;
+            await _findingRepository.UpdateAsync(finding, cancellationToken);
+
+            return Ok(new { findingId = finding.Id, severity = finding.Severity });
+        }
+
+        /// <summary>
+        /// Updates the status of a finding. Used by the Visual Studio extension and the website.
+        /// </summary>
+        /// <param name="findingId">Finding identifier.</param>
+        /// <param name="request">The new status.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        [HttpPost(Consts.FileDetailsIssueStatusRoute)]
+        public async Task<IActionResult> UpdateStatus(long findingId, [FromBody] UpdateFindingStatusRequest request, CancellationToken cancellationToken)
+        {
+            Finding finding = await _findingRepository.GetByIdAsync(findingId, cancellationToken);
+
+            if (finding is null)
+            {
+                return NotFound();
+            }
+
+            finding.Status = request.Status;
+            finding.LastModifiedDate = DateTime.UtcNow;
+            await _findingRepository.UpdateAsync(finding, cancellationToken);
+
+            return Ok(new { findingId = finding.Id, status = finding.Status });
+        }
+
+        /// <summary>
+        /// Re-queues the finding's file for review by its originating review type.
+        /// </summary>
+        /// <param name="findingId">Finding identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        [HttpPost(Consts.FileDetailsIssueResubmitRoute)]
+        public async Task<IActionResult> Resubmit(long findingId, CancellationToken cancellationToken)
+        {
+            Finding finding = await _findingRepository.GetByIdAsync(findingId, cancellationToken);
+
+            if (finding is null)
+            {
+                return NotFound();
+            }
+
+            if (!finding.RepoFileId.HasValue || !finding.ReviewTypeId.HasValue)
+            {
+                return UnprocessableEntity(new { message = Strings.ResubmitUnavailableMessage });
+            }
+
+            ReviewScheduleResult result = await _reviewScheduler.RequeueFileAsync(finding.RepoFileId.Value, finding.ReviewTypeId.Value, cancellationToken);
+
+            return Ok(new { findingId = finding.Id, added = result.Added, duplicatesSkipped = result.DuplicatesSkipped });
+        }
+
         private async Task<Repository> ResolveRepositoryAsync(string name, CancellationToken cancellationToken)
         {
             IReadOnlyList<Repository> repositories = await _repositoryService.GetAllAsync(cancellationToken);
@@ -128,6 +199,8 @@ namespace Revathryn.Controllers
                 Reviews = reviews,
                 Issues = issues,
                 Symbols = symbols,
+                SystemDependencies = BuildDependencies(symbols, systemOnly: true),
+                OtherDependencies = BuildDependencies(symbols, systemOnly: false),
                 ExportedUtc = DateTime.UtcNow
             };
         }
@@ -231,6 +304,47 @@ namespace Revathryn.Controllers
         {
             string sourcePath = ResolveSourcePath(repository.LocalPath, file.RelativePath);
             return await _symbolIndexStore.GetSymbolsForFileAsync(repository.Name, sourcePath, cancellationToken);
+        }
+
+        private static IReadOnlyList<string> BuildDependencies(IReadOnlyList<IndexedSymbol> symbols, bool systemOnly)
+        {
+            HashSet<string> dependencies = [with(StringComparer.Ordinal)];
+
+            foreach (IndexedSymbol symbol in symbols ?? [])
+            {
+                foreach (string directive in symbol.UsingDirectives ?? [])
+                {
+                    if (IsSystemDependency(directive) == systemOnly)
+                    {
+                        dependencies.Add(directive);
+                    }
+                }
+
+                foreach (string dependency in symbol.Dependencies ?? [])
+                {
+                    if (IsSystemDependency(dependency) == systemOnly)
+                    {
+                        dependencies.Add(dependency);
+                    }
+                }
+            }
+
+            return [.. dependencies.OrderBy(value => value, StringComparer.Ordinal)];
+        }
+
+        private static bool IsSystemDependency(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            string trimmed = value.Trim();
+
+            return string.Equals(trimmed, Consts.SystemNamespace, StringComparison.Ordinal)
+                || trimmed.StartsWith(Consts.SystemDependencyPrefix, StringComparison.Ordinal)
+                || string.Equals(trimmed, Consts.MicrosoftNamespace, StringComparison.Ordinal)
+                || trimmed.StartsWith(Consts.MicrosoftDependencyPrefix, StringComparison.Ordinal);
         }
 
         private static string ResolveSourcePath(string repositoryLocalPath, string relativePath)

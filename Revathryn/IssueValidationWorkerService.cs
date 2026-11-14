@@ -42,12 +42,7 @@ namespace Revathryn
         {
             try
             {
-                int processed = 0;
-
-                while (processed < Consts.IssueValidationDrainLimit && await _processor.ProcessNextAsync(cancellationToken))
-                {
-                    processed++;
-                }
+                await QueueDrainHelper.DrainAsync(_processor.ProcessNextAsync, Consts.IssueValidationDrainLimit, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

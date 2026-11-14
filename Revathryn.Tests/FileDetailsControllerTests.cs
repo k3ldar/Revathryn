@@ -160,7 +160,9 @@ namespace Revathryn.Tests
             {
                 Name = "Program",
                 Kind = "Class",
-                FullyQualifiedName = "Demo.Program"
+                FullyQualifiedName = "Demo.Program",
+                UsingDirectives = ["System", "System.Text", "Demo.Orders"],
+                Dependencies = ["Demo.Customer", "System.Linq", "Microsoft.Extensions.Logging"]
             };
 
             FakeRepositoryService repositories = new();
@@ -255,6 +257,14 @@ namespace Revathryn.Tests
 
             Assert.HasCount(1, response.Symbols);
             Assert.AreSame(symbol, response.Symbols[0]);
+            Assert.HasCount(4, response.SystemDependencies);
+            Assert.AreEqual("Microsoft.Extensions.Logging", response.SystemDependencies[0]);
+            Assert.AreEqual("System", response.SystemDependencies[1]);
+            Assert.AreEqual("System.Linq", response.SystemDependencies[2]);
+            Assert.AreEqual("System.Text", response.SystemDependencies[3]);
+            Assert.HasCount(2, response.OtherDependencies);
+            Assert.AreEqual("Demo.Customer", response.OtherDependencies[0]);
+            Assert.AreEqual("Demo.Orders", response.OtherDependencies[1]);
             Assert.AreEqual("Demo", symbols.LastRequestedRepositoryName);
             Assert.AreEqual(Path.GetFullPath(Path.Combine(@"C:\repo", "src\\Program.cs")), symbols.LastRequestedSourcePath);
             Assert.IsTrue(Path.IsPathRooted(symbols.LastRequestedSourcePath));
@@ -287,6 +297,8 @@ namespace Revathryn.Tests
             Assert.HasCount(0, response.Reviews);
             Assert.HasCount(0, response.Issues);
             Assert.HasCount(0, response.Symbols);
+            Assert.HasCount(0, response.SystemDependencies);
+            Assert.HasCount(0, response.OtherDependencies);
         }
 
         [TestMethod]
@@ -402,6 +414,113 @@ namespace Revathryn.Tests
             IActionResult result = await controller.Get("Repo", "src/Old.cs", TestContext.CancellationToken);
 
             Assert.IsInstanceOfType<NotFoundObjectResult>(result);
+        }
+
+        [TestMethod]
+        public async Task UpdateSeverity_UpdatesFindingAndReturnsOk()
+        {
+            Finding finding = new() { Id = 1, Severity = FindingSeverity.Info };
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            FileDetailsController controller = CreateController(findings: findings);
+
+            IActionResult result = await controller.UpdateSeverity(
+                1,
+                new UpdateFindingSeverityRequest { Severity = FindingSeverity.Critical },
+                TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<OkObjectResult>(result);
+            Assert.AreEqual(FindingSeverity.Critical, finding.Severity);
+        }
+
+        [TestMethod]
+        public async Task UpdateSeverity_UnknownFinding_ReturnsNotFound()
+        {
+            FileDetailsController controller = CreateController();
+
+            IActionResult result = await controller.UpdateSeverity(
+                99,
+                new UpdateFindingSeverityRequest { Severity = FindingSeverity.Low },
+                TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task UpdateStatus_UpdatesFindingAndReturnsOk()
+        {
+            Finding finding = new() { Id = 1, Status = FindingStatus.New };
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            FileDetailsController controller = CreateController(findings: findings);
+
+            IActionResult result = await controller.UpdateStatus(
+                1,
+                new UpdateFindingStatusRequest { Status = FindingStatus.Resolved },
+                TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<OkObjectResult>(result);
+            Assert.AreEqual(FindingStatus.Resolved, finding.Status);
+        }
+
+        [TestMethod]
+        public async Task UpdateStatus_UnknownFinding_ReturnsNotFound()
+        {
+            FileDetailsController controller = CreateController();
+
+            IActionResult result = await controller.UpdateStatus(
+                99,
+                new UpdateFindingStatusRequest { Status = FindingStatus.Reviewed },
+                TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task Resubmit_QueuesFileAndReturnsResult()
+        {
+            Finding finding = new() { Id = 1, RepoFileId = 10, ReviewTypeId = 100 };
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            FakeReviewScheduler scheduler = new()
+            {
+                RequeueResult = new ReviewScheduleResult { Added = 1, DuplicatesSkipped = 0 }
+            };
+
+            FileDetailsController controller = CreateController(findings: findings, scheduler: scheduler);
+
+            IActionResult result = await controller.Resubmit(1, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<OkObjectResult>(result);
+            Assert.AreEqual(10L, scheduler.LastRequeuedRepoFileId);
+            Assert.AreEqual(100L, scheduler.LastRequeuedReviewTypeId);
+        }
+
+        [TestMethod]
+        public async Task Resubmit_MissingFileOrReviewType_ReturnsUnprocessableEntity()
+        {
+            Finding finding = new() { Id = 1 };
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            FileDetailsController controller = CreateController(findings: findings);
+
+            IActionResult result = await controller.Resubmit(1, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<UnprocessableEntityObjectResult>(result);
+        }
+
+        [TestMethod]
+        public async Task Resubmit_UnknownFinding_ReturnsNotFound()
+        {
+            FileDetailsController controller = CreateController();
+
+            IActionResult result = await controller.Resubmit(99, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
         }
 
         private static FileDetailsController CreateController(
@@ -707,6 +826,12 @@ namespace Revathryn.Tests
 
             public Func<RepoFile, ReviewType, bool> CurrentResolver { get; set; } = (repoFile, reviewType) => false;
 
+            public ReviewScheduleResult RequeueResult { get; set; } = new();
+
+            public long LastRequeuedRepoFileId { get; private set; }
+
+            public long LastRequeuedReviewTypeId { get; private set; }
+
             public Task<ReviewScheduleResult> ScheduleRepositoryAsync(long repositoryId, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(new ReviewScheduleResult());
@@ -719,7 +844,9 @@ namespace Revathryn.Tests
 
             public Task<ReviewScheduleResult> RequeueFileAsync(long repoFileId, long reviewTypeId, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult(new ReviewScheduleResult());
+                LastRequeuedRepoFileId = repoFileId;
+                LastRequeuedReviewTypeId = reviewTypeId;
+                return Task.FromResult(RequeueResult);
             }
 
             public Task<IReadOnlyList<ReviewType>> GetApplicableReviewTypesAsync(RepoFile file, CancellationToken cancellationToken = default)

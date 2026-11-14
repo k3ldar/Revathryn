@@ -96,6 +96,11 @@ namespace Revathryn.Engine
                 result.Errors.Add(string.Format(Strings.ReviewEngineMaxTokensInvalid, Consts.MinimumAIMaxTokens));
             }
 
+            if (settings.MaxSimultaneousConnections is < Consts.MinimumAIMaxSimultaneousConnections or > Consts.MaximumAIMaxSimultaneousConnections)
+            {
+                result.Errors.Add(string.Format(Strings.ReviewEngineMaxSimultaneousConnectionsInvalid, Consts.MinimumAIMaxSimultaneousConnections, Consts.MaximumAIMaxSimultaneousConnections));
+            }
+
             if (settings.Temperature.HasValue
                 && (double.IsNaN(settings.Temperature.Value)
                     || settings.Temperature.Value < Consts.MinimumTemperature
@@ -204,6 +209,7 @@ namespace Revathryn.Engine
                 Provider = AIProvider.OpenAI,
                 Endpoint = Consts.DefaultReviewEngineEndpoint,
                 MaxTokens = Consts.DefaultReviewEngineMaxTokens,
+                MaxSimultaneousConnections = Consts.DefaultAIMaxSimultaneousConnections,
                 Enabled = false
             };
         }
@@ -218,6 +224,7 @@ namespace Revathryn.Engine
                 Temperature = settings.Temperature,
                 ReasoningEffort = (settings.ReasoningEffort ?? string.Empty).Trim().ToLowerInvariant(),
                 MaxTokens = settings.MaxTokens,
+                MaxSimultaneousConnections = settings.MaxSimultaneousConnections,
                 SecretKeyName = (settings.SecretKeyName ?? string.Empty).Trim(),
                 Enabled = settings.Enabled,
                 AdditionalOptions = (settings.AdditionalOptions ?? string.Empty).Trim(),

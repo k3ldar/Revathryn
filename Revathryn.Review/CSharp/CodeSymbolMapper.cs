@@ -23,7 +23,8 @@ namespace Revathryn.Review.CSharp
                 IsStatic = symbol.IsStatic,
                 IsAbstract = symbol.IsAbstract,
                 IsSealed = symbol.IsSealed,
-                Dependencies = symbol.Dependencies is null ? [] : [.. symbol.Dependencies]
+                Dependencies = symbol.Dependencies is null ? [] : [.. symbol.Dependencies],
+                UsingDirectives = symbol.UsingDirectives is null ? [] : [.. symbol.UsingDirectives]
             };
 
             foreach (MethodSymbol method in symbol.Methods ?? [])

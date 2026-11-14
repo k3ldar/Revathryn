@@ -10,7 +10,7 @@ namespace Revathryn.Data
     public sealed class ReviewEngineSettingsRepository : SqliteRepositoryBase, IReviewEngineSettingsRepository
     {
         private const string SelectColumns =
-            "Provider, Endpoint, Model, Temperature, ReasoningEffort, MaxTokens, SecretKeyName, Enabled, AdditionalOptions, LastModifiedUtc";
+            "Provider, Endpoint, Model, Temperature, ReasoningEffort, MaxTokens, SecretKeyName, Enabled, AdditionalOptions, LastModifiedUtc, MaxSimultaneousConnections";
 
         /// <summary>Initialises a new repository.</summary>
         public ReviewEngineSettingsRepository(SqliteConnectionFactory connectionFactory)
@@ -43,8 +43,8 @@ namespace Revathryn.Data
             using SqliteConnection connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO ReviewEngineSettings (Id, Provider, Endpoint, Model, Temperature, ReasoningEffort, MaxTokens, SecretKeyName, Enabled, AdditionalOptions, LastModifiedUtc)
-                VALUES (1, @Provider, @Endpoint, @Model, @Temperature, @ReasoningEffort, @MaxTokens, @SecretKeyName, @Enabled, @AdditionalOptions, @LastModifiedUtc)
+                INSERT INTO ReviewEngineSettings (Id, Provider, Endpoint, Model, Temperature, ReasoningEffort, MaxTokens, SecretKeyName, Enabled, AdditionalOptions, LastModifiedUtc, MaxSimultaneousConnections)
+                VALUES (1, @Provider, @Endpoint, @Model, @Temperature, @ReasoningEffort, @MaxTokens, @SecretKeyName, @Enabled, @AdditionalOptions, @LastModifiedUtc, @MaxSimultaneousConnections)
                 ON CONFLICT (Id) DO UPDATE SET
                     Provider = excluded.Provider,
                     Endpoint = excluded.Endpoint,
@@ -55,7 +55,8 @@ namespace Revathryn.Data
                     SecretKeyName = excluded.SecretKeyName,
                     Enabled = excluded.Enabled,
                     AdditionalOptions = excluded.AdditionalOptions,
-                    LastModifiedUtc = excluded.LastModifiedUtc;
+                    LastModifiedUtc = excluded.LastModifiedUtc,
+                    MaxSimultaneousConnections = excluded.MaxSimultaneousConnections;
                 """;
             command.Parameters.AddWithValue("@Provider", (int)settings.Provider);
             command.Parameters.AddWithValue("@Endpoint", settings.Endpoint ?? string.Empty);
@@ -67,6 +68,7 @@ namespace Revathryn.Data
             command.Parameters.AddWithValue("@Enabled", settings.Enabled ? 1 : 0);
             command.Parameters.AddWithValue("@AdditionalOptions", settings.AdditionalOptions ?? string.Empty);
             command.Parameters.AddWithValue("@LastModifiedUtc", SqliteValueConverter.ToText(settings.LastModifiedUtc));
+            command.Parameters.AddWithValue("@MaxSimultaneousConnections", settings.MaxSimultaneousConnections);
 
             _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -84,7 +86,8 @@ namespace Revathryn.Data
                 SecretKeyName = reader.GetString(6),
                 Enabled = reader.GetInt32(7) != 0,
                 AdditionalOptions = reader.GetString(8),
-                LastModifiedUtc = SqliteValueConverter.ToDateTime(reader.GetString(9))
+                LastModifiedUtc = SqliteValueConverter.ToDateTime(reader.GetString(9)),
+                MaxSimultaneousConnections = reader.GetInt32(10)
             };
         }
     }

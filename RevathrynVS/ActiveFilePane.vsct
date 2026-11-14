@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <Commands package="guidActiveFilePanePackage">
+	<Menus>
+	  <Menu guid="guidActiveFilePaneCmdSet" id="RevathrynMenu" priority="0x0100" type="Menu">
+		<Parent guid="guidActiveFilePaneCmdSet" id="ExtensionsMenuGroup" />
+		<Strings>
+		  <ButtonText>Revathryn</ButtonText>
+		</Strings>
+	  </Menu>
+	</Menus>
+
+	<Groups>
+	  <!-- Hosts the Revathryn menu inside the Visual Studio Extensions menu -->
+	  <Group guid="guidActiveFilePaneCmdSet" id="ExtensionsMenuGroup" priority="0x0600">
+		<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_EXTENSIONS" />
+	  </Group>
+	  <Group guid="guidActiveFilePaneCmdSet" id="RevathrynMenuGroup" priority="0x0100">
+		<Parent guid="guidActiveFilePaneCmdSet" id="RevathrynMenu" />
+	  </Group>
+	</Groups>
+
+	<Buttons>
+	  <Button guid="guidActiveFilePaneCmdSet" id="ShowActiveFilePaneCommandId" priority="0x0100" type="Button">
+		<Parent guid="guidActiveFilePaneCmdSet" id="RevathrynMenuGroup" />
+		<Strings>
+		  <ButtonText>View Insights</ButtonText>
+		</Strings>
+	  </Button>
+	  <Button guid="guidActiveFilePaneCmdSet" id="ConfigureCommandId" priority="0x0200" type="Button">
+		<Parent guid="guidActiveFilePaneCmdSet" id="RevathrynMenuGroup" />
+		<Strings>
+		  <ButtonText>Configure</ButtonText>
+		</Strings>
+	  </Button>
+	</Buttons>
+  </Commands>
+
+  <Symbols>
+	<GuidSymbol name="guidActiveFilePanePackage" value="{5568f749-6c8a-4943-b81d-8f37812209bb}" />
+	<GuidSymbol name="guidActiveFilePaneCmdSet" value="{a7667f4c-0919-4f53-913a-230feab58672}">
+	  <IDSymbol name="RevathrynMenu" value="0x1000" />
+	  <IDSymbol name="ExtensionsMenuGroup" value="0x1010" />
+	  <IDSymbol name="RevathrynMenuGroup" value="0x1020" />
+	  <IDSymbol name="ShowActiveFilePaneCommandId" value="0x0100" />
+	  <IDSymbol name="ConfigureCommandId" value="0x0101" />
+	</GuidSymbol>
+  </Symbols>
+</CommandTable>

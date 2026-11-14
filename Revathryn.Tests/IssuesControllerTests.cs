@@ -427,6 +427,41 @@ namespace Revathryn.Tests
         }
 
         [TestMethod]
+        public async Task UpdateStatus_ReturnsNotFoundWhenFindingMissing()
+        {
+            IssuesController controller = CreateController();
+
+            IActionResult result = await controller.UpdateStatus(99, FindingStatus.Resolved, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            Assert.IsInstanceOfType<NotFoundResult>(result);
+        }
+
+        [TestMethod]
+        public async Task UpdateStatus_UpdatesFindingAndRedirectsToDetails()
+        {
+            Finding finding = new() { Id = 42, RepositoryId = 1, Status = FindingStatus.New };
+
+            FakeFindingRepository findings = new();
+            findings.Findings.Add(finding);
+
+            IssuesController controller = CreateController(findings: findings);
+
+            IActionResult result = await controller.UpdateStatus(42, FindingStatus.Resolved, null, null, null, null, null, null, null, null, TestContext.CancellationToken);
+
+            RedirectToActionResult redirect = result as RedirectToActionResult;
+            Assert.IsNotNull(redirect);
+            Assert.AreEqual(nameof(IssuesController.Details), redirect.ActionName);
+            Assert.AreEqual(42L, redirect.RouteValues["id"]);
+            Assert.AreEqual(1L, redirect.RouteValues["repositoryId"]);
+
+            Assert.IsNotNull(findings.Updated);
+            Assert.AreEqual(FindingStatus.Resolved, findings.Updated.Status);
+            Assert.AreNotEqual(default, findings.Updated.LastModifiedDate);
+
+            Assert.AreEqual(Revathryn.Resources.Strings.StatusUpdatedMessage, controller.TempData[Consts.SuccessMessageTempDataKey]);
+        }
+
+        [TestMethod]
         public async Task Delete_ReturnsNotFoundWhenFindingMissing()
         {
             IssuesController controller = CreateController();

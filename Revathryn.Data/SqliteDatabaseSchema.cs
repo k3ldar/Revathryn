@@ -191,7 +191,8 @@ namespace Revathryn.Data
                 MaxTokens INTEGER NOT NULL DEFAULT {Consts.DefaultAIMaxTokens},
                 Enabled INTEGER NOT NULL DEFAULT 1,
                 IsDefault INTEGER NOT NULL DEFAULT 0,
-                UseArchitecturePass INTEGER NOT NULL DEFAULT 0
+                UseArchitecturePass INTEGER NOT NULL DEFAULT 0,
+                MaxSimultaneousConnections INTEGER NOT NULL DEFAULT {Consts.DefaultAIMaxSimultaneousConnections}
             );
             """;
 
@@ -307,7 +308,7 @@ namespace Revathryn.Data
             """;
 
         /// <summary>Creates the ReviewEngineSettings singleton table holding the independent review engine configuration.</summary>
-        internal const string CreateReviewEngineSettings = """
+        internal static readonly string CreateReviewEngineSettings = $"""
             CREATE TABLE IF NOT EXISTS ReviewEngineSettings (
                 Id INTEGER PRIMARY KEY CHECK (Id = 1),
                 Provider INTEGER NOT NULL DEFAULT 0,
@@ -319,7 +320,8 @@ namespace Revathryn.Data
                 SecretKeyName TEXT NOT NULL DEFAULT '',
                 Enabled INTEGER NOT NULL DEFAULT 0,
                 AdditionalOptions TEXT NOT NULL DEFAULT '',
-                LastModifiedUtc TEXT NOT NULL
+                LastModifiedUtc TEXT NOT NULL,
+                MaxSimultaneousConnections INTEGER NOT NULL DEFAULT {Consts.DefaultAIMaxSimultaneousConnections}
             );
             """;
 

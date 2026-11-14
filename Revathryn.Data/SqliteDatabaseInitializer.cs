@@ -108,6 +108,8 @@ namespace Revathryn.Data
             EnsureColumn(connection, "Findings", "Branch", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(connection, "AIEngines", "MaxTokens", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxTokens);
             EnsureColumn(connection, "AIEngines", "UseArchitecturePass", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(connection, "AIEngines", "MaxSimultaneousConnections", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxSimultaneousConnections);
+            EnsureColumn(connection, "ReviewEngineSettings", "MaxSimultaneousConnections", "INTEGER NOT NULL DEFAULT " + Consts.DefaultAIMaxSimultaneousConnections);
             EnsureColumn(connection, "AISettings", "IssueSimilarityEnabled", "INTEGER NOT NULL DEFAULT 1");
             EnsureColumn(connection, "AISettings", "IssueSimilarityThreshold", "REAL NOT NULL DEFAULT " + Consts.DefaultIssueSimilarityThreshold);
             EnsureColumn(connection, "AISettings", "IssueSimilarityMinimumTokenLength", "INTEGER NOT NULL DEFAULT " + Consts.DefaultIssueSimilarityMinimumTokenLength);

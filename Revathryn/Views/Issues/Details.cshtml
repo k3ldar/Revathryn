@@ -73,6 +73,21 @@
                 </form>
             </div>
             <div class="col-12 col-md-auto">
+                <form method="post" asp-action="UpdateStatus" asp-all-route-data="@PostStateRoute()" class="d-flex flex-wrap gap-2 align-items-end">
+                    <input type="hidden" name="id" value="@Model.Finding.Id" />
+                    <div>
+                        <label for="newStatus" class="form-label">@Strings.UpdateStatusLabel</label>
+                        <select id="newStatus" name="newStatus" class="form-select">
+                            @foreach (FindingStatus option in StatusOptions())
+                            {
+                                <option value="@((int)option)" selected="@(Model.Finding.Status == option)">@StatusLabel(option)</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">@Strings.SaveButton</button>
+                </form>
+            </div>
+            <div class="col-12 col-md-auto">
                 <form method="post" asp-action="Delete" asp-all-route-data="@PostStateRoute()" onsubmit="return confirm('@Strings.DeleteFindingConfirmation');">
                     <input type="hidden" name="id" value="@Model.Finding.Id" />
                     <button type="submit" class="btn btn-outline-danger">@Strings.DeleteButton</button>
@@ -426,6 +441,18 @@
             FindingSeverity.Medium,
             FindingSeverity.Low,
             FindingSeverity.Info
+        ];
+    }
+
+    private static FindingStatus[] StatusOptions()
+    {
+        return
+        [
+            FindingStatus.New,
+            FindingStatus.Reviewed,
+            FindingStatus.FalsePositive,
+            FindingStatus.Resolved,
+            FindingStatus.Deferred
         ];
     }
 

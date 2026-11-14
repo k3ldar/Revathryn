@@ -25,6 +25,9 @@ namespace Revathryn.Models.Administration
         /// <summary>Maximum output tokens.</summary>
         public int MaxTokens { get; set; } = Consts.DefaultReviewEngineMaxTokens;
 
+        /// <summary>Maximum number of simultaneous requests sent to this engine.</summary>
+        public int MaxSimultaneousConnections { get; set; } = Consts.DefaultAIMaxSimultaneousConnections;
+
         /// <summary>Name of the secret (environment variable) holding the API key.</summary>
         public string SecretKeyName { get; set; } = string.Empty;
 
@@ -45,6 +48,7 @@ namespace Revathryn.Models.Administration
                 Temperature = settings.Temperature,
                 ReasoningEffort = settings.ReasoningEffort,
                 MaxTokens = settings.MaxTokens,
+                MaxSimultaneousConnections = settings.MaxSimultaneousConnections,
                 SecretKeyName = settings.SecretKeyName,
                 Enabled = settings.Enabled,
                 AdditionalOptions = settings.AdditionalOptions
@@ -62,6 +66,7 @@ namespace Revathryn.Models.Administration
                 Temperature = Temperature,
                 ReasoningEffort = ReasoningEffort?.Trim() ?? string.Empty,
                 MaxTokens = MaxTokens,
+                MaxSimultaneousConnections = MaxSimultaneousConnections,
                 SecretKeyName = SecretKeyName?.Trim() ?? string.Empty,
                 Enabled = Enabled,
                 AdditionalOptions = AdditionalOptions?.Trim() ?? string.Empty

@@ -25,6 +25,7 @@ namespace Revathryn.Engine.Tests
             ReviewEngineSettings settings = CreateValid();
             settings.Model = "  review-model  ";
             settings.ReasoningEffort = " HIGH ";
+            settings.MaxSimultaneousConnections = 8;
 
             ReviewEngineValidationResult result = await service.SaveAsync(settings, TestContext.CancellationToken);
 
@@ -35,6 +36,7 @@ namespace Revathryn.Engine.Tests
             Assert.AreEqual("high", saved.ReasoningEffort);
             Assert.AreEqual(SecretName, saved.SecretKeyName);
             Assert.IsTrue(saved.Enabled);
+            Assert.AreEqual(8, saved.MaxSimultaneousConnections);
         }
 
         [TestMethod]
@@ -117,6 +119,8 @@ namespace Revathryn.Engine.Tests
             AssertInvalid(service, s => s.Endpoint = "ftp://host/path", Strings.ReviewEngineEndpointInvalid);
             AssertInvalid(service, s => s.Endpoint = null, Strings.ReviewEngineEndpointInvalid);
             AssertInvalid(service, s => s.MaxTokens = 0, string.Format(Strings.ReviewEngineMaxTokensInvalid, Consts.MinimumAIMaxTokens));
+            AssertInvalid(service, s => s.MaxSimultaneousConnections = Consts.MinimumAIMaxSimultaneousConnections - 1, string.Format(Strings.ReviewEngineMaxSimultaneousConnectionsInvalid, Consts.MinimumAIMaxSimultaneousConnections, Consts.MaximumAIMaxSimultaneousConnections));
+            AssertInvalid(service, s => s.MaxSimultaneousConnections = Consts.MaximumAIMaxSimultaneousConnections + 1, string.Format(Strings.ReviewEngineMaxSimultaneousConnectionsInvalid, Consts.MinimumAIMaxSimultaneousConnections, Consts.MaximumAIMaxSimultaneousConnections));
             AssertInvalid(service, s => s.Temperature = -0.1, string.Format(Strings.ReviewEngineTemperatureInvalid, Consts.MinimumTemperature, Consts.MaximumTemperature));
             AssertInvalid(service, s => s.Temperature = 2.1, string.Format(Strings.ReviewEngineTemperatureInvalid, Consts.MinimumTemperature, Consts.MaximumTemperature));
             AssertInvalid(service, s => s.Temperature = double.NaN, string.Format(Strings.ReviewEngineTemperatureInvalid, Consts.MinimumTemperature, Consts.MaximumTemperature));
@@ -141,6 +145,19 @@ namespace Revathryn.Engine.Tests
         }
 
         [TestMethod]
+        public void Validate_BoundarySimultaneousConnectionsAreAccepted()
+        {
+            ReviewEngineConfigurationService service = CreateService(null, out _, out _);
+
+            foreach (int connections in new[] { Consts.MinimumAIMaxSimultaneousConnections, Consts.MaximumAIMaxSimultaneousConnections })
+            {
+                ReviewEngineSettings settings = CreateValid();
+                settings.MaxSimultaneousConnections = connections;
+                Assert.IsTrue(service.Validate(settings).IsValid, connections.ToString());
+            }
+        }
+
+        [TestMethod]
         public void Validate_NullSettingsReportsNotConfigured()
         {
             ReviewEngineValidationResult result = CreateService(null, out _, out _).Validate(null);
@@ -160,6 +177,7 @@ namespace Revathryn.Engine.Tests
             Assert.IsFalse(settings.Enabled);
             Assert.AreEqual(Consts.DefaultReviewEngineEndpoint, settings.Endpoint);
             Assert.AreEqual(Consts.DefaultReviewEngineMaxTokens, settings.MaxTokens);
+            Assert.AreEqual(Consts.DefaultAIMaxSimultaneousConnections, settings.MaxSimultaneousConnections);
             Assert.IsFalse(await service.IsConfiguredAsync(TestContext.CancellationToken));
         }
 

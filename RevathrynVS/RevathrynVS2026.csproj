@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.VisualStudio.Sdk.Build">
+  <PropertyGroup>
+    <TargetFrameworks>vs18_11</TargetFrameworks>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <ExtensionType>VSSDK</ExtensionType>
+    <LangVersion>latest</LangVersion>
+    <UseWPF>true</UseWPF>
+    <AssemblyVersion></AssemblyVersion>
+    <Copyright>© 2026 Revathryn</Copyright>
+  </PropertyGroup>
+</Project>

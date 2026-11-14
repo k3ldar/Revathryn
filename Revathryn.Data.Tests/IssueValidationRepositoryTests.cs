@@ -401,6 +401,7 @@ namespace Revathryn.Data.Tests
                 Temperature = 0.2,
                 ReasoningEffort = "high",
                 MaxTokens = 4096,
+                MaxSimultaneousConnections = 8,
                 SecretKeyName = "REVIEW_KEY",
                 Enabled = true,
                 AdditionalOptions = "{\"top_p\":0.5}",
@@ -415,6 +416,7 @@ namespace Revathryn.Data.Tests
             Assert.AreEqual(0.2, stored.Temperature);
             Assert.AreEqual("high", stored.ReasoningEffort);
             Assert.AreEqual(4096, stored.MaxTokens);
+            Assert.AreEqual(8, stored.MaxSimultaneousConnections);
             Assert.AreEqual("REVIEW_KEY", stored.SecretKeyName);
             Assert.IsTrue(stored.Enabled);
             Assert.AreEqual("{\"top_p\":0.5}", stored.AdditionalOptions);
@@ -425,13 +427,14 @@ namespace Revathryn.Data.Tests
         {
             using ValidationTestDatabase database = new();
 
-            await database.EngineSettings.SaveAsync(new ReviewEngineSettings { Model = "first", MaxTokens = 100, LastModifiedUtc = DateTime.UtcNow }, TestContext.CancellationToken);
-            await database.EngineSettings.SaveAsync(new ReviewEngineSettings { Model = "second", MaxTokens = 200, LastModifiedUtc = DateTime.UtcNow }, TestContext.CancellationToken);
+            await database.EngineSettings.SaveAsync(new ReviewEngineSettings { Model = "first", MaxTokens = 100, MaxSimultaneousConnections = 2, LastModifiedUtc = DateTime.UtcNow }, TestContext.CancellationToken);
+            await database.EngineSettings.SaveAsync(new ReviewEngineSettings { Model = "second", MaxTokens = 200, MaxSimultaneousConnections = 6, LastModifiedUtc = DateTime.UtcNow }, TestContext.CancellationToken);
 
             ReviewEngineSettings stored = await database.EngineSettings.GetAsync(TestContext.CancellationToken);
 
             Assert.AreEqual("second", stored.Model);
             Assert.AreEqual(200, stored.MaxTokens);
+            Assert.AreEqual(6, stored.MaxSimultaneousConnections);
             Assert.IsNull(stored.Temperature);
         }
 

@@ -39,6 +39,9 @@ namespace Revathryn.Contracts.Models
         /// <summary>User-defined type names the symbol depends on.</summary>
         public List<string> Dependencies { get; set; } = [];
 
+        /// <summary>Namespace imports (using directives) of the file that defines the symbol.</summary>
+        public List<string> UsingDirectives { get; set; } = [];
+
         /// <summary>Members declared by the symbol.</summary>
         public List<IndexedMember> Members { get; set; } = [];
     }

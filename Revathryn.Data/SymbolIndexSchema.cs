@@ -3,6 +3,12 @@ namespace Revathryn.Data
     /// <summary>DDL statements for the per-repository symbol index database.</summary>
     internal static class SymbolIndexSchema
     {
+        internal const string SymbolsUsingDirectivesJsonColumn = "UsingDirectivesJson";
+
+        internal const string SymbolsUsingDirectivesJsonDefinition = "TEXT NOT NULL DEFAULT ''";
+
+        internal const string AddSymbolsUsingDirectivesJsonColumn = "ALTER TABLE Symbols ADD COLUMN " + SymbolsUsingDirectivesJsonColumn + " " + SymbolsUsingDirectivesJsonDefinition + ";";
+
         internal const string CreateFiles = """
             CREATE TABLE IF NOT EXISTS Files (
                 SourcePath TEXT NOT NULL PRIMARY KEY,
@@ -30,6 +36,7 @@ namespace Revathryn.Data
                 IsAbstract INTEGER NOT NULL DEFAULT 0,
                 IsSealed INTEGER NOT NULL DEFAULT 0,
                 DependenciesJson TEXT NOT NULL DEFAULT '',
+                UsingDirectivesJson TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (SourcePath) REFERENCES Files(SourcePath) ON DELETE CASCADE
             );
             """;

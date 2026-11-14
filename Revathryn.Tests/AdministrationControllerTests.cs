@@ -162,7 +162,8 @@ namespace Revathryn.Tests
                 SecretKeyName = null,
                 Provider = AIProvider.Local,
                 Enabled = true,
-                IsDefault = true
+                IsDefault = true,
+                MaxSimultaneousConnections = 8
             };
 
             AIEngine engine = model.ToEngine();
@@ -175,6 +176,7 @@ namespace Revathryn.Tests
             Assert.AreEqual(AIProvider.Local, engine.Provider);
             Assert.IsTrue(engine.Enabled);
             Assert.IsTrue(engine.IsDefault);
+            Assert.AreEqual(8, engine.MaxSimultaneousConnections);
         }
 
         [TestMethod]
@@ -189,7 +191,8 @@ namespace Revathryn.Tests
                 Model = "gpt-4o",
                 SecretKeyName = "secret",
                 Enabled = false,
-                IsDefault = true
+                IsDefault = true,
+                MaxSimultaneousConnections = 12
             };
 
             AIEngineEditViewModel model = AIEngineEditViewModel.FromEngine(engine);
@@ -202,6 +205,7 @@ namespace Revathryn.Tests
             Assert.AreEqual("secret", model.SecretKeyName);
             Assert.IsFalse(model.Enabled);
             Assert.IsTrue(model.IsDefault);
+            Assert.AreEqual(12, model.MaxSimultaneousConnections);
         }
 
         [TestMethod]
@@ -218,6 +222,32 @@ namespace Revathryn.Tests
             Assert.HasCount(2, results);
             Assert.IsTrue(results.Exists(r => r.MemberNames.Contains(nameof(AIEngineEditViewModel.Name))));
             Assert.IsTrue(results.Exists(r => r.MemberNames.Contains(nameof(AIEngineEditViewModel.Model))));
+        }
+
+        [TestMethod]
+        public void AIEngineEditViewModel_ValidatesMaxSimultaneousConnectionsRange()
+        {
+            AssertRangeValidation(Consts.MinimumAIMaxSimultaneousConnections, isValid: true);
+            AssertRangeValidation(Consts.MaximumAIMaxSimultaneousConnections, isValid: true);
+            AssertRangeValidation(Consts.MinimumAIMaxSimultaneousConnections - 1, isValid: false);
+            AssertRangeValidation(Consts.MaximumAIMaxSimultaneousConnections + 1, isValid: false);
+        }
+
+        private static void AssertRangeValidation(int maxSimultaneousConnections, bool isValid)
+        {
+            AIEngineEditViewModel model = new()
+            {
+                Name = "Engine",
+                Model = "gpt-4o",
+                MaxSimultaneousConnections = maxSimultaneousConnections
+            };
+
+            List<ValidationResult> results = new();
+            ValidationContext context = new(model);
+
+            bool actual = Validator.TryValidateObject(model, context, results, validateAllProperties: true);
+
+            Assert.AreEqual(isValid, actual, $"MaxSimultaneousConnections {maxSimultaneousConnections} produced an unexpected validation result.");
         }
 
         [TestMethod]
